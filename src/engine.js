@@ -3,7 +3,7 @@
 // ============================================================
 'use strict';
 
-const PAL = ['#e3f2cd', '#9cc47a', '#4b7a5a', '#17301f'];
+const PAL = ['#f8f8f8', '#a8c8e8', '#4868a0', '#202838'];
 const TS = 16, VW = 160, VH = 144;
 const $ = s => document.querySelector(s);
 const cv = $('#cv'), ctx = cv.getContext('2d');
@@ -80,60 +80,88 @@ document.querySelectorAll('[data-k]').forEach(b => {
 document.addEventListener('contextmenu', e => e.preventDefault());
 
 // ------------------------------------------------------------
-//  Disegno: tessere
+//  Disegno: tessere (a colori)
 // ------------------------------------------------------------
-function R(g, c, x, y, w = 1, h = 1) { g.fillStyle = PAL[c]; g.fillRect(x, y, w, h); }
+function R(g, c, x, y, w = 1, h = 1) { g.fillStyle = typeof c === 'number' ? PAL[c] : c; g.fillRect(x, y, w, h); }
 const SOLID = new Set('T~FRCMGWwSrYOxobtcpk#Xn'.split(''));
-
+const K = {
+  g0: '#b8e888', g1: '#98d070', g2: '#78b858', g3: '#4e9040', g4: '#2e6a2e',
+  p0: '#f8eac0', p1: '#ead49a', p2: '#ccae72', p3: '#9a7a48',
+  t0: '#5cb85a', t1: '#88d470', t2: '#3a8a3e', t3: '#215a2a', tr: '#8a5e36', trd: '#5a3a20',
+  w0: '#5aa0f0', w1: '#8cc4f8', w2: '#d0ecff', w3: '#3a70c8',
+  r0: '#e05a4a', r1: '#f48c74', r2: '#b03a32', r3: '#6e2020',
+  b0: '#4a7ad8', b1: '#7aaaf2', b2: '#2e52a2',
+  s0: '#a8a8b2', s1: '#cacad4', s2: '#787884', s3: '#4a4a54',
+  wl0: '#faf2e2', wl1: '#e2d2b8', wl2: '#baa88e', wl3: '#7a6a52',
+  win: '#a8d8f8', win2: '#eaf8ff', fr: '#7a5a3a',
+  dr0: '#a66a3a', dr1: '#7a4a22', knob: '#f2d26a',
+  rk0: '#bab2a2', rk1: '#ddd5c5', rk2: '#8a8272', rk3: '#5a5248',
+  fl0: '#f4e2ba', fl1: '#dcc292', fl2: '#b89a68',
+  iw0: '#eadaca', iw1: '#c4aa8a', iw2: '#8a7258',
+  out: '#2a2a32',
+};
 const PAINT = {
-  '.': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 3, 4); R(g, 1, 11, 10); R(g, 1, 7, 13); R(g, 1, 13, 2); },
-  '=': g => { R(g, 0, 0, 0, 16, 16); for (let y = 1; y < 16; y += 4) for (let x = (y % 8 === 1 ? 1 : 3); x < 16; x += 4) R(g, 1, x, y); },
+  '.': g => { R(g, K.g1, 0, 0, 16, 16); R(g, K.g0, 3, 4, 2, 1); R(g, K.g2, 11, 10, 1, 2); R(g, K.g0, 7, 13, 2, 1); R(g, K.g2, 13, 2, 1, 2); R(g, K.g2, 2, 11); },
+  '=': g => { R(g, K.p0, 0, 0, 16, 16); for (let y = 1; y < 16; y += 4) for (let x = (y % 8 === 1 ? 1 : 3); x < 16; x += 4) R(g, K.p1, x, y, 2, 1); R(g, K.p2, 6, 9); R(g, K.p2, 13, 5); },
   ',': (g, f) => {
-    R(g, 1, 0, 0, 16, 16);
-    for (const [x, y] of [[1, 2], [9, 1], [5, 7], [12, 9], [1, 11], [8, 12]]) {
+    R(g, K.g2, 0, 0, 16, 16);
+    for (const [x, y] of [[0, 1], [8, 0], [4, 6], [12, 7], [0, 11], [8, 12]]) {
       const o = f ? 1 : 0;
-      R(g, 2, x, y + 1, 1, 3); R(g, 2, x + 2, y + 1, 1, 3); R(g, 3, x + 1, y + o, 1, 3); R(g, 2, x + 3, y + 2, 1, 2);
+      R(g, K.g3, x, y + 3, 4, 3); R(g, K.g1, x + o, y + 1, 1, 3); R(g, K.g1, x + 2, y, 1, 4); R(g, K.g0, x + 2, y, 1, 1); R(g, K.g4, x + 3, y + 2, 1, 3); R(g, K.g4, x, y + 5, 4, 1);
     }
   },
-  'f': (g, f) => { PAINT['.'](g); for (const [x, y] of [[3, 3], [11, 4], [6, 10], [12, 12]]) { R(g, 3, x, y + (f ? 1 : 0), 3, 3); R(g, 0, x + 1, y + 1 + (f ? 1 : 0)); R(g, 2, x + 1, y + 3, 1, 2); } },
+  'f': (g, f) => { PAINT['.'](g); const C = ['#f25a6a', '#ffffff', '#f2d23a', '#ffffff'];
+    [[2, 2], [10, 3], [5, 10], [12, 11]].forEach(([x, y], i) => { const o = f ? 1 : 0; R(g, K.g3, x + 1, y + 2, 1, 3); R(g, C[i], x + o, y, 3, 1); R(g, C[i], x + 1 + o, y - 1, 1, 3); R(g, '#f2c23a', x + 1 + o, y); }); },
   'T': g => {
-    R(g, 0, 0, 0, 16, 16); R(g, 3, 2, 1, 12, 11); R(g, 3, 1, 3, 14, 7);
-    R(g, 2, 3, 2, 10, 9); R(g, 2, 2, 4, 12, 5); R(g, 1, 5, 3, 3, 2); R(g, 1, 4, 5, 2, 1); R(g, 1, 10, 6, 2, 2);
-    R(g, 3, 6, 12, 4, 3); R(g, 2, 7, 12, 2, 3);
+    R(g, K.g1, 0, 0, 16, 16);
+    R(g, 'rgba(0,0,0,.18)', 2, 13, 12, 3);
+    R(g, K.t3, 2, 1, 12, 11); R(g, K.t3, 1, 3, 14, 7);
+    R(g, K.t0, 3, 2, 10, 9); R(g, K.t0, 2, 4, 12, 5);
+    R(g, K.t2, 3, 8, 10, 3); R(g, K.t2, 2, 7, 3, 2); R(g, K.t2, 11, 7, 3, 2);
+    R(g, K.t1, 5, 3, 3, 2); R(g, K.t1, 4, 5, 2, 1); R(g, K.t1, 9, 4, 2, 2);
+    R(g, K.trd, 6, 11, 4, 4); R(g, K.tr, 7, 11, 2, 4);
   },
-  '~': (g, f) => { R(g, 1, 0, 0, 16, 16); const o = f ? 4 : 0; R(g, 0, (2 + o) % 16, 4, 5, 1); R(g, 0, (10 + o) % 16, 11, 4, 1); R(g, 2, (9 + o) % 16, 5, 3, 1); R(g, 2, (1 + o) % 16, 12, 3, 1); },
-  'F': g => { PAINT['.'](g); R(g, 3, 0, 5, 16, 1); R(g, 3, 0, 10, 16, 1); for (const x of [2, 13]) { R(g, 3, x, 3, 2, 11); R(g, 1, x, 4, 1, 8); } },
-  'R': g => { R(g, 2, 0, 0, 16, 16); for (let y = 3; y < 16; y += 4) R(g, 3, 0, y, 16, 1); for (let y = 0; y < 16; y += 4) for (let x = (y % 8 ? 2 : 6); x < 16; x += 8) R(g, 3, x, y, 1, 3); R(g, 1, 0, 0, 16, 1); },
-  'C': g => { PAINT.R(g); R(g, 0, 5, 3, 6, 10); R(g, 3, 7, 4, 2, 8); R(g, 3, 6, 7, 4, 2); },
-  'M': g => { R(g, 3, 0, 0, 16, 16); for (let x = 0; x < 16; x += 4) R(g, 2, x, 0, 2, 16); R(g, 1, 0, 0, 16, 1); R(g, 1, 0, 14, 16, 2); },
-  'G': g => { R(g, 3, 0, 0, 16, 16); R(g, 2, 0, 2, 16, 2); R(g, 2, 0, 8, 16, 2); R(g, 1, 0, 0, 16, 1); R(g, 1, 6, 4, 4, 3); },
-  'W': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 0, 5, 16, 1); R(g, 1, 0, 10, 16, 1); R(g, 1, 0, 15, 16, 1); R(g, 2, 0, 0, 16, 1); },
-  'w': g => { PAINT.W(g); R(g, 3, 3, 3, 10, 9); R(g, 1, 4, 4, 8, 7); R(g, 0, 5, 5, 2, 2); R(g, 3, 7, 4, 1, 7); },
-  'D': g => { PAINT.W(g); R(g, 3, 3, 2, 10, 14); R(g, 2, 4, 3, 8, 13); R(g, 1, 10, 9, 1, 1); R(g, 3, 4, 7, 8, 1); },
-  'S': g => { PAINT['.'](g); R(g, 3, 7, 9, 2, 6); R(g, 3, 1, 2, 14, 8); R(g, 1, 2, 3, 12, 6); R(g, 2, 4, 5, 8, 1); R(g, 2, 4, 7, 6, 1); },
-  'v': g => { PAINT['.'](g); R(g, 2, 0, 10, 16, 2); R(g, 3, 0, 12, 16, 1); R(g, 1, 0, 13, 16, 3); },
-  'r': g => { (MAP && MAP.indoor ? PAINT._ : PAINT['.'])(g); R(g, 3, 2, 4, 12, 11); R(g, 3, 3, 3, 10, 13); R(g, 2, 3, 5, 10, 9); R(g, 2, 4, 4, 8, 11); R(g, 1, 5, 5, 3, 2); R(g, 3, 9, 9, 3, 1); },
-  'B': g => { R(g, 1, 0, 0, 16, 16); for (let x = 0; x < 16; x += 4) R(g, 2, x, 0, 1, 16); R(g, 3, 0, 0, 16, 1); R(g, 3, 0, 15, 16, 1); },
-  'Y': g => { PAINT['.'](g); R(g, 2, 5, 3, 6, 13); R(g, 3, 5, 3, 1, 13); R(g, 3, 10, 3, 1, 13); R(g, 3, 7, 11, 2, 5); R(g, 3, 1, 1, 14, 1); R(g, 3, 7, 0, 1, 9); R(g, 1, 6, 4, 4, 2); },
+  '~': (g, f) => { R(g, K.w0, 0, 0, 16, 16); const o = f ? 3 : 0; R(g, K.w1, (2 + o) % 16, 4, 5, 1); R(g, K.w2, (3 + o) % 16, 4, 2, 1); R(g, K.w1, (10 + o) % 16, 11, 4, 1); R(g, K.w3, (9 + o) % 16, 7, 3, 1); R(g, K.w3, (1 + o) % 16, 13, 3, 1); },
+  'F': g => { PAINT['.'](g); R(g, '#f8f8f8', 0, 5, 16, 2); R(g, '#f8f8f8', 0, 10, 16, 2); R(g, '#a8a8a8', 0, 7, 16, 1); R(g, '#a8a8a8', 0, 12, 16, 1); for (const x of [2, 12]) { R(g, '#a8a8a8', x, 3, 3, 11); R(g, '#ffffff', x, 3, 2, 10); } },
+  'R': g => roof(g, K.r0, K.r1, K.r2, K.r3),
+  'H': g => roof(g, K.b0, K.b1, K.b2, '#1a2a5a'),
+  'C': g => { roof(g, K.r0, K.r1, K.r2, K.r3); R(g, '#ffffff', 5, 3, 6, 10); R(g, K.r0, 7, 4, 2, 8); R(g, K.r0, 6, 7, 4, 2); },
+  'M': g => { roof(g, K.b0, K.b1, K.b2, '#1a2a5a'); R(g, '#ffffff', 3, 5, 10, 6); R(g, K.b0, 4, 6, 8, 1); R(g, K.b0, 4, 8, 6, 1); },
+  'G': g => { roof(g, K.s0, K.s1, K.s2, K.s3); R(g, '#f2c23a', 5, 4, 6, 5); R(g, '#c89a22', 6, 5, 4, 3); },
+  'W': g => { R(g, K.wl0, 0, 0, 16, 16); R(g, K.wl1, 0, 5, 16, 1); R(g, K.wl1, 0, 10, 16, 1); R(g, K.wl2, 0, 15, 16, 1); R(g, K.wl2, 0, 0, 16, 1); },
+  'w': g => { PAINT.W(g); R(g, K.fr, 3, 3, 10, 9); R(g, K.win, 4, 4, 8, 7); R(g, K.win2, 5, 5, 2, 2); R(g, K.fr, 7, 4, 1, 7); R(g, K.fr, 4, 7, 8, 1); },
+  'D': g => { PAINT.W(g); R(g, K.dr1, 3, 2, 10, 14); R(g, K.dr0, 4, 3, 8, 13); R(g, K.knob, 10, 9, 1, 1); R(g, K.dr1, 4, 7, 8, 1); R(g, '#c88a52', 5, 4, 2, 2); },
+  'S': g => { PAINT['.'](g); R(g, K.trd, 7, 9, 2, 6); R(g, '#5a3a20', 1, 2, 14, 8); R(g, '#c8945a', 2, 3, 12, 6); R(g, '#8a5e36', 4, 5, 8, 1); R(g, '#8a5e36', 4, 7, 6, 1); },
+  'v': g => { PAINT['.'](g); R(g, K.g3, 0, 10, 16, 2); R(g, K.g4, 0, 12, 16, 1); R(g, K.g2, 0, 13, 16, 3); },
+  'r': g => { (MAP && MAP.indoor ? PAINT._ : PAINT['.'])(g); R(g, 'rgba(0,0,0,.2)', 2, 13, 12, 3); R(g, K.rk3, 2, 4, 12, 10); R(g, K.rk3, 3, 3, 10, 12); R(g, K.rk0, 3, 5, 10, 8); R(g, K.rk0, 4, 4, 8, 10); R(g, K.rk1, 5, 5, 3, 2); R(g, K.rk2, 4, 11, 8, 2); R(g, K.rk2, 9, 8, 3, 1); },
+  'B': g => { R(g, '#c8945a', 0, 0, 16, 16); for (let x = 0; x < 16; x += 4) R(g, '#8a5e36', x, 0, 1, 16); R(g, '#5a3a20', 0, 0, 16, 1); R(g, '#5a3a20', 0, 15, 16, 1); },
+  'Y': (g, f) => { PAINT['.'](g); R(g, K.wl2, 5, 5, 6, 11); R(g, K.wl0, 6, 5, 4, 11); R(g, K.dr1, 7, 12, 2, 4); const o = f ? 1 : 0; R(g, K.fr, 1 + o, 1, 14 - 2 * o, 2); R(g, K.fr, 7, 0 + o, 2, 9 - 2 * o); R(g, '#ffffff', 2 + o, 1, 4, 1); R(g, '#ffffff', 7, 1 + o, 1, 3); R(g, K.r0, 6, 4, 4, 2); },
   'O': (g, f) => {
-    R(g, 3, 0, 0, 16, 16); R(g, 2, 1, 1, 14, 14);
+    R(g, K.rk3, 0, 0, 16, 16); R(g, K.rk0, 1, 1, 14, 14);
     const alive = MAP && MAP.spring && F(MAP.spring);
-    if (alive) { R(g, 1, 2, 2, 12, 12); R(g, 0, 4 + (f ? 2 : 0), 5, 2, 2); R(g, 0, 9 - (f ? 2 : 0), 9, 2, 2); R(g, 0, 7, 3 + (f ? 1 : 0), 1, 1); }
-    else { R(g, 3, 3, 3, 10, 10); R(g, 2, 6, 6, 4, 4); R(g, 1, 7, 7, 2, 2); }
+    if (alive) { R(g, '#5ad2e2', 2, 2, 12, 12); R(g, '#a2f2ff', 3, 3, 10, 10); R(g, '#ffffff', 4 + (f ? 2 : 0), 5, 2, 2); R(g, '#ffffff', 9 - (f ? 2 : 0), 9, 2, 2); R(g, '#ffffff', 7, 3 + (f ? 1 : 0), 1, 1); }
+    else { R(g, '#5a524a', 3, 3, 10, 10); R(g, '#3a342e', 6, 6, 4, 4); }
   },
   // interni
-  '#': g => { R(g, 2, 0, 0, 16, 16); R(g, 3, 0, 14, 16, 2); R(g, 1, 0, 3, 16, 1); for (let x = 3; x < 16; x += 8) R(g, 3, x, 4, 1, 10); },
-  '_': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 0, 15, 16, 1); R(g, 1, 15, 0, 1, 16); },
-  'b': g => { R(g, 3, 0, 0, 16, 16); R(g, 2, 1, 1, 14, 14); for (let y = 2; y < 15; y += 5) { R(g, 3, 1, y + 3, 14, 1); for (let x = 2; x < 14; x += 3) R(g, (x / 3) % 2 ? 0 : 1, x, y, 2, 3); } },
-  't': g => { R(g, 3, 0, 1, 16, 14); R(g, 1, 1, 2, 14, 10); R(g, 0, 2, 3, 6, 2); R(g, 2, 1, 12, 14, 2); },
-  'c': g => { R(g, 3, 0, 0, 16, 16); R(g, 1, 0, 1, 16, 5); R(g, 2, 0, 7, 16, 8); R(g, 0, 0, 2, 16, 1); },
-  'p': g => { PAINT._(g); R(g, 3, 2, 1, 12, 11); R(g, 1, 3, 2, 10, 7); R(g, 0, 4, 3, 3, 2); R(g, 3, 6, 12, 4, 3); },
-  'm': g => { PAINT._(g); R(g, 2, 1, 4, 14, 10); R(g, 1, 2, 5, 12, 8); for (let x = 3; x < 13; x += 3) R(g, 2, x, 6, 1, 6); },
-  'k': g => { PAINT._(g); R(g, 3, 1, 0, 14, 16); R(g, 0, 2, 1, 12, 4); R(g, 1, 2, 6, 12, 9); R(g, 2, 2, 8, 12, 1); },
-  'x': g => { PAINT._(g); R(g, 3, 5, 10, 6, 6); R(g, 2, 6, 11, 4, 4); R(g, 3, 3, 1, 10, 10); R(g, 2, 4, 2, 8, 8); R(g, 1, 5, 3, 2, 2); R(g, 1, 9, 6, 2, 2); },
-  'o': g => { PAINT._(g); R(g, 3, 4, 1, 8, 15); R(g, 2, 5, 2, 6, 13); R(g, 1, 6, 3, 2, 3); R(g, 3, 6, 6, 1, 1); R(g, 3, 9, 6, 1, 1); R(g, 3, 3, 13, 10, 3); },
-  'X': g => { R(g, 3, 0, 0, 16, 16); },
+  '#': g => { R(g, K.iw0, 0, 0, 16, 16); R(g, K.iw1, 0, 12, 16, 4); R(g, K.iw2, 0, 15, 16, 1); R(g, K.iw1, 0, 3, 16, 1); for (let x = 3; x < 16; x += 8) R(g, '#f8eade', x, 4, 1, 8); },
+  '_': g => { R(g, K.fl0, 0, 0, 16, 16); R(g, K.fl1, 0, 7, 16, 1); R(g, K.fl1, 0, 15, 16, 1); R(g, K.fl1, 5, 0, 1, 7); R(g, K.fl1, 12, 8, 1, 7); R(g, '#fff4d8', 1, 1, 3, 1); },
+  'b': g => { R(g, '#5a3a20', 0, 0, 16, 16); R(g, '#8a5e36', 1, 1, 14, 14); const BC = ['#e05a4a', '#4a7ad8', '#f2c23a', '#5ab85a', '#a25ac2'];
+    for (let y = 2, r = 0; y < 15; y += 5, r++) { R(g, '#5a3a20', 1, y + 3, 14, 1); for (let x = 2, i = r; x < 14; x += 3, i++) R(g, BC[i % 5], x, y, 2, 3); } },
+  't': g => { PAINT._(g); R(g, '#7a4a22', 0, 1, 16, 14); R(g, '#c88a52', 1, 2, 14, 10); R(g, '#e8b072', 2, 3, 6, 2); R(g, '#a66a3a', 1, 12, 14, 2); },
+  'c': g => { R(g, '#7a4a22', 0, 0, 16, 16); R(g, '#f8f0dc', 0, 1, 16, 5); R(g, '#c88a52', 0, 7, 16, 8); R(g, '#ffffff', 0, 2, 16, 1); },
+  'p': g => { PAINT._(g); R(g, '#3a3a44', 2, 1, 12, 11); R(g, '#4a8ad8', 3, 2, 10, 7); R(g, '#a8d8ff', 4, 3, 3, 2); R(g, '#8a8a94', 5, 12, 6, 3); },
+  'm': g => { PAINT._(g); R(g, '#a83a32', 1, 4, 14, 10); R(g, '#e05a4a', 2, 5, 12, 8); for (let x = 3; x < 13; x += 3) R(g, '#f2c23a', x, 6, 1, 6); },
+  'k': g => { PAINT._(g); R(g, '#3a3a44', 1, 0, 14, 16); R(g, '#ffffff', 2, 1, 12, 4); R(g, '#4a7ad8', 2, 6, 12, 9); R(g, '#7aaaf2', 2, 6, 12, 2); },
+  'x': g => { PAINT._(g); R(g, '#8a4a2a', 5, 10, 6, 6); R(g, '#c8723a', 6, 11, 4, 4); R(g, K.t3, 3, 1, 10, 10); R(g, K.t0, 4, 2, 8, 8); R(g, K.t1, 5, 3, 2, 2); R(g, K.t1, 9, 6, 2, 2); },
+  'o': g => { PAINT._(g); R(g, K.s3, 4, 1, 8, 15); R(g, K.s0, 5, 2, 6, 13); R(g, K.s1, 6, 3, 2, 3); R(g, K.s3, 6, 6, 1, 1); R(g, K.s3, 9, 6, 1, 1); R(g, K.s2, 3, 13, 10, 3); },
+  'X': g => { R(g, '#18181e', 0, 0, 16, 16); },
 };
+function roof(g, a, l, d, o) {
+  R(g, a, 0, 0, 16, 16);
+  for (let y = 3; y < 16; y += 4) R(g, d, 0, y, 16, 1);
+  for (let y = 0; y < 16; y += 4) for (let x = (y % 8 ? 2 : 6); x < 16; x += 8) R(g, d, x, y, 1, 3);
+  R(g, l, 0, 0, 16, 1); R(g, l, 1, 1, 3, 1); R(g, o, 0, 15, 16, 1);
+}
 const tileCache = {};
 function tileImg(ch, f) {
   const springState = ch === 'O' ? (MAP && MAP.spring && F(MAP.spring) ? 1 : 0) : 0;
@@ -147,28 +175,29 @@ function tileImg(ch, f) {
 }
 
 // ------------------------------------------------------------
-//  Disegno: personaggi
+//  Disegno: personaggi (a colori)
 // ------------------------------------------------------------
+const SKIN = '#f8cca2', SKIN2 = '#d89a6a';
 const LOOKS = {
-  player: {hair: 3, shirt: 2, cap: 1},
-  rival:  {hair: 2, shirt: 3, spiky: 1},
-  prof:   {hair: 1, shirt: 0, coat: 1},
-  mom:    {hair: 3, shirt: 1, long: 1},
-  dad:    {hair: 2, shirt: 1, beard: 1},
-  man:    {hair: 3, shirt: 1},
-  woman:  {hair: 2, shirt: 2, long: 1},
-  old:    {hair: 1, shirt: 2, beard: 1},
-  oldw:   {hair: 1, shirt: 1, long: 1},
-  kid:    {hair: 3, shirt: 1, small: 1, cap: 1},
-  girl:   {hair: 3, shirt: 2, long: 1, small: 1},
-  scout:  {hair: 2, shirt: 1, cap: 1},
-  hiker:  {hair: 3, shirt: 2, beard: 1, cap: 1},
-  grigio: {hair: 3, shirt: 3, cap: 1, coat: 1},
-  nurse:  {hair: 2, shirt: 0, long: 1, cross: 1},
-  clerk:  {hair: 3, shirt: 1, apron: 1},
-  leader: {hair: 3, shirt: 2, long: 1, coat: 1},
-  miner:  {hair: 3, shirt: 2, cap: 1},
-  worker: {hair: 3, shirt: 1, cap: 1, apron: 1},
+  player: {hair: '#4a3020', shirt: '#f2902e', pants: '#3a4a8a', cap: '#2aa2a2'},
+  rival:  {hair: '#c88a3a', shirt: '#7a52c2', pants: '#3a3a4a', spiky: 1},
+  prof:   {hair: '#c8c8c8', shirt: '#5ab85a', pants: '#6a5a4a', coat: '#ffffff', long: 1},
+  mom:    {hair: '#7a3a2a', shirt: '#e85a8a', pants: '#e85a8a', long: 1},
+  dad:    {hair: '#3a3a3a', shirt: '#3a6ac2', pants: '#3a3a4a', beard: 1},
+  man:    {hair: '#3a2a20', shirt: '#4a9a6a', pants: '#4a4a5a'},
+  woman:  {hair: '#e2a23a', shirt: '#4a8ae2', pants: '#4a8ae2', long: 1},
+  old:    {hair: '#e2e2e2', shirt: '#8a6a4a', pants: '#5a4a3a', beard: 1},
+  oldw:   {hair: '#d2d2e2', shirt: '#a25aa2', pants: '#a25aa2', long: 1},
+  kid:    {hair: '#4a3020', shirt: '#e24a4a', pants: '#3a5aa2', small: 1, cap: '#f2c23a'},
+  girl:   {hair: '#c25a2a', shirt: '#f28ac2', pants: '#f28ac2', long: 1, small: 1},
+  scout:  {hair: '#6a4a2a', shirt: '#8a9a3a', pants: '#5a4a2a', cap: '#5a6a2a'},
+  hiker:  {hair: '#3a2a20', shirt: '#c25a2a', pants: '#5a4a3a', beard: 1, cap: '#6a4a2a'},
+  grigio: {hair: '#2a2a2a', shirt: '#6a6a74', pants: '#3a3a44', cap: '#4a4a54', coat: '#8a8a94'},
+  nurse:  {hair: '#f28aa2', shirt: '#ffffff', pants: '#ffffff', long: 1, cross: 1},
+  clerk:  {hair: '#3a2a20', shirt: '#4a7ad8', pants: '#3a3a4a', apron: '#ffffff'},
+  leader: {hair: '#8a4a2a', shirt: '#a2725a', pants: '#5a4a3a', long: 1, coat: '#6a5a4a'},
+  miner:  {hair: '#3a2a20', shirt: '#c28a3a', pants: '#4a4a5a', cap: '#f2c23a'},
+  worker: {hair: '#3a2a20', shirt: '#f28a2a', pants: '#3a4a8a', cap: '#f2c23a', apron: '#f2d23a'},
 };
 const charCache = {};
 function charImg(look, dir, step) {
@@ -176,124 +205,124 @@ function charImg(look, dir, step) {
   if (charCache[key]) return charCache[key];
   const c = document.createElement('canvas'); c.width = c.height = 16;
   const g = c.getContext('2d');
+  const O = K.out;
   if (look === 'ball') {
-    R(g, 3, 4, 5, 8, 9); R(g, 3, 3, 6, 10, 7); R(g, 2, 4, 6, 8, 3); R(g, 0, 4, 10, 8, 3); R(g, 3, 3, 9, 10, 1); R(g, 0, 7, 8, 2, 3); R(g, 3, 7, 9, 2, 1); R(g, 1, 5, 7, 1, 1);
+    // SFERA: verde acqua sopra, crema sotto, fascia dorata con gemma
+    R(g, O, 4, 4, 8, 10); R(g, O, 3, 5, 10, 8);
+    R(g, '#2a9a8a', 4, 5, 8, 4); R(g, '#7ad8c8', 5, 5, 2, 1); R(g, '#1e6e64', 10, 6, 1, 3);
+    R(g, '#f2e2b2', 4, 10, 8, 3); R(g, '#c8b282', 9, 11, 2, 2);
+    R(g, '#c8962a', 3, 9, 10, 1);
+    R(g, O, 6, 8, 4, 3); R(g, '#f2d23a', 7, 9, 2, 1); R(g, '#fff6b2', 7, 9, 1, 1);
   } else {
     const L = LOOKS[look] || LOOKS.man;
     const o = L.small ? 1 : 0;
     const side = dir === 'left' || dir === 'right';
+    const shade = col => col;
     // gambe
-    const lg = step ? 1 : 0;
-    if (side) { R(g, 3, 6 - lg, 13, 2, 3); R(g, 3, 9 + lg, 13, 2, 3); }
-    else { R(g, 3, 5, 13, 2, 3 - (step === 1 ? 1 : 0)); R(g, 3, 9, 13, 2, 3 - (step === 2 ? 1 : 0)); }
+    if (side) { R(g, O, 5 + (step ? -1 : 0), 12, 3, 4); R(g, L.pants, 6 + (step ? -1 : 0), 12, 1, 3); R(g, O, 8 + (step ? 1 : 0), 12, 3, 4); R(g, L.pants, 9 + (step ? 1 : 0), 12, 1, 3); }
+    else {
+      R(g, O, 4, 12, 4, 4 - (step === 1 ? 1 : 0)); R(g, L.pants, 5, 12, 2, 3 - (step === 1 ? 1 : 0));
+      R(g, O, 8, 12, 4, 4 - (step === 2 ? 1 : 0)); R(g, L.pants, 9, 12, 2, 3 - (step === 2 ? 1 : 0));
+    }
     // corpo
-    R(g, 3, 4, 8 + o, 8, 6 - o); R(g, L.shirt, 5, 9 + o, 6, 4 - o);
-    if (L.coat) { R(g, 0, 4, 9 + o, 2, 5 - o); R(g, 0, 10, 9 + o, 2, 5 - o); R(g, 3, 4, 13, 8, 1); }
-    if (L.apron) R(g, 0, 6, 10 + o, 4, 3 - o);
-    if (L.cross && dir === 'down') { R(g, 3, 7, 10, 2, 1); R(g, 3, 7, 9, 1, 3); }
-    // braccia
-    if (!side) { R(g, 3, 3, 9 + o, 1, 3); R(g, 3, 12, 9 + o, 1, 3); }
+    R(g, O, 3, 8 + o, 10, 6 - o);
+    R(g, L.shirt, 4, 9 + o, 8, 4 - o);
+    R(g, 'rgba(0,0,0,.18)', 4, 12, 8, 1);
+    if (L.coat) { R(g, L.coat, 4, 9 + o, 2, 5 - o); R(g, L.coat, 10, 9 + o, 2, 5 - o); }
+    if (L.apron && dir !== 'up') R(g, L.apron, 6, 10 + o, 4, 3 - o);
+    if (L.cross && dir === 'down') { R(g, '#e24a4a', 7, 9 + o, 2, 3); R(g, '#e24a4a', 6, 10 + o, 4, 1); }
+    // braccia / mani
+    if (!side) { R(g, SKIN, 3, 11, 1, 2); R(g, SKIN, 12, 11, 1, 2); }
+    else R(g, SKIN, dir === 'left' ? 6 : 9, 11, 2, 2);
     // testa
-    R(g, 3, 3, 1 + o, 10, 8); R(g, 3, 4, 0 + o, 8, 10 - o);
-    R(g, 0, 4, 2 + o, 8, 6);
+    R(g, O, 3, 1 + o, 10, 8); R(g, O, 4, 0 + o, 8, 10 - o);
+    R(g, SKIN, 4, 2 + o, 8, 6); R(g, SKIN2, 4, 7 + o, 8, 1);
     // capelli
     R(g, L.hair, 4, 1 + o, 8, 2);
-    if (dir === 'up') { R(g, L.hair, 4, 1 + o, 8, 7); R(g, L.hair === 3 ? 2 : 1, 5, 3 + o, 6, 1); R(g, L.hair === 3 ? 2 : 1, 6, 5 + o, 4, 1); }
+    if (dir === 'up') { R(g, L.hair, 4, 1 + o, 8, 7); R(g, 'rgba(255,255,255,.25)', 5, 2 + o, 4, 1); }
     if (L.long) { R(g, L.hair, 3, 2 + o, 1, 7); R(g, L.hair, 12, 2 + o, 1, 7); if (dir === 'up') R(g, L.hair, 4, 8, 8, 2); }
-    if (L.spiky) { R(g, 3, 4, 0, 1, 1); R(g, 3, 7, 0, 1, 1); R(g, 3, 10, 0, 1, 1); R(g, L.hair, 5, 0 + o, 2, 1); R(g, L.hair, 8, 0 + o, 2, 1); }
-    if (L.cap) { R(g, 3, 4, 0 + o, 8, 3); R(g, 2, 5, 1 + o, 6, 1); if (dir === 'down') R(g, 3, 3, 3 + o, 10, 1); if (dir === 'up') R(g, 1, 6, 1 + o, 4, 1); }
+    if (L.spiky) { R(g, O, 4, 0, 1, 1); R(g, O, 7, 0, 1, 1); R(g, O, 10, 0, 1, 1); R(g, L.hair, 5, 0 + o, 2, 2); R(g, L.hair, 8, 0 + o, 2, 2); R(g, L.hair, 3, 3 + o, 1, 2); R(g, L.hair, 12, 3 + o, 1, 2); }
+    if (L.cap) {
+      R(g, O, 3, 0 + o, 10, 4); R(g, L.cap, 4, 1 + o, 8, 2); R(g, 'rgba(255,255,255,.35)', 5, 1 + o, 3, 1);
+      if (dir === 'down') R(g, L.cap, 3, 3 + o, 10, 1);
+      if (side) R(g, L.cap, dir === 'left' ? 2 : 10, 3 + o, 4, 1);
+    }
     // viso
     if (dir === 'down') {
-      R(g, 3, 5, 5 + o, 1, 2); R(g, 3, 10, 5 + o, 1, 2);
-      if (L.beard) R(g, L.hair === 1 ? 1 : 2, 5, 7 + o, 6, 2);
+      R(g, O, 5, 4 + o, 1, 2); R(g, O, 10, 4 + o, 1, 2);
+      R(g, '#f2a29a', 4, 6 + o, 1, 1); R(g, '#f2a29a', 11, 6 + o, 1, 1);
+      if (L.beard) R(g, L.hair, 5, 6 + o, 6, 2);
     } else if (side) {
       const ex = dir === 'left' ? 5 : 10;
-      R(g, 3, ex, 5 + o, 1, 2);
+      R(g, O, ex, 4 + o, 1, 2);
       R(g, L.hair, dir === 'left' ? 9 : 4, 2 + o, 3, 5);
-      if (L.beard) R(g, 2, dir === 'left' ? 4 : 8, 7 + o, 4, 2);
-    }
-    if (dir === 'right') { // specchia
-      const c2 = document.createElement('canvas'); c2.width = c2.height = 16;
-      const g2 = c2.getContext('2d'); g2.translate(16, 0); g2.scale(-1, 1); g2.drawImage(c, 0, 0);
-      g.clearRect(0, 0, 16, 16); g.drawImage(c2, 0, 0);
+      if (L.beard) R(g, L.hair, dir === 'left' ? 4 : 8, 6 + o, 4, 2);
     }
   }
   return (charCache[key] = c);
 }
 
 // ------------------------------------------------------------
-//  Disegno: sprite dei FAUNI (generati proceduralmente)
+//  Disegno: creature (pixel art con contorno e ombre automatici)
 // ------------------------------------------------------------
+function hex2rgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function tint(h, f) { // f>0 schiarisce, f<0 scurisce
+  const [r, g, b] = hex2rgb(h);
+  const m = v => Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f));
+  return `rgb(${m(r)},${m(g)},${m(b)})`;
+}
+function artGrid(id) {
+  const A = ART[id];
+  const N = 24;
+  const rows = [];
+  if (A.f) for (let y = 0; y < N; y++) rows.push((A.f[y] || '').padEnd(N, '.').slice(0, N));
+  else for (let y = 0; y < N; y++) { const h = (A.h[y] || '').padEnd(12, '.').slice(0, 12); rows.push(h + [...h].reverse().join('')); }
+  return rows;
+}
 const monCache = {};
 function monSprite(spId, back) {
   const key = spId + (back ? 'b' : 'f');
   if (monCache[key]) return monCache[key];
-  const sp = SPECIES[spId];
-  const N = 16, H = 8;
-  const rnd = mulberry(hashStr(sp.fam));
-  const extra = mulberry(hashStr(sp.id));
-  const stage = sp.st || 1;
-  const halfW = [0, 5, 6, 8][stage];
-  const top = [0, 5, 3, 1][stage];
-  const grid = Array.from({length: N}, () => Array(N).fill(0));
-  // forma base condivisa dalla famiglia
-  const base = [];
-  for (let y = 0; y < N; y++) { base[y] = []; for (let x = 0; x < H; x++) base[y][x] = rnd(); }
-  for (let y = top; y < N - 1; y++) {
-    for (let x = 0; x < H; x++) {
-      const cx = H - 1 - x; // distanza dal centro
-      if (cx >= halfW) continue;
-      const cy = (y - top) / (N - 1 - top);
-      let p = 0.92 - cx / halfW * 0.75 - Math.abs(cy - 0.55) * 0.5;
-      if (stage > 1 && extra() < 0.12) p += 0.25;
-      if (base[y][x] < p) grid[y][x] = 1;
-    }
-    // il centro è sempre pieno in basso
-    if (y > top + 2) grid[y][H - 1] = 1;
-  }
-  // specchia
-  for (let y = 0; y < N; y++) for (let x = 0; x < H; x++) grid[y][N - 1 - x] = grid[y][x];
-  // pulizia: elimina pixel isolati
-  const filled = (x, y) => x >= 0 && y >= 0 && x < N && y < N && grid[y][x] >= 1;
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    if (grid[y][x] && !filled(x - 1, y) && !filled(x + 1, y) && !filled(x, y - 1) && !filled(x, y + 1)) grid[y][x] = 0;
-  }
-  // colore: corpo 1, macchie 2
-  const tone = sp.types.includes('OMBRA') || sp.types.includes('ROCCIA') ? 2 : 1;
-  const spots = mulberry(hashStr(sp.fam + 'spots'));
-  const col = Array.from({length: N}, () => Array(N).fill(-1));
-  for (let y = 0; y < N; y++) for (let x = 0; x < H; x++) {
-    if (!grid[y][x]) continue;
-    let c = tone;
-    if (spots() < 0.22) c = tone === 1 ? 2 : 1;
-    if (y < top + 3 && tone === 1 && spots() < 0.4) c = 0;
-    col[y][x] = c; col[y][N - 1 - x] = c;
-  }
-  // contorno
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    if (grid[y][x]) {
-      if (!filled(x - 1, y) || !filled(x + 1, y) || !filled(x, y - 1) || !filled(x, y + 1)) col[y][x] = 3;
-    }
-  }
-  // occhi
-  if (!back) {
-    let ey = top + 3 + Math.floor(rnd() * 2);
-    for (let tries = 0; tries < 6; tries++, ey++) {
-      const ex = 5 + (stage === 1 ? 1 : 0);
-      if (filled(ex, ey) && filled(N - 1 - ex, ey) && filled(ex, ey + 1)) {
-        for (const x of [ex, N - 1 - ex]) { col[ey][x] = 3; col[ey + 1][x] = 3; col[ey][x + (x < H ? 1 : -1)] = 0; }
-        break;
-      }
-    }
-  }
+  const A = ART[spId];
+  const N = 24;
+  let rows = artGrid(spId);
+  if (back) rows = rows.map(r => [...r].reverse().join('').replace(/[ek]/g, 'a'));
+  const col = {e: '#ffffff', k: '#1e1e26'};
+  for (const k in A.c) col[k] = A.c[k];
+  const at = (x, y) => (x >= 0 && y >= 0 && x < N && y < N ? rows[y][x] : '.');
+  const filled = (x, y) => at(x, y) !== '.';
   const c = document.createElement('canvas'); c.width = c.height = 48;
   const g = c.getContext('2d');
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-    if (col[y][x] < 0) continue;
-    const v = back && col[y][x] === 0 ? 1 : col[y][x];
-    R(g, v, x * 3, y * 3, 3, 3);
+    const ch = at(x, y);
+    let color;
+    if (ch === '.') {
+      // contorno colorato attorno alla figura
+      const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => at(x + dx, y + dy)).find(v => v !== '.' && v !== 'e');
+      if (!nb) continue;
+      color = nb === 'k' ? col.k : tint(col[nb] || col.a, -0.62);
+    } else if (ch === 'e' || ch === 'k') color = col[ch];
+    else {
+      const base = col[ch] || col.a;
+      const top = !filled(x, y - 1) || !filled(x - 1, y);
+      const bot = !filled(x, y + 1) || !filled(x + 1, y);
+      const bot2 = !filled(x, y + 2);
+      color = top ? tint(base, 0.32) : bot ? tint(base, -0.28) : bot2 ? tint(base, -0.12) : base;
+    }
+    g.fillStyle = color; g.fillRect(x * 2, y * 2, 2, 2);
   }
   return (monCache[key] = c);
+}
+// Sagoma bianca (per entrata in campo / evoluzione)
+const silCache = {};
+function monSilhouette(spId, color = '#ffffff') {
+  const key = spId + color;
+  if (silCache[key]) return silCache[key];
+  const s = monSprite(spId);
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const g = c.getContext('2d'); g.drawImage(s, 0, 0);
+  g.globalCompositeOperation = 'source-in'; g.fillStyle = color; g.fillRect(0, 0, 48, 48);
+  return (silCache[key] = c);
 }
 
 // ------------------------------------------------------------
@@ -364,6 +393,14 @@ async function say(text, opt = {}) {
     await waitAB();
   }
   if (!opt.keep) hideTextBox();
+}
+
+// Testo istantaneo che non aspetta tasti (usato durante le animazioni)
+function msg(text) {
+  const box = showTextBox();
+  if (waiter && waiter.typing) waiter = null;
+  box.querySelector('.t').textContent = wrap(fmt(text)).slice(0, 2).join('\n');
+  box.querySelector('.more').style.visibility = 'hidden';
 }
 
 // Menu a lista. Ritorna l'indice scelto o -1 se annullato.
@@ -594,7 +631,11 @@ function entryOf(I) {
 
 async function run(fn) {
   busy = true;
-  try { await fn(); } catch (e) { console.error(e); hideTextBox(); }
+  try { await fn(); } catch (e) {
+    console.error(e); hideTextBox();
+    // ripristino di sicurezza: mai restare bloccati dentro una lotta
+    if (mode === 'battle') { if (B) { B.eh && B.eh.remove(); B.ph && B.ph.remove(); } B = null; FX = []; TR = null; mode = 'world'; }
+  }
   finally { busy = false; hideTextBox(); }
 }
 
@@ -620,7 +661,7 @@ async function trainerSpot(n, dist) {
 async function trainerBattle(n) {
   const T = n.trainer;
   await say(T.intro);
-  const res = await battle({trainer: T, canLose: T.canLose});
+  const res = await battle({trainer: Object.assign({look: n.look}, T), canLose: T.canLose});
   if (res === 'win') { setF(trKey(n)); if (T.onWin) await T.onWin(n); }
   return res;
 }
@@ -672,7 +713,7 @@ function drawWorld() {
   const camX = Math.round(ppx - 72), camY = Math.round(ppy - 64);
   const f = Math.floor(frame / 32) % 2;
   const tx0 = Math.floor(camX / TS), ty0 = Math.floor(camY / TS);
-  R(ctx, 3, 0, 0, VW, VH);
+  R(ctx, '#18181e', 0, 0, VW, VH);
   for (let ty = ty0; ty <= ty0 + 10; ty++) for (let tx = tx0; tx <= tx0 + 11; tx++) {
     ctx.drawImage(tileImg(tileAt(tx, ty), f), tx * TS - camX, ty * TS - camY);
   }
@@ -680,20 +721,50 @@ function drawWorld() {
   actors.sort((a, b) => actorPx(a)[1] - actorPx(b)[1]);
   for (const a of actors) {
     const [x, y] = actorPx(a);
+    const sx = Math.round(x - camX), sy = Math.round(y - camY);
+    const hop = a.mv && a.mv.jump ? Math.sin(a.mv.t * Math.PI) * 8 : 0;
+    // ombra
+    ctx.fillStyle = 'rgba(20,30,20,.28)';
+    ctx.beginPath(); ctx.ellipse(sx + 8, sy + 11 + hop, 6 - hop / 4, 2.5, 0, 0, Math.PI * 2); ctx.fill();
     const step = a.mv ? (a.mv.t > 0.25 && a.mv.t < 0.75 ? a.mv.step : 0) : 0;
-    ctx.drawImage(charImg(a.look, a.dir, step), Math.round(x - camX), Math.round(y - camY - 4));
+    ctx.drawImage(charImg(a.look, a.dir, step), sx, sy - 4);
+    // erba alta che copre le gambe
+    const gx = Math.round(x / TS), gy = Math.round(y / TS);
+    if (!hop && tileAt(gx, gy) === ',' && a.look !== 'ball') {
+      ctx.drawImage(tileImg(',', f), 0, 9, 16, 7, gx * TS - camX, gy * TS - camY + 9, 16, 7);
+    }
     if (a.bang) {
-      const bx = Math.round(x - camX) + 4, by = Math.round(y - camY) - 18;
-      R(ctx, 3, bx, by, 8, 11); R(ctx, 0, bx + 1, by + 1, 6, 9); R(ctx, 3, bx + 3, by + 2, 2, 4); R(ctx, 3, bx + 3, by + 7, 2, 2);
+      const bx = sx + 3, by = sy - 20 - (frame % 20 < 10 ? 1 : 0);
+      R(ctx, K.out, bx, by, 10, 12); R(ctx, '#ffffff', bx + 1, by + 1, 8, 10); R(ctx, '#e24a3a', bx + 4, by + 2, 2, 5); R(ctx, '#e24a3a', bx + 4, by + 8, 2, 2);
     }
   }
 }
 function drawOverlay() {
   if (!overlay) return;
   if (overlay.type === 'mon') {
-    R(ctx, 3, 52, 22, 56, 56); R(ctx, 0, 54, 24, 52, 52);
-    ctx.drawImage(monSprite(overlay.sp), 56, 26);
+    R(ctx, K.out, 50, 18, 60, 60); R(ctx, '#ffffff', 52, 20, 56, 56); R(ctx, '#e8f2ff', 52, 56, 56, 20);
+    ctx.drawImage(monSprite(overlay.sp), 56, 22 + (Math.floor(frame / 20) % 2));
   }
+}
+// transizione d'ingresso in lotta (barre che si chiudono)
+let TR = null;
+function drawTransition() {
+  if (!TR) return;
+  const k = TR.k;
+  if (TR.type === 'flash') { ctx.fillStyle = `rgba(255,255,255,${k})`; ctx.fillRect(0, 0, VW, VH); return; }
+  ctx.fillStyle = '#101018';
+  const n = 9, h = VH / n;
+  for (let i = 0; i < n; i++) {
+    const w = VW * k;
+    if (i % 2) ctx.fillRect(0, i * h, w, h + 1); else ctx.fillRect(VW - w, i * h, w, h + 1);
+  }
+}
+function tween(ms, fn) {
+  return new Promise(res => {
+    const t0 = performance.now();
+    const step = () => { const k = Math.min(1, (performance.now() - t0) / ms); fn(k); if (k < 1) requestAnimationFrame(step); else res(); };
+    step();
+  });
 }
 let last = performance.now();
 function loop(now) {
@@ -710,6 +781,7 @@ function loop(now) {
   } else if (mode === 'battle') drawBattle();
   else if (mode === 'title') drawTitle();
   else if (mode === 'intro') drawIntro();
+  drawTransition();
   requestAnimationFrame(loop);
 }
 
@@ -932,86 +1004,316 @@ async function pcMenu() {
 // ------------------------------------------------------------
 const stMul = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
 const zeroStages = () => ({atk: 0, def: 0, spd: 0, spc: 0, acc: 0});
+// posizioni sullo schermo
+const POS = {e: {x: 100, y: 8, cx: 124, cy: 32, base: 56}, p: {x: 14, y: 54, cx: 38, cy: 78, base: 102}};
 
-function drawBattle() {
-  R(ctx, 0, 0, 0, VW, VH);
-  // pedane
-  ctx.fillStyle = PAL[1];
-  ctx.beginPath(); ctx.ellipse(124, 50, 32, 7, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(36, 94, 36, 7, 0, 0, Math.PI * 2); ctx.fill();
-  if (!B) return;
-  const sh = n => (B.shake && B.shake.who === n ? (Math.floor(frame / 3) % 2 ? 2 : -2) : 0);
-  const blink = n => B.blink && B.blink.who === n && Math.floor(frame / 4) % 2;
-  if (B.e && !B.eHidden && !blink('e')) ctx.drawImage(monSprite(B.e.sp), 100 + sh('e') + (B.eSlide || 0), 4 + (B.eDrop || 0));
-  if (B.ball) { const b = charImg('ball', 'down', 0); ctx.drawImage(b, 116, 34 + (B.ballBob ? -2 : 0)); }
-  const pm = B.pm != null ? G.party[B.pm] : null;
-  if (pm && !B.pHidden && !blink('p')) ctx.drawImage(monSprite(pm.sp, true), 12 + sh('p') + (B.pSlide || 0), 50, 48, 48);
+// ---------- particelle ----------
+let FX = [];
+function fx(p) { p.t = -(p.delay || 0); p.life = p.life || 500; FX.push(p); return p; }
+function updFx(dt) { for (const p of FX) p.t += dt; FX = FX.filter(p => p.t < p.life); }
+function star(g, x, y, r, c) { R(g, c, x - r, y, r * 2 + 1, 1); R(g, c, x, y - r, 1, r * 2 + 1); if (r > 1) R(g, c, x - 1, y - 1, 3, 3); }
+function drawFx() {
+  for (const p of FX) {
+    if (p.t < 0) continue;
+    const k = p.t / p.life;
+    let x, y;
+    if (p.path) [x, y] = p.path(k);
+    else { const s = p.t / 1000; x = p.x + (p.vx || 0) * s; y = p.y + (p.vy || 0) * s + 0.5 * (p.ay || 0) * s * s; }
+    x = Math.round(x); y = Math.round(y);
+    const g = ctx;
+    switch (p.kind) {
+      case 'flame': {
+        const h = 7 - Math.floor(k * 4), fl = frame % 6 < 3;
+        R(g, '#e8402a', x - 2, y - h + 2, 5, h); R(g, '#ff9a2a', x - 1, y - h + 3, 3, h - 2); R(g, '#fff27a', x, y - 2, 1, 2);
+        if (fl) R(g, '#ff9a2a', x - 1, y - h, 1, 2); else R(g, '#ff9a2a', x + 1, y - h, 1, 2);
+        break; }
+      case 'bubble': { const r = p.r || 3; g.strokeStyle = '#4a9af2'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); g.fillStyle = 'rgba(160,215,255,.7)'; g.fill(); R(g, '#ffffff', x - 1, y - 1, 1, 1); break; }
+      case 'drop': R(g, '#3a7ad8', x - 1, y - 2, 3, 4); R(g, '#a8d8ff', x, y - 1, 1, 2); break;
+      case 'leaf': { const a = k * 12 + (p.seed || 0); const dx = Math.round(Math.cos(a) * 2), dy = Math.round(Math.sin(a) * 2);
+        R(g, '#2a7a2a', x - 2 + dx, y - 1, 5, 3); R(g, '#7ad25a', x - 1 + dx, y - 1 + (dy > 0 ? 1 : 0), 3, 1); R(g, '#2a7a2a', x + dx, y - 2 - dy, 1, 5); break; }
+      case 'bolt': {
+        g.strokeStyle = '#fff27a'; g.lineWidth = 3; g.beginPath(); let bx = p.x, by = p.y0 || 0; g.moveTo(bx, by);
+        const seed = p.seed || 1;
+        for (let i = 1; i <= 6; i++) { bx = p.x + ((i * 7 * seed) % 11) - 5; by = (p.y0 || 0) + (p.y - (p.y0 || 0)) * i / 6; g.lineTo(bx, by); }
+        g.stroke(); g.strokeStyle = '#ffffff'; g.lineWidth = 1; g.stroke(); break; }
+      case 'rock': R(g, '#4a4238', x - 3, y - 3, 7, 7); R(g, '#a2927a', x - 2, y - 2, 5, 5); R(g, '#d2c2a2', x - 2, y - 2, 2, 2); break;
+      case 'dust': { const r = 2 + k * 5; g.fillStyle = `rgba(200,180,140,${1 - k})`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); break; }
+      case 'slash': { g.strokeStyle = `rgba(255,255,255,${1 - k * .6})`; g.lineWidth = 2; g.beginPath(); g.arc(x, y, 12, p.a0 || 3.6, (p.a0 || 3.6) + 1.6 * Math.min(1, k * 3)); g.stroke(); g.strokeStyle = 'rgba(160,220,255,.8)'; g.lineWidth = 1; g.stroke(); break; }
+      case 'orb': { const r = 3 + Math.sin(k * 6) ; g.fillStyle = '#2a1a3a'; g.beginPath(); g.arc(x, y, r + 1, 0, 7); g.fill(); g.fillStyle = '#7a4aba'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); R(g, '#d2a2ff', x - 1, y - 1, 1, 1); break; }
+      case 'ring': { const r = 4 + k * (p.rmax || 26); g.strokeStyle = `rgba(242,110,200,${1 - k})`; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke(); break; }
+      case 'needle': R(g, '#2a6a1a', x - 1, y, 3, 1); R(g, '#9ae25a', x + 2, y, 2, 1); break;
+      case 'poison': { const r = 2 + Math.round(k * 2); g.fillStyle = '#8a3ab2'; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); R(g, '#e2a2ff', x - 1, y - 1, 1, 1); break; }
+      case 'star': star(g, x, y, k < .5 ? 3 : 2, k < .5 ? '#fff27a' : '#ffffff'); break;
+      case 'spark': star(g, x, y, 1, frame % 4 < 2 ? '#ffffff' : '#fff27a'); break;
+      case 'hit': { const r = 3 + Math.round(k * 9); star(g, x, y, r, '#ffffff'); star(g, x, y, Math.max(1, r - 3), '#fff27a'); break; }
+      case 'z': { const c = '#4a7ad8'; R(g, c, x, y, 5, 1); R(g, c, x + 3, y + 1, 1, 1); R(g, c, x + 2, y + 2, 1, 1); R(g, c, x + 1, y + 3, 1, 1); R(g, c, x, y + 4, 5, 1); break; }
+      case 'up': case 'down': {
+        const c = p.kind === 'up' ? '#4a9af2' : '#e24a4a'; const d = p.kind === 'up' ? 1 : -1;
+        R(g, c, x - 1, y - 3, 3, 7); for (let i = 0; i < 3; i++) R(g, c, x - 3 + i, y - d * (3 - i) - (d < 0 ? 0 : 0), 1, 1), R(g, c, x + 3 - i, y - d * (3 - i), 1, 1);
+        R(g, '#ffffff', x, y - 2, 1, 4); break; }
+      case 'heal': star(g, x, y, 2, frame % 6 < 3 ? '#7ae25a' : '#ffffff'); break;
+      case 'puff': { const r = 3 + k * 14; g.fillStyle = `rgba(255,255,255,${0.9 * (1 - k)})`; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); break; }
+      case 'ball': { const sp = charImg('ball', 'down', 0); g.save(); g.translate(x, y); g.rotate(p.rot ? p.rot(k) : k * 12); g.drawImage(sp, -8, -9); g.restore(); break; }
+    }
+  }
 }
+const arc = (x0, y0, x1, y1, h) => k => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k - Math.sin(k * Math.PI) * h];
+const line = (x0, y0, x1, y1) => k => [x0 + (x1 - x0) * k, y0 + (y1 - y0) * k];
+
+// Animazione di un attacco, in base al tipo
+async function moveAnim(side, d) {
+  const U = POS[side], T = POS[side === 'p' ? 'e' : 'p'];
+  const dir = side === 'p' ? 1 : -1;
+  // slancio in avanti
+  const off = side === 'p' ? 'pOff' : 'eOff';
+  await tween(110, k => { B[off] = {x: dir * 8 * k, y: -dir * 3 * k}; });
+  await tween(110, k => { B[off] = {x: dir * 8 * (1 - k), y: -dir * 3 * (1 - k)}; });
+  B[off] = null;
+  const tx = T.cx, ty = T.cy, ux = U.cx, uy = U.cy;
+  const rnd = (a) => (Math.random() - .5) * a;
+  let wait = 450;
+  switch (d.t) {
+    case 'FUOCO':
+      for (let i = 0; i < 6; i++) fx({kind: 'flame', path: line(ux, uy, tx + rnd(16), ty + rnd(10)), life: 300, delay: i * 50});
+      for (let i = 0; i < 10; i++) fx({kind: 'flame', x: tx + rnd(30), y: ty + 10 + rnd(10), vy: -30, life: 500, delay: 300 + i * 30});
+      wait = 750; break;
+    case 'ACQUA':
+      for (let i = 0; i < 12; i++) fx({kind: 'bubble', r: 2 + (i % 3), path: line(ux, uy, tx + rnd(20), ty + rnd(14)), life: 380, delay: i * 35});
+      for (let i = 0; i < 8; i++) fx({kind: 'drop', x: tx + rnd(10), y: ty, vx: rnd(120), vy: -60 - Math.random() * 40, ay: 300, life: 450, delay: 450});
+      wait = 850; break;
+    case 'PIANTA':
+      if (d.fx && d.fx.drain) {
+        for (let i = 0; i < 10; i++) fx({kind: 'heal', path: arc(tx + rnd(16), ty + rnd(16), ux, uy, 20 + rnd(20)), life: 500, delay: i * 50});
+        wait = 900; break;
+      }
+      for (let i = 0; i < 8; i++) fx({kind: 'leaf', seed: i, path: arc(ux, uy, tx + rnd(18), ty + rnd(14), 14 + i * 2), life: 420, delay: i * 50});
+      wait = 820; break;
+    case 'ELETTRO':
+      for (let i = 0; i < 3; i++) fx({kind: 'bolt', x: tx + rnd(16), y: ty + 8, y0: ty - 34, seed: i + 2, life: 140, delay: i * 140});
+      for (let i = 0; i < 8; i++) fx({kind: 'spark', x: tx + rnd(36), y: ty + rnd(30), life: 300, delay: 100 + i * 40});
+      B.flash = {c: '255,250,180', t0: performance.now(), ms: 420};
+      wait = 600; break;
+    case 'ROCCIA':
+      for (let i = 0; i < 6; i++) fx({kind: 'rock', path: line(tx + rnd(30), ty - 40, tx + rnd(22), ty + 6 + rnd(6)), life: 260, delay: i * 70});
+      for (let i = 0; i < 5; i++) fx({kind: 'dust', x: tx + rnd(30), y: ty + 14, life: 400, delay: 300 + i * 50});
+      wait = 750; B.shakeT = performance.now() + 700; break;
+    case 'VENTO':
+      for (let i = 0; i < 4; i++) fx({kind: 'slash', x: tx + rnd(10), y: ty + rnd(10), a0: 3.4 + i * .5, life: 260, delay: i * 90});
+      for (let i = 0; i < 6; i++) fx({kind: 'spark', path: line(tx - 30, ty + rnd(24), tx + 30, ty + rnd(24)), life: 280, delay: i * 50});
+      wait = 650; break;
+    case 'OMBRA':
+      B.dark = {t0: performance.now(), ms: 700};
+      for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; fx({kind: 'orb', path: line(tx + Math.cos(a) * 34, ty + Math.sin(a) * 26, tx, ty), life: 420, delay: i * 30}); }
+      wait = 700; break;
+    case 'MENTE':
+      for (let i = 0; i < 4; i++) fx({kind: 'ring', x: tx, y: ty, life: 450, delay: i * 120});
+      B.wave = {t0: performance.now(), ms: 700};
+      wait = 800; break;
+    case 'INSETTO':
+      for (let i = 0; i < 7; i++) fx({kind: 'needle', path: line(ux, uy + rnd(10), tx + rnd(16), ty + rnd(16)), life: 220, delay: i * 50});
+      wait = 600; break;
+    case 'VELENO':
+      for (let i = 0; i < 6; i++) fx({kind: 'poison', path: arc(ux, uy, tx + rnd(16), ty + rnd(10), 18), life: 360, delay: i * 50});
+      for (let i = 0; i < 8; i++) fx({kind: 'poison', x: tx + rnd(30), y: ty + 14, vy: -35, life: 500, delay: 400 + i * 30});
+      wait = 900; break;
+    default:
+      if (d.p) { fx({kind: 'hit', x: tx + rnd(8), y: ty + rnd(8), life: 220}); fx({kind: 'hit', x: tx + rnd(16), y: ty + rnd(16), life: 220, delay: 120}); wait = 380; }
+      else wait = 100;
+  }
+  await sleep(wait);
+}
+async function statAnim(side, up) {
+  const P = POS[side];
+  for (let i = 0; i < 6; i++) fx({kind: up ? 'up' : 'down', x: P.cx - 18 + (i % 3) * 18, y: up ? P.cy + 18 : P.cy - 18, vy: up ? -50 : 50, life: 550, delay: i * 70});
+  await sleep(800);
+}
+async function statusAnim(side, st) {
+  const P = POS[side];
+  const kind = {psn: 'poison', brn: 'flame', par: 'spark', slp: 'z'}[st];
+  for (let i = 0; i < 6; i++) fx({kind, x: P.cx + (Math.random() - .5) * 30, y: P.cy + (st === 'slp' ? -6 : 10), vx: st === 'slp' ? 12 : 0, vy: st === 'par' ? 0 : -30, life: 550, delay: i * 80});
+  await sleep(700);
+}
+async function hitAnim(side, eff) {
+  B.blink = {who: side};
+  if (eff > 1) B.shakeT = performance.now() + 380;
+  await sleep(380); B.blink = null;
+}
+
+// ---------- disegno della scena ----------
+function drawSprite(img, x, y, scale = 1, alpha = 1, clipY = null) {
+  ctx.save();
+  if (clipY != null) { ctx.beginPath(); ctx.rect(0, 0, VW, clipY); ctx.clip(); }
+  ctx.globalAlpha = alpha;
+  const w = 48 * scale, h = 48 * scale;
+  ctx.drawImage(img, Math.round(x + (48 - w) / 2), Math.round(y + (48 - h)), Math.round(w), Math.round(h));
+  ctx.restore();
+}
+function drawBattleBg() {
+  // cielo e prato
+  const sky = ctx.createLinearGradient(0, 0, 0, 70);
+  sky.addColorStop(0, '#d8f0ff'); sky.addColorStop(1, '#f6fbe8');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, VW, 70);
+  R(ctx, '#e2f2c2', 0, 46, VW, VH - 46);
+  for (let x = 0; x < VW; x += 8) R(ctx, '#cfe6a8', x + ((x / 8) % 2) * 3, 66, 2, 1);
+  // pedane
+  const plat = (cx, cy, rx, ry) => {
+    ctx.fillStyle = '#6aa24a'; ctx.beginPath(); ctx.ellipse(cx, cy + 2, rx, ry, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#a2d87a'; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = '#c2ea9a'; ctx.beginPath(); ctx.ellipse(cx - rx * .2, cy - ry * .3, rx * .55, ry * .45, 0, 0, 7); ctx.fill();
+  };
+  plat(124, 52, 34, 8);
+  plat(40, 98, 42, 9);
+}
+function drawBattle() {
+  updFx(16);
+  ctx.save();
+  if (B && B.shakeT && performance.now() < B.shakeT) ctx.translate((frame % 4 < 2 ? 2 : -2), (frame % 6 < 3 ? 1 : -1));
+  drawBattleBg();
+  if (B) {
+    const now = performance.now();
+    const blink = n => B.blink && B.blink.who === n && Math.floor(frame / 4) % 2;
+    const wave = B.wave && now - B.wave.t0 < B.wave.ms ? Math.sin(frame / 2) * 3 : 0;
+    // avversario
+    if (B.trainerPic) drawSprite(B.trainerPic.img, POS.e.x + B.trainerPic.x, POS.e.y, 1);
+    if (B.e && !B.eHidden && !blink('e')) {
+      const o = B.eOff || {x: 0, y: 0};
+      const img = B.eWhite ? monSilhouette(B.e.sp) : monSprite(B.e.sp);
+      drawSprite(img, POS.e.x + (B.eSlide || 0) + o.x + wave, POS.e.y + (B.eDrop || 0) + o.y, B.eScale ?? 1, 1, B.eDrop ? POS.e.base : null);
+    }
+    // giocatore
+    if (B.playerPic) drawSprite(B.playerPic.img, POS.p.x + B.playerPic.x, POS.p.y, 1);
+    const pm = B.pm != null ? G.party[B.pm] : null;
+    if (pm && !B.pHidden && !blink('p')) {
+      const o = B.pOff || {x: 0, y: 0};
+      const img = B.pWhite ? monSilhouette(pm.sp) : monSprite(pm.sp, true);
+      drawSprite(img, POS.p.x + (B.pSlide || 0) + o.x - wave, POS.p.y + (B.pDrop || 0) + o.y, B.pScale ?? 1, 1, B.pDrop ? POS.p.base + 2 : null);
+    }
+    // evoluzione
+    if (B.evo) {
+      ctx.fillStyle = B.evo.bg; ctx.fillRect(0, 0, VW, VH);
+      drawSprite(B.evo.img, 56, 26, 1);
+    }
+    drawFx();
+    if (B.dark && now - B.dark.t0 < B.dark.ms) { ctx.fillStyle = `rgba(30,10,50,${0.45 * Math.sin((now - B.dark.t0) / B.dark.ms * Math.PI)})`; ctx.fillRect(-4, -4, VW + 8, VH + 8); }
+    if (B.flash && now - B.flash.t0 < B.flash.ms) { const a = (now - B.flash.t0) % 140 < 70 ? .55 : 0; ctx.fillStyle = `rgba(${B.flash.c},${a})`; ctx.fillRect(-4, -4, VW + 8, VH + 8); }
+  }
+  ctx.restore();
+}
+function bigChar(look, dir) {
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  g.drawImage(charImg(look, dir, 0), 0, 0, 16, 16, 0, 0, 48, 48);
+  return c;
+}
+
+// ---------- HUD ----------
 function hudHtml(m, enemy) {
-  return `<div class="hn">${m.name}${m.status ? ' ' + STATUS_LABEL[m.status] : ''}</div>
-    <div class="hl">Lv${m.lvl}</div><div class="hb">PS ${hpBar({hp: m._dhp ?? m.hp, st: m.st})}</div>
-    ${enemy ? '' : `<div class="hp">${Math.ceil(m._dhp ?? m.hp)}/${m.st.hp}</div><div class="xp"><span style="width:${xpPct(m)}%"></span></div>`}`;
+  const xp = m._dxp != null ? m._dxp : xpPct(m);
+  return `<div class="hn">${m.name}${m.status ? ` <i class="st ${m.status}">${STATUS_LABEL[m.status]}</i>` : ''}</div>
+    <div class="hl">Lv${m.lvl}</div><div class="hb"><b>PS</b>${hpBar({hp: m._dhp ?? m.hp, st: m.st})}</div>
+    ${enemy ? '' : `<div class="hp">${Math.ceil(m._dhp ?? m.hp)}/${m.st.hp}</div><div class="xp"><span style="width:${xp}%"></span></div>`}`;
 }
 function xpPct(m) { if (m.lvl >= 100) return 0; const a = xpFor(m.lvl), b = xpFor(m.lvl + 1); return clamp(Math.round((m.xp - a) / (b - a) * 100), 0, 100); }
 function hud() {
   if (!B) return;
-  if (B.e && !B.eHidden) { B.eh.style.display = ''; B.eh.innerHTML = hudHtml(B.e, true); } else B.eh.style.display = 'none';
+  if (B.e && !B.eHidden && !B.hideHud) { B.eh.style.display = ''; B.eh.innerHTML = hudHtml(B.e, true); } else B.eh.style.display = 'none';
   const pm = G.party[B.pm];
-  if (pm && !B.pHidden) { B.ph.style.display = ''; B.ph.innerHTML = hudHtml(pm, false); } else B.ph.style.display = 'none';
+  if (pm && !B.pHidden && !B.hideHud) { B.ph.style.display = ''; B.ph.innerHTML = hudHtml(pm, false); } else B.ph.style.display = 'none';
 }
 async function animHp(m) {
   if (m._dhp == null) m._dhp = m.hp;
-  const diff = m.hp - m._dhp; if (!diff) return;
-  const steps = Math.min(30, Math.abs(diff));
-  for (let i = 1; i <= steps; i++) { m._dhp = m._dhp + diff / steps; hud(); await sleep(22); }
+  const from = m._dhp, diff = m.hp - from; if (!diff) return;
+  await tween(Math.min(900, 250 + Math.abs(diff) * 25), k => { m._dhp = from + diff * k; hud(); });
   m._dhp = m.hp; hud();
 }
 const eName = () => B.wild ? `${B.e.name} selvatico` : `${B.e.name} nemico`;
 const nameOf = side => side === 'p' ? G.party[B.pm].name : eName();
 
+// ---------- flusso della lotta ----------
+async function battleTransition() {
+  for (let i = 0; i < 2; i++) { await tween(110, k => { TR = {type: 'flash', k: k}; }); await tween(110, k => { TR = {type: 'flash', k: 1 - k}; }); }
+  await tween(420, k => { TR = {type: 'bars', k}; });
+}
 async function battle(opts) {
-  mode = 'battle';
   hideTextBox();
-  screenEl.classList.add('battleflash'); await sleep(700); screenEl.classList.remove('battleflash');
+  await battleTransition();
+  mode = 'battle'; FX = [];
   B = {wild: !!opts.wild, trainer: opts.trainer, canLose: opts.canLose, stages: {p: zeroStages(), e: zeroStages()},
     runs: 0, part: new Set(), levelled: new Set(), pm: null};
-  B.eh = el('box hud ehud', 4, 6, 92, 30);
-  B.ph = el('box hud phud', 70, 58, 88, 40);
-  if (opts.wild) {
-    B.team = [opts.wild];
-  } else {
-    B.team = opts.trainer.team.map(([sp, l]) => makeMon(sp, l));
-  }
+  B.eh = el('box hud ehud', 4, 6, 92, 28);
+  B.ph = el('box hud phud', 68, 60, 90, 38);
+  B.team = opts.wild ? [opts.wild] : opts.trainer.team.map(([sp, l]) => makeMon(sp, l));
   B.ei = 0; B.e = B.team[0]; B.e._dhp = B.e.hp; seen(B.e.sp);
-  B.pHidden = true; hud();
-  B.eSlide = 60; for (let i = 0; i < 12; i++) { B.eSlide -= 5; await sleep(16); } B.eSlide = 0;
-  if (B.wild) await say(`Appare un ${B.e.name} selvatico!`);
-  else { await say(`${opts.trainer.cls} ${opts.trainer.name} vuole lottare!`); await say(`${opts.trainer.cls} ${opts.trainer.name} manda in campo ${B.e.name}!`); }
+  B.pHidden = true; B.hideHud = true;
+  B.playerPic = {img: bigChar('player', 'up'), x: 120};
+  if (B.wild) B.eSlide = -110; else { B.eHidden = true; B.trainerPic = {img: bigChar(opts.trainer.look || 'man', 'down'), x: -110}; }
+  hud();
+  await tween(450, k => { TR = {type: 'bars', k: 1 - k}; });
+  TR = null;
+  await tween(600, k => {
+    const e = 1 - Math.pow(1 - k, 3);
+    if (B.wild) B.eSlide = -110 * (1 - e); else B.trainerPic.x = -110 * (1 - e);
+    B.playerPic.x = 120 * (1 - e);
+  });
+  B.eSlide = 0;
+  if (B.wild) { B.hideHud = false; hud(); await say(`Appare un ${B.e.name} selvatico!`); }
+  else {
+    await say(`${opts.trainer.cls} ${opts.trainer.name} vuole lottare!`);
+    await tween(350, k => { B.trainerPic.x = 90 * k; });
+    B.trainerPic = null;
+    await enemySendOut(`${opts.trainer.cls} ${opts.trainer.name} manda in campo ${B.e.name}!`);
+  }
   B.pm = G.party.findIndex(m => m.hp > 0);
+  await tween(300, k => { B.playerPic.x = -90 * k; });
+  B.playerPic = null;
   await sendOut();
   let result = null;
   while (!result) {
     const act = await chooseAction();
     result = await doTurn(act);
   }
-  // fine lotta
   if (result === 'win' || result === 'catch') await afterBattleEvolve();
-  G.party.forEach(m => { delete m._dhp; });
-  B.eh.remove(); B.ph.remove(); hideTextBox();
-  B = null;
+  G.party.forEach(m => { delete m._dhp; delete m._dxp; });
+  hideTextBox();
+  await tween(300, k => { TR = {type: 'bars', k}; });
+  B.eh.remove(); B.ph.remove();
+  B = null; FX = [];
   if (result === 'lose') {
-    if (opts.canLose) { healParty(); }
-    else await whiteout();
+    if (opts.canLose) healParty();
+    else { mode = 'world'; TR = null; await whiteout(); }
   }
   mode = 'world';
+  await tween(300, k => { TR = {type: 'bars', k: 1 - k}; });
+  TR = null;
   return result;
+}
+async function popOut(side) {
+  const P = POS[side];
+  for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28; fx({kind: 'star', x: P.cx + Math.cos(a) * 6, y: P.cy + 10 + Math.sin(a) * 6, vx: Math.cos(a) * 60, vy: Math.sin(a) * 60, life: 380}); }
+  fx({kind: 'puff', x: P.cx, y: P.cy + 10, life: 350});
+  const W = side === 'p' ? 'pWhite' : 'eWhite', S = side === 'p' ? 'pScale' : 'eScale', H = side === 'p' ? 'pHidden' : 'eHidden';
+  B[H] = false; B[W] = true;
+  await tween(260, k => { B[S] = 0.2 + 0.8 * k; });
+  B[S] = 1; await sleep(80); B[W] = false;
+}
+async function enemySendOut(text) {
+  msg(text);
+  const P = POS.e;
+  fx({kind: 'ball', path: arc(170, 20, P.cx, P.cy + 12, 26), life: 420});
+  await sleep(430);
+  await popOut('e');
+  B.hideHud = false; hud();
+  await sleep(350);
 }
 async function sendOut() {
   const m = G.party[B.pm]; m._dhp = m.hp; B.part.add(B.pm); B.stages.p = zeroStages();
-  B.pHidden = false; B.pSlide = -50;
-  await say(`Vai, ${m.name}!`, {auto: 250, keep: true});
-  for (let i = 0; i < 10; i++) { B.pSlide += 5; await sleep(16); } B.pSlide = 0;
-  hud();
+  msg(`Vai, ${m.name}!`);
+  const P = POS.p;
+  fx({kind: 'ball', path: arc(-10, 70, P.cx, P.cy + 12, 30), life: 420});
+  await sleep(430);
+  await popOut('p');
+  B.hideHud = false; hud();
+  await sleep(300);
 }
 
 async function chooseAction() {
@@ -1019,7 +1321,7 @@ async function chooseAction() {
     const m = G.party[B.pm];
     await say(`Cosa farà\n${m.name}?`, {noWait: true, keep: true});
     const box = el('box menu grid', 80, 100, 80, 44);
-    const opts = ['LOTTA', 'FAUNI', 'BORSA', 'FUGA'];
+    const opts = ['LOTTA', 'BORSA', 'FAUNI', 'FUGA'];
     let i = B.lastAct || 0;
     const draw = () => { box.innerHTML = opts.map((s, j) => `<div class="it">${j === i ? '▶' : '&nbsp;'}${s}</div>`).join(''); };
     draw();
@@ -1032,13 +1334,14 @@ async function chooseAction() {
       draw();
     }
     box.remove(); B.lastAct = pick;
-    if (pick === 0) {
+    const o = opts[pick];
+    if (o === 'LOTTA') {
       const mv = await moveMenu(m);
       if (mv == null) continue;
       if (m.moves.every(x => x.pp <= 0)) return {type: 'move', id: 'botta', struggle: true};
       return {type: 'move', idx: mv};
     }
-    if (pick === 1) {
+    if (o === 'FAUNI') {
       hideTextBox();
       const t = await partyScreen('battle', 'Chi mandi in campo?');
       if (t < 0) continue;
@@ -1046,20 +1349,20 @@ async function chooseAction() {
       if (t === B.pm) { await say(`${G.party[t].name} è già in campo!`); continue; }
       return {type: 'switch', to: t};
     }
-    if (pick === 2) {
+    if (o === 'BORSA') {
       hideTextBox();
       const r = await bagMenu('battle');
       if (!r) continue;
       return {type: 'item', ...r};
     }
-    if (pick === 3) return {type: 'run'};
+    return {type: 'run'};
   }
 }
 async function moveMenu(m) {
   const info = el('box', 0, 64, 76, 36);
   const show = i => {
     const mv = m.moves[i]; const d = MOVES[mv.id];
-    info.innerHTML = `TIPO/<br>&nbsp;${d.t}<br><span class="r">PP ${mv.pp}/${d.pp}</span>`;
+    info.innerHTML = `TIPO/<br>&nbsp;<i class="ty t-${d.t}">${d.t}</i><br><span class="r">PP ${mv.pp}/${d.pp}</span>`;
   };
   for (;;) {
     const i = await choose(m.moves.map(x => MOVES[x.id].n), {x: 40, y: 96, w: 120, rows: 4, onMove: show, start: B.lastMove || 0});
@@ -1098,41 +1401,43 @@ async function doTurn(act) {
     if (ps >= es || Math.random() < 0.35 + 0.2 * B.runs) { await say('Sei scappato senza problemi!'); return 'run'; }
     await say('Non riesci a scappare!');
   } else if (act.type === 'switch') {
-    await say(`Basta così, ${p().name}! Torna qui!`, {auto: 300, keep: true});
-    B.pHidden = true; hud();
+    await say(`Basta così, ${p().name}! Torna qui!`, {noWait: true, keep: true});
+    B.pWhite = true; await tween(250, k => { B.pScale = 1 - k; }); B.pHidden = true; B.pWhite = false; B.pScale = 1; hud();
     B.pm = act.to; await sendOut();
   } else if (act.type === 'item') {
     if (ITEMS[act.item].ball) {
       const r = await throwBall(act.item);
       if (r) return r;
-    } else hud();
+    } else {
+      const P = POS.p;
+      for (let i = 0; i < 8; i++) fx({kind: 'heal', x: P.cx + (Math.random() - .5) * 30, y: P.cy + 14, vy: -40, life: 500, delay: i * 60});
+      await sleep(600); hud();
+    }
   }
-  // mosse
   const order = [];
   if (act.type === 'move') {
     const pmv = act.struggle ? {id: 'botta', pp: 99} : p().moves[act.idx];
     const pp = MOVES[pmv.id].prio || 0, ep = eMove ? (MOVES[eMove.id].prio || 0) : -9;
-    let pFirst = pp > ep || (pp === ep && (speedOf(p(), 'p') > speedOf(B.e, 'e') || (speedOf(p(), 'p') === speedOf(B.e, 'e') && Math.random() < .5)));
+    const pFirst = pp > ep || (pp === ep && (speedOf(p(), 'p') > speedOf(B.e, 'e') || (speedOf(p(), 'p') === speedOf(B.e, 'e') && Math.random() < .5)));
     const pa = ['p', pmv], ea = ['e', eMove];
     if (pFirst) order.push(pa, ea); else order.push(ea, pa);
   } else order.push(['e', eMove]);
   for (const [side, mv] of order) {
-    if (!mv) { if (side === 'e') await useMove('e', {id: 'botta', pp: 99}); continue; }
     const user = side === 'p' ? p() : B.e;
     if (user.hp <= 0) continue;
     const foe = side === 'p' ? B.e : p();
     if (foe.hp <= 0) continue;
-    await useMove(side, mv);
+    await useMove(side, mv || {id: 'botta', pp: 99});
     const r = await checkFaints();
     if (r !== undefined) return r;
   }
-  // danni da stato a fine turno
   for (const side of ['p', 'e']) {
     const m = side === 'p' ? p() : B.e;
     if (m.hp > 0 && (m.status === 'psn' || m.status === 'brn')) {
+      await statusAnim(side, m.status);
       m.hp = Math.max(0, m.hp - Math.max(1, Math.floor(m.st.hp / 8)));
-      await say(`${nameOf(side)} soffre per ${m.status === 'psn' ? 'il veleno' : 'la scottatura'}!`, {keep: true});
-      await animHp(m);
+      msg(`${nameOf(side)} soffre per ${m.status === 'psn' ? 'il veleno' : 'la scottatura'}!`);
+      await animHp(m); await sleep(400);
       const r = await checkFaints();
       if (r !== undefined) return r;
     }
@@ -1146,32 +1451,36 @@ async function useMove(side, mv) {
   const foe = foeSide === 'p' ? G.party[B.pm] : B.e;
   const d = MOVES[mv.id];
   const uName = nameOf(side);
-  // stati che bloccano
   if (user.status === 'slp') {
     user.slp--;
-    if (user.slp > 0) { await say(`${uName} dorme profondamente.`, {keep: true}); return; }
+    if (user.slp > 0) { await statusAnim(side, 'slp'); await say(`${uName} dorme profondamente.`, {keep: true}); return; }
     user.status = null; hud(); await say(`${uName} si è svegliato!`, {keep: true});
   }
-  if (user.status === 'par' && Math.random() < .25) { await say(`${uName} è paralizzato! Non riesce a muoversi!`, {keep: true}); return; }
+  if (user.status === 'par' && Math.random() < .25) { await statusAnim(side, 'par'); await say(`${uName} è paralizzato! Non riesce a muoversi!`, {keep: true}); return; }
   if (mv.pp < 99) mv.pp = Math.max(0, mv.pp - 1);
-  await say(`${uName} usa ${d.n}!`, {keep: true, auto: 350});
+  msg(`${uName} usa ${d.n}!`);
+  await sleep(300);
   const st = B.stages[side];
   const selfTarget = d.fx && (d.fx.heal || (d.fx.stat && !d.fx.foe));
-  if (!selfTarget && d.a && Math.random() * 100 >= d.a * stMul(st.acc)) { await say(`Ma ${uName} manca il bersaglio!`, {keep: true}); return; }
+  if (!selfTarget && d.a && Math.random() * 100 >= d.a * stMul(st.acc)) {
+    const off = side === 'p' ? 'pOff' : 'eOff';
+    await tween(140, k => { B[off] = {x: (side === 'p' ? 1 : -1) * 6 * Math.sin(k * Math.PI), y: 0}; }); B[off] = null;
+    await say(`Ma ${uName} manca il bersaglio!`, {keep: true}); return;
+  }
+  if (!selfTarget || d.p) await moveAnim(side, d);
   if (d.p > 0) {
     const eff = typeEff(d.t, SPECIES[foe.sp].types);
     if (eff === 0) { await say(`Non ha effetto su ${nameOf(foeSide)}...`, {keep: true}); return; }
     const special = SPECIAL_TYPES.has(d.t);
     let A = (special ? user.st.spc : user.st.atk) * stMul(special ? st.spc : st.atk);
-    let D = (special ? foe.st.spc : foe.st.def) * stMul(special ? B.stages[foeSide].spc : B.stages[foeSide].def);
+    const D = (special ? foe.st.spc : foe.st.def) * stMul(special ? B.stages[foeSide].spc : B.stages[foeSide].def);
     if (!special && user.status === 'brn') A /= 2;
     const crit = Math.random() < SPECIES[user.sp].b[3] / 512;
     const L = user.lvl * (crit ? 2 : 1);
     let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * d.p * A / Math.max(1, D)) / 50) + 2;
     if (SPECIES[user.sp].types.includes(d.t)) dmg = Math.floor(dmg * 1.5);
-    dmg = Math.floor(dmg * eff * rand(217, 255) / 255);
-    dmg = Math.max(1, dmg);
-    B.blink = {who: foeSide}; await sleep(350); B.blink = null;
+    dmg = Math.max(1, Math.floor(dmg * eff * rand(217, 255) / 255));
+    await hitAnim(foeSide, eff);
     foe.hp = Math.max(0, foe.hp - dmg);
     await animHp(foe);
     if (crit) await say('Brutto colpo!', {keep: true});
@@ -1183,50 +1492,61 @@ async function useMove(side, mv) {
     }
     if (foe.hp <= 0) return;
   }
-  const fx = d.fx;
-  if (!fx) return;
-  if (fx.heal) {
+  const fxd = d.fx;
+  if (!fxd) return;
+  if (fxd.heal) {
     if (user.hp >= user.st.hp) { await say('Ma non ha bisogno di recuperare!', {keep: true}); return; }
-    user.hp = Math.min(user.st.hp, user.hp + Math.floor(user.st.hp * fx.heal)); await animHp(user);
+    const P = POS[side];
+    for (let i = 0; i < 10; i++) fx({kind: 'heal', x: P.cx + (Math.random() - .5) * 30, y: P.cy + 14, vy: -40, life: 550, delay: i * 50});
+    await sleep(500);
+    user.hp = Math.min(user.st.hp, user.hp + Math.floor(user.st.hp * fxd.heal)); await animHp(user);
     await say(`${uName} recupera energie!`, {keep: true}); return;
   }
-  if (fx.ch != null && fx.ch < 1 && Math.random() >= fx.ch) return;
-  if (fx.stat) {
-    const tSide = fx.foe ? foeSide : side; const S = B.stages[tSide];
-    const cur = S[fx.stat];
-    const nv = clamp(cur + fx.d, -6, 6);
+  if (fxd.ch != null && fxd.ch < 1 && Math.random() >= fxd.ch) return;
+  if (fxd.stat) {
+    const tSide = fxd.foe ? foeSide : side; const S = B.stages[tSide];
+    const cur = S[fxd.stat];
+    const nv = clamp(cur + fxd.d, -6, 6);
     if (nv === cur) { if (!d.p) await say('Non succede nulla!', {keep: true}); return; }
-    S[fx.stat] = nv;
+    S[fxd.stat] = nv;
+    await statAnim(tSide, fxd.d > 0);
     const who = nameOf(tSide);
-    await say(fx.d > 0 ? `${STAT_LABEL[fx.stat]} di ${who} ${fx.d > 1 ? 'aumenta molto' : 'aumenta'}!` : `${STAT_LABEL[fx.stat]} di ${who} diminuisce!`, {keep: true});
+    await say(fxd.d > 0 ? `${STAT_LABEL[fxd.stat]} di ${who} ${fxd.d > 1 ? 'aumenta molto' : 'aumenta'}!` : `${STAT_LABEL[fxd.stat]} di ${who} diminuisce!`, {keep: true});
     return;
   }
-  if (fx.st) {
+  if (fxd.st) {
     const types = SPECIES[foe.sp].types;
-    const immune = (fx.st === 'brn' && types.includes('FUOCO')) || (fx.st === 'psn' && types.includes('VELENO')) || (fx.st === 'par' && types.includes('ELETTRO'));
+    const immune = (fxd.st === 'brn' && types.includes('FUOCO')) || (fxd.st === 'psn' && types.includes('VELENO')) || (fxd.st === 'par' && types.includes('ELETTRO'));
     if (foe.status || immune) { if (!d.p) await say('Non ha effetto!', {keep: true}); return; }
-    foe.status = fx.st; if (fx.st === 'slp') foe.slp = rand(2, 4);
+    foe.status = fxd.st; if (fxd.st === 'slp') foe.slp = rand(2, 4);
+    await statusAnim(foeSide, fxd.st);
     hud();
-    const msg = {psn: 'è stato avvelenato!', par: 'è paralizzato! Potrebbe non riuscire a muoversi!', slp: 'si è addormentato!', brn: 'si è scottato!'}[fx.st];
+    const msg = {psn: 'è stato avvelenato!', par: 'è paralizzato! Potrebbe non riuscire a muoversi!', slp: 'si è addormentato!', brn: 'si è scottato!'}[fxd.st];
     await say(`${nameOf(foeSide)} ${msg}`, {keep: true});
   }
 }
 
+async function faintAnim(side) {
+  const k0 = side === 'p' ? 'pDrop' : 'eDrop';
+  await tween(380, k => { B[k0] = 50 * k * k; });
+  B[side === 'p' ? 'pHidden' : 'eHidden'] = true; B[k0] = 0; hud();
+}
 async function checkFaints() {
   if (B.e.hp <= 0) {
-    B.eDrop = 0; for (let i = 0; i < 8; i++) { B.eDrop += 6; await sleep(20); } B.eHidden = true; B.eDrop = 0; hud();
+    await faintAnim('e');
     await say(`${eName()} è esausto!`, {keep: true});
     await giveXp();
     B.ei++;
     if (B.ei < B.team.length) {
       B.e = B.team[B.ei]; B.e._dhp = B.e.hp; seen(B.e.sp); B.stages.e = zeroStages();
       B.part = new Set([B.pm]);
-      B.eHidden = false; hud();
-      await say(`${B.trainer.cls} ${B.trainer.name} manda in campo ${B.e.name}!`, {keep: true});
+      await enemySendOut(`${B.trainer.cls} ${B.trainer.name} manda in campo ${B.e.name}!`);
       if (G.party[B.pm].hp <= 0) return await playerFaint();
       return null;
     }
     if (B.trainer) {
+      B.trainerPic = {img: bigChar(B.trainer.look || 'man', 'down'), x: 90};
+      await tween(400, k => { B.trainerPic.x = 90 * (1 - k); });
       await say(`Hai sconfitto ${B.trainer.cls} ${B.trainer.name}!`);
       if (B.trainer.lose) await say(B.trainer.lose);
       const money = B.trainer.money || B.team[B.team.length - 1].lvl * 15;
@@ -1240,7 +1560,7 @@ async function checkFaints() {
 }
 async function playerFaint() {
   const m = G.party[B.pm];
-  B.pHidden = true; hud();
+  await faintAnim('p');
   await say(`${m.name} è esausto!`, {keep: true});
   B.part.delete(B.pm);
   if (!alive(G.party).length) {
@@ -1257,26 +1577,41 @@ async function playerFaint() {
   B.pm = t; await sendOut();
   return null;
 }
+async function levelUpAnim() {
+  const P = POS.p;
+  for (let i = 0; i < 12; i++) fx({kind: 'spark', x: P.cx + (Math.random() - .5) * 40, y: P.cy + 16, vy: -60 - Math.random() * 30, life: 600, delay: i * 40});
+  B.ph.classList.add('glow'); await sleep(700); B.ph.classList.remove('glow');
+}
 async function giveXp() {
   const parts = [...B.part].filter(i => G.party[i] && G.party[i].hp > 0);
   if (!parts.length) return;
   const sp = SPECIES[B.e.sp];
-  let total = Math.floor(sp.xp * B.e.lvl / 7 * (B.trainer ? 1.5 : 1));
+  const total = Math.floor(sp.xp * B.e.lvl / 7 * (B.trainer ? 1.5 : 1));
   const each = Math.max(1, Math.floor(total / parts.length));
   for (const i of parts) {
     const m = G.party[i];
     if (m.lvl >= 100) continue;
-    m.xp += each;
-    await say(`${m.name} guadagna ${each} punti esperienza!`, {keep: true});
-    while (m.lvl < 100 && m.xp >= xpFor(m.lvl + 1)) {
-      const oldMax = m.st.hp;
-      m.lvl++; m.st = calcStats(m); m.hp += m.st.hp - oldMax; m._dhp = m.hp;
-      hud();
-      await say(`${m.name} sale al livello ${m.lvl}!`, {keep: true});
-      B.levelled.add(m);
-      for (const [l, id] of SPECIES[m.sp].learn) if (l === m.lvl) await learnMove(m, id);
+    await say(`${m.name} guadagna ${each} punti esperienza!`, {keep: true, noWait: true});
+    let remaining = each;
+    while (remaining > 0 && m.lvl < 100) {
+      const need = xpFor(m.lvl + 1) - m.xp;
+      const gain = Math.min(need, remaining);
+      const from = xpPct(m);
+      m.xp += gain; remaining -= gain;
+      const to = m.xp >= xpFor(m.lvl + 1) ? 100 : xpPct(m);
+      if (i === B.pm) { await tween(Math.max(150, (to - from) * 12), k => { m._dxp = from + (to - from) * k; hud(); }); }
+      if (m.xp >= xpFor(m.lvl + 1)) {
+        const oldMax = m.st.hp;
+        m.lvl++; m.st = calcStats(m); m.hp += m.st.hp - oldMax; m._dhp = m.hp; m._dxp = 0;
+        hud();
+        if (i === B.pm) await levelUpAnim();
+        await say(`${m.name} sale al livello ${m.lvl}!`, {keep: true});
+        B.levelled.add(m);
+        for (const [l, id] of SPECIES[m.sp].learn) if (l === m.lvl) await learnMove(m, id);
+      }
     }
-    hud();
+    delete m._dxp; hud();
+    await sleep(250);
   }
 }
 async function learnMove(m, id) {
@@ -1300,16 +1635,20 @@ async function afterBattleEvolve() {
     const sp = SPECIES[m.sp];
     if (!sp.evo || m.lvl < sp.evo[0]) continue;
     const to = SPECIES[sp.evo[1]];
-    hideTextBox();
-    mode = 'battle'; B.eHidden = true; B.pHidden = true; hud();
-    const holdE = B.e; B.e = null;
+    B.hideHud = true; hud(); FX = [];
+    B.evo = {img: monSprite(sp.id), bg: '#f6fbe8'};
     await say(`Cosa? ${m.name} si sta evolvendo!`, {keep: true});
-    overlay = null;
-    const evoCanvas = el('box evo', 52, 22, 56, 56);
-    const c = document.createElement('canvas'); c.width = c.height = 48; evoCanvas.appendChild(c);
-    const g = c.getContext('2d');
-    for (let i = 0; i < 16; i++) { g.clearRect(0, 0, 48, 48); g.drawImage(monSprite(i % 2 && i > 4 ? to.id : m.sp), 0, 0); await sleep(140 - i * 5); }
-    g.clearRect(0, 0, 48, 48); g.drawImage(monSprite(to.id), 0, 0);
+    // alternanza delle sagome, sempre più veloce
+    for (let i = 0; i < 18; i++) {
+      B.evo.bg = i % 2 ? '#2a2a4a' : '#3a3a6a';
+      B.evo.img = monSilhouette(i % 2 ? to.id : sp.id, '#ffffff');
+      for (let j = 0; j < 3; j++) fx({kind: 'spark', x: 80 + (Math.random() - .5) * 90, y: 60 + (Math.random() - .5) * 70, life: 400});
+      await sleep(Math.max(60, 260 - i * 12));
+    }
+    await tween(250, k => { TR = {type: 'flash', k}; });
+    B.evo = {img: monSprite(to.id), bg: '#f6fbe8'};
+    await tween(350, k => { TR = {type: 'flash', k: 1 - k}; }); TR = null;
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 6.28; fx({kind: 'star', x: 80 + Math.cos(a) * 10, y: 52 + Math.sin(a) * 10, vx: Math.cos(a) * 70, vy: Math.sin(a) * 70, life: 600}); }
     const wasDefault = m.name === sp.name;
     const oldName = m.name;
     m.sp = to.id; if (wasDefault) m.name = to.name;
@@ -1317,37 +1656,58 @@ async function afterBattleEvolve() {
     caught(to.id);
     await say(`Congratulazioni! ${oldName} si è evoluto in ${to.name}!`, {keep: true});
     for (const [l, id] of to.learn) if (l === m.lvl) await learnMove(m, id);
-    evoCanvas.remove(); B.e = holdE;
+    B.evo = null;
   }
 }
 async function throwBall(id) {
-  if (!B.wild) {
-    await say('{NAME} lancia una SFERA... ma l\'allenatore la devia!', {keep: true});
-    await say('Non si catturano i FAUNI degli altri!', {keep: true});
-    useItemCount(id); return null;
-  }
+  const P = POS.e;
   useItemCount(id);
-  await say(`{NAME} lancia una ${ITEMS[id].n}!`, {keep: true, auto: 300});
+  msg(`{NAME} lancia una ${ITEMS[id].n}!`);
+  if (!B.wild) {
+    fx({kind: 'ball', path: arc(20, 90, P.cx, P.cy, 30), life: 420});
+    await sleep(420);
+    fx({kind: 'ball', path: arc(P.cx, P.cy, P.cx - 40, P.cy + 60, 20), life: 400}); await sleep(400);
+    await say('L\'allenatore devia la SFERA! Non si catturano i FAUNI degli altri!', {keep: true});
+    return null;
+  }
   const e = B.e, sp = SPECIES[e.sp];
   let a = (3 * e.st.hp - 2 * e.hp) * sp.cr * ITEMS[id].ball / (3 * e.st.hp);
   if (e.status === 'slp') a *= 2; else if (e.status) a *= 1.5;
   const p = Math.min(1, a / 255);
   const ok = Math.random() < p;
   const shakes = ok ? 3 : Math.min(2, Math.floor(Math.random() * 4 * p + Math.random() * 1.2));
-  B.eHidden = true; B.ball = true; hud();
-  for (let i = 0; i < shakes; i++) { await sleep(350); B.ballBob = true; await sleep(250); B.ballBob = false; }
-  await sleep(300);
+  // lancio
+  fx({kind: 'ball', path: arc(20, 90, P.cx, P.cy - 4, 34), life: 450});
+  await sleep(450);
+  // il FAUNO viene risucchiato
+  fx({kind: 'puff', x: P.cx, y: P.cy, life: 300});
+  B.eWhite = true;
+  await tween(300, k => { B.eScale = 1 - k; });
+  B.eHidden = true; B.eWhite = false; B.eScale = 1; B.hideHud = true; hud();
+  // la sfera cade e dondola
+  const ball = {x: P.cx, y: P.cy - 4, rot: 0};
+  const bp = fx({kind: 'ball', path: () => [ball.x, ball.y], rot: () => ball.rot, life: 99999});
+  await tween(350, k => { ball.y = P.cy - 4 + (P.base - 6 - (P.cy - 4)) * k; });
+  for (let i = 0; i < shakes; i++) {
+    await sleep(380);
+    await tween(300, k => { ball.rot = Math.sin(k * Math.PI * 2) * 0.45; ball.x = P.cx + Math.sin(k * Math.PI * 2) * 2; });
+  }
+  await sleep(400);
   if (ok) {
+    for (let i = 0; i < 6; i++) fx({kind: 'star', x: ball.x, y: ball.y - 6, vx: (i - 2.5) * 22, vy: -50, ay: 120, life: 600});
     await say(`Preso! ${e.name} è stato catturato!`, {keep: true});
+    FX = FX.filter(f => f !== bp);
     const isNew = !G.caught[e.sp];
-    delete e._dhp; e.status = e.status || null; e.ot = G.name;
+    delete e._dhp; e.ot = G.name;
     const where = addMon(e);
     if (isNew) await say(`I dati di ${e.name} sono stati registrati nel FAUNARIO!`, {keep: true});
     if (where === 'box') await say(`La squadra è piena: ${e.name} è stato inviato al BOX.`, {keep: true});
-    B.ball = false;
     return 'catch';
   }
-  B.ball = false; B.eHidden = false; hud();
+  FX = FX.filter(f => f !== bp);
+  fx({kind: 'puff', x: P.cx, y: P.cy + 10, life: 300});
+  B.eHidden = false; B.eWhite = true;
+  await tween(260, k => { B.eScale = k; }); B.eScale = 1; B.eWhite = false; B.hideHud = false; hud();
   await say(['Oh no! Il FAUNO è uscito dalla SFERA!', 'Accidenti! Sembrava preso!', 'Uffa! Mancava pochissimo!'][shakes], {keep: true});
   return null;
 }
@@ -1377,11 +1737,26 @@ async function wildEncounter() {
 let titleSel = 0, titleMenuEl = null, titleEl = null;
 const TITLE_MONS = ['fiammolo', 'gocciolo', 'fogliotto', 'lucciolo', 'ombretto', 'farfalia'];
 function drawTitle() {
-  R(ctx, 0, 0, 0, VW, VH);
-  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('~', Math.floor(frame / 32) % 2), x, 128);
-  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('T', 0), x, 112);
+  const sky = ctx.createLinearGradient(0, 0, 0, 112);
+  sky.addColorStop(0, '#5ab2f2'); sky.addColorStop(1, '#d2f0ff');
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, VW, 112);
+  // nuvole
+  for (const [cx, cy, sp] of [[30, 54, 40], [110, 40, 55], [150, 70, 30]]) {
+    const x = (cx + frame / sp) % 200 - 20;
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(x, cy, 14, 4, 0, 0, 7); ctx.ellipse(x + 8, cy - 3, 8, 4, 0, 0, 7); ctx.fill();
+  }
+  // monte Corona
+  ctx.fillStyle = '#7a9ac2'; ctx.beginPath(); ctx.moveTo(10, 112); ctx.lineTo(80, 58); ctx.lineTo(150, 112); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.moveTo(68, 67); ctx.lineTo(80, 58); ctx.lineTo(92, 67); ctx.lineTo(84, 64); ctx.lineTo(80, 68); ctx.lineTo(75, 64); ctx.fill();
+  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('T', 0), x, 104);
+  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('~', Math.floor(frame / 32) % 2), x, 120), ctx.drawImage(tileImg('~', Math.floor(frame / 32) % 2), x, 136);
   const sp = TITLE_MONS[Math.floor(frame / 180) % TITLE_MONS.length];
-  ctx.drawImage(monSprite(sp), 56, 54);
+  const t = frame % 180;
+  const a = t < 15 ? t / 15 : t > 165 ? (180 - t) / 15 : 1;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(80, 103, 18, 4, 0, 0, 7); ctx.fill();
+  ctx.drawImage(monSprite(sp), 56, 56 + (Math.floor(frame / 16) % 2));
+  ctx.restore();
 }
 function showTitle() {
   mode = 'title'; uiEl.innerHTML = ''; textBox = null;
@@ -1407,11 +1782,14 @@ function titleKey(k) {
 }
 let introPic = null;
 function drawIntro() {
-  R(ctx, 0, 0, 0, VW, VH);
-  if (introPic === 'prof') { const c = charImg('prof', 'down', 0); ctx.drawImage(c, 0, 0, 16, 16, 56, 18, 48, 48); }
-  else if (introPic === 'player') { ctx.drawImage(charImg('player', 'down', 0), 0, 0, 16, 16, 56, 18, 48, 48); }
-  else if (introPic === 'rival') { ctx.drawImage(charImg('rival', 'down', 0), 0, 0, 16, 16, 56, 18, 48, 48); }
-  else if (introPic) ctx.drawImage(monSprite(introPic), 56, 22);
+  const bg = ctx.createLinearGradient(0, 0, 0, VH);
+  bg.addColorStop(0, '#f8f8f0'); bg.addColorStop(1, '#cfe8f8');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#a2d87a'; ctx.beginPath(); ctx.ellipse(80, 76, 40, 9, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#c2ea9a'; ctx.beginPath(); ctx.ellipse(74, 74, 22, 4, 0, 0, 7); ctx.fill();
+  const bob = Math.floor(frame / 20) % 2;
+  if (introPic === 'prof' || introPic === 'player' || introPic === 'rival') ctx.drawImage(charImg(introPic, 'down', 0), 0, 0, 16, 16, 56, 26 + bob, 48, 48);
+  else if (introPic) ctx.drawImage(monSprite(introPic), 56, 28 + bob);
 }
 
 const SAVE_KEY = 'fauni-valcorona-save';

@@ -204,7 +204,7 @@ async function rivalBattle1() {
   const rival = NPCS.find(n => n.id === 'rival');
   player.dir = 'up';
   await say('{RIVAL}: Aspetta, {NAME}! Vediamo subito chi ha scelto meglio!');
-  const res = await battle({canLose: true, trainer: {cls: 'RIVALE', name: G.rival, team: [[G.rivalStarter, 5]], money: 80,
+  const res = await battle({canLose: true, trainer: {look: 'rival', cls: 'RIVALE', name: G.rival, team: [[G.rivalStarter, 5]], money: 80,
     lose: '{RIVAL}: Cosa?! Stavo solo... scaldando i motori.'}});
   if (res === 'lose') await say('{RIVAL}: Visto? Sono nato per questo!');
   setF('rival1');
@@ -407,7 +407,7 @@ async function springScene() {
   await say('RECLUTA GRIGIA: Questa SORGENTE adesso è proprietà del CONSORZIO. La LINFA vale oro, e noi la imbottigliamo.');
   await say('RECLUTA GRIGIA: Hai visto la VALVOLA che ho montato? Un capolavoro. Neanche una goccia va sprecata.');
   await say('RECLUTA GRIGIA: Non ti piace? Allora fatti da parte... o te ne faccio pentire!');
-  const res = await battle({trainer: {cls: 'RECLUTA', name: 'GRIGIA', team: [['pipistrino', 7], ['topino', 8]], money: 150,
+  const res = await battle({trainer: {look: 'grigio', cls: 'RECLUTA', name: 'GRIGIA', team: [['pipistrino', 7], ['topino', 8]], money: 150,
     lose: 'Che cosa?! Un ragazzino mi ha messo al tappeto?'}});
   if (res !== 'win') return;
   await say('RECLUTA GRIGIA: Va bene, va bene! Me ne vado... ma il DIRETTORE CENERI non ne sarà contento.');
@@ -513,7 +513,7 @@ MAPS.pf_palestra = {
       await say('BRUNA: Sono BRUNA, capopalestra di PIETRAFONDA.');
       await say('BRUNA: La roccia non si muove, non si piega e non si arrende. I miei FAUNI sono uguali.');
       await say('BRUNA: Vediamo se hai la pazienza di scalfirli!');
-      const res = await battle({trainer: {cls: 'CAPOPALESTRA', name: 'BRUNA', team: [['sassolo', 10], ['macigno', 12]], money: 600,
+      const res = await battle({trainer: {look: 'leader', cls: 'CAPOPALESTRA', name: 'BRUNA', team: [['sassolo', 10], ['macigno', 12]], money: 600,
         lose: 'BRUNA: Una crepa... poi una frana. Hai vinto tu.'}});
       if (res !== 'win') return;
       G.badges.push(1); setF('badge1');

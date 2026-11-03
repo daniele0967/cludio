@@ -1,6 +1,6 @@
 # FAUNI — Le Sorgenti di Valcorona
 
-Gioco di ruolo originale in stile portatile anni '90 (4 tonalità di verde, movimento a griglia, lotte a turni), per **Scriptable** su iPhone e iPad.
+Gioco di ruolo originale in stile portatile a colori anni 2000 (pixel art, movimento a griglia, lotte a turni animate), per **Scriptable** su iPhone e iPad.
 
 ## Come giocare su iPhone
 1. Installa [Scriptable](https://scriptable.app) dall'App Store.
@@ -15,11 +15,13 @@ Apri `dist/fauni.html` nel browser. Comandi: frecce, **Z** = A, **X** = B, **Inv
 
 ## Contenuti
 - **Capitolo 1 completo**: Borgo Aurora → Sentiero 1 → Torrevento → Sentiero 2 → Bosco Sussurro → Pietrafonda (prima palestra).
-- 30 specie di Fauni con evoluzioni, 11 tipi, 40 mosse, stati alterati, cattura, Faunario, squadra e BOX, borsa, negozi, Centro Cura.
+- 30 specie di Fauni originali disegnate in pixel art, con evoluzioni, 11 tipi, 40 mosse, stati alterati, cattura, Faunario, squadra e BOX, borsa, negozi, Centro Cura.
 - La storia completa, con tutte le 40 zone, è in [`docs/STORIA.md`](docs/STORIA.md).
 
+- Animazioni di lotta: transizione d'ingresso, lancio della sfera, attacchi diversi per ogni tipo, colpi superefficaci che scuotono lo schermo, cattura con la sfera che dondola, salita di livello, evoluzione.
+
 ## Sviluppo
-I sorgenti sono in `src/` (`data.js` dati, `engine.js` motore, `world.js` mappe e storia, `index.html` interfaccia).
+I sorgenti sono in `src/` (`sprites.js` pixel art delle creature, `data.js` dati, `engine.js` motore, `world.js` mappe e storia, `index.html` interfaccia).
 Dopo ogni modifica:
 ```
 python3 build.py

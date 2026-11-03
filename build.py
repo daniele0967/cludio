@@ -4,7 +4,7 @@ import json, pathlib
 root = pathlib.Path(__file__).parent
 src = root / 'src'
 html = (src / 'index.html').read_text()
-for tag, f in [('DATA', 'data.js'), ('ENGINE', 'engine.js'), ('WORLD', 'world.js')]:
+for tag, f in [('SPRITES', 'sprites.js'), ('DATA', 'data.js'), ('ENGINE', 'engine.js'), ('WORLD', 'world.js')]:
     code = (src / f).read_text()
     assert '</script' not in code.lower(), f
     html = html.replace(f'/*__{tag}__*/', code)
