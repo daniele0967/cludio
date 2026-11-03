@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Lavagna Baseball5</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: tabellone · panchina ospiti · campo · panchina casa · schede strumenti (su tablet il pannello va a destra) */
+:root {
+  --bg: #0d171c; --panel: #142229; --panel2: #1b2e37; --edge: #26404b;
+  --court: #1f5c74; --court2: #17485c; --line: #f4f1e6;
+  --fg: #e8eef0; --muted: #8aa3ad; --accent: #ff7a2f;
+  --ok: #4ad37a; --bad: #ff5a5a; --warn: #ffc542;
+  --display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", -apple-system, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.4 var(--body); -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body { padding: calc(env(safe-area-inset-top) + 8px) max(12px, env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 16px) max(12px, env(safe-area-inset-left)); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+input { -webkit-user-select: text; user-select: text; }
+.app { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+@media (min-width: 900px) { .app { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } .left { grid-column: 1; } .right { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 8px; } }
+.left { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; min-width: 0; }
+
+/* tabellone */
+.sb { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; background: #081014; border: 1px solid var(--edge); border-radius: 12px; padding: 8px 12px; }
+.tm { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.tm.r { justify-content: flex-end; text-align: right; }
+.tm .nm { font: 800 18px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tm .pts { font: 800 34px/1 var(--display); font-variant-numeric: tabular-nums; }
+.tm .bat { font: 700 10px var(--body); letter-spacing: .12em; color: var(--accent); }
+.mid { display: grid; justify-items: center; gap: 3px; }
+.inn { font: 800 16px/1 var(--display); letter-spacing: .06em; }
+.dots { display: flex; gap: 4px; } .dots i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--bad); } .dots i.on { background: var(--bad); }
+canvas.mini { width: 34px; height: 34px; }
+
+/* panchine */
+.bench { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 6px 8px 8px; transition: box-shadow .15s; }
+.bench.drop { box-shadow: 0 0 0 2px var(--accent) inset; }
+.bench h4 { margin: 0 0 5px; display: flex; align-items: center; gap: 8px; font: 700 11px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.bench h4 .tag { font-size: 10px; padding: 1px 6px; border-radius: 5px; background: var(--panel2); color: var(--fg); }
+.bench h4 .tag.att { background: var(--accent); color: #200c02; }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 9px 4px 4px; border-radius: 20px; background: var(--panel2); border: 1px solid var(--edge); touch-action: none; }
+.chip .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font: 800 14px var(--display); color: #0b1418; }
+.chip .t { font: 600 13px var(--body); white-space: nowrap; }
+.chip.on { opacity: .38; }
+.chip.next { border-color: var(--accent); }
+.ghost { position: fixed; z-index: 99; pointer-events: none; transform: translate(-50%, -60%); }
+
+/* campo */
+.fieldwrap { position: relative; background: #081014; border: 1px solid var(--edge); border-radius: 12px; padding: 6px; }
+#f { display: block; width: 100%; max-width: 100%; aspect-ratio: 1 / 1; touch-action: none; border-radius: 8px; }
+.hint { position: absolute; left: 14px; right: 14px; top: 12px; pointer-events: none; font: 600 13px var(--body); text-shadow: 0 1px 2px #000; }
+.hint b { color: var(--accent); }
+.banner { position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); background: rgba(8,16,20,.92); border: 1px solid var(--accent); border-radius: 12px; padding: 12px 18px; text-align: center; font: 800 26px/1.05 var(--display); letter-spacing: .04em; text-transform: uppercase; pointer-events: none; }
+.banner small { display: block; font: 600 13px var(--body); letter-spacing: 0; text-transform: none; color: var(--muted); margin-top: 4px; }
+
+/* pannello */
+.right { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; overflow: hidden; min-width: 0; }
+.tabs { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--edge); }
+.tabs button { background: none; border: 0; padding: 11px 2px; font: 700 14px var(--display); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom: 3px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.pane { padding: 12px; display: grid; gap: 10px; }
+.pane h3 { margin: 4px 0 0; font: 700 11.5px var(--body); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.btn { background: var(--panel2); border: 1px solid #2f4d59; border-radius: 9px; padding: 9px 12px; font-weight: 600; }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: #200c02; }
+.btn.on { border-color: #4fd6e0; color: #4fd6e0; }
+.btn:disabled { opacity: .4; }
+.btn.big { flex: 1; padding: 12px; font: 800 18px var(--display); letter-spacing: .06em; text-transform: uppercase; }
+.seg { display: inline-flex; border: 1px solid #2f4d59; border-radius: 9px; overflow: hidden; }
+.seg button { background: var(--panel2); border: 0; padding: 8px 11px; font-weight: 600; }
+.seg button + button { border-left: 1px solid #2f4d59; }
+.seg button.on { background: #4fd6e0; color: #06222a; }
+select, .inp { background: #0b1418; border: 1px solid #2f4d59; border-radius: 9px; padding: 8px 9px; min-width: 0; }
+label.sl { display: grid; grid-template-columns: 1fr auto; gap: 1px 8px; font-size: 13px; color: var(--muted); }
+label.sl input { grid-column: 1 / -1; accent-color: var(--accent); }
+label.sl output { font: 500 12px var(--mono); color: var(--fg); }
+label.ck { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+label.ck input { margin-top: 3px; accent-color: var(--accent); }
+.log { background: #0b1418; border-radius: 9px; padding: 9px 11px; font-size: 13.5px; min-height: 60px; max-height: 220px; overflow: auto; display: grid; gap: 5px; -webkit-user-select: text; user-select: text; }
+.log p { margin: 0; } .log .t { font: 500 11.5px var(--mono); color: var(--muted); margin-right: 6px; }
+.out { color: var(--bad); font-weight: 700; } .safe { color: var(--ok); font-weight: 700; } .run { color: var(--warn); font-weight: 700; }
+.note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.frames { display: flex; flex-wrap: wrap; gap: 6px; }
+.roster { display: grid; gap: 6px; }
+.prow { display: grid; grid-template-columns: 54px minmax(0, 1fr) 36px; gap: 6px; }
+.prow .inp { width: 100%; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.sw { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; padding: 0; }
+.sw.on { border-color: #fff; }
+.teamcard { background: #0b1418; border: 1px solid var(--edge); border-radius: 10px; padding: 10px; display: grid; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="left">
+    <header class="sb" aria-label="Tabellone">
+      <div class="tm"><div><div class="nm" id="n0">—</div><div class="bat" id="b0"></div></div><div class="pts" id="p0">0</div></div>
+      <div class="mid"><div class="inn" id="inn">1° ▲</div><div class="dots" id="outs"><i></i><i></i><i></i></div><canvas class="mini" id="mini" width="68" height="68"></canvas></div>
+      <div class="tm r"><div class="pts" id="p1">0</div><div><div class="nm" id="n1">—</div><div class="bat" id="b1"></div></div></div>
+    </header>
+    <section class="bench" id="bench0"><h4><span id="bt0"></span><span class="tag" id="bg0"></span></h4><div class="chips" id="chips0"></div></section>
+    <div class="fieldwrap">
+      <canvas id="f" width="900" height="900" aria-label="Campo di Baseball5"></canvas>
+      <div class="hint" id="hint"></div>
+      <div class="banner" id="banner" hidden></div>
+    </div>
+    <section class="bench" id="bench1"><h4><span id="bt1"></span><span class="tag" id="bg1"></span></h4><div class="chips" id="chips1"></div></section>
+  </div>
+
+  <aside class="right">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-t="campo" aria-selected="true">Campo</button>
+      <button role="tab" data-t="batti" aria-selected="false">Battuta</button>
+      <button role="tab" data-t="schemi" aria-selected="false">Schemi</button>
+      <button role="tab" data-t="penna" aria-selected="false">Penna</button>
+      <button role="tab" data-t="squadre" aria-selected="false">Squadre</button>
+    </div>
+
+    <section class="pane" id="p-campo">
+      <h3>Difesa in campo</h3>
+      <div class="row">
+        <select id="formation" aria-label="Schieramento">
+          <option value="std">Standard</option><option value="in">Avanzata (gioco a casa)</option><option value="deep">Profonda</option>
+          <option value="left">Spostata a sinistra</option><option value="right">Spostata a destra</option><option value="dp">Doppio gioco</option>
+        </select>
+        <button class="btn" id="applyForm">Applica</button>
+        <button class="btn" id="autoDef">Schiera automaticamente</button>
+      </div>
+      <h3>Attacco</h3>
+      <div class="row">
+        <select id="situation" aria-label="Situazione corridori">
+          <option value="">Basi vuote</option><option value="1">Corridore in 1ª</option><option value="2">Corridore in 2ª</option><option value="12">1ª e 2ª</option>
+          <option value="13">1ª e 3ª</option><option value="23">2ª e 3ª</option><option value="123">Basi piene</option>
+        </select>
+        <button class="btn" id="applySit">Applica</button>
+      </div>
+      <div class="row"><button class="btn" id="clearField">Tutti in panchina</button><button class="btn" id="swapSides">Scambia attacco e difesa</button></div>
+      <p class="note">Trascina un giocatore dalla panchina al campo. Chi difende si mette dove lo lasci; chi attacca va sulla base più vicina (o in battuta, se lo lasci vicino a casa). Per riportarlo in panchina, trascinalo sulla sua panchina. Tocca un corridore per farlo avanzare di una base.</p>
+    </section>
+
+    <section class="pane" id="p-batti" hidden>
+      <div class="seg" id="hitType"><button data-v="ground" class="on">Rasoterra</button><button data-v="line">Linea</button><button data-v="fly">Volata</button></div>
+      <p class="note">Tocca il campo dove va la pallina: per la rasoterra è il punto dove si fermerebbe, per linea e volata è dove tocca terra.</p>
+      <div class="row">
+        <button class="btn big pri" id="simulate">▶ Batti</button>
+        <button class="btn big" id="randHit">Casuale</button>
+      </div>
+      <div class="row">
+        <div class="seg" id="speed"><button data-v="0.35">Lento</button><button data-v="0.6" class="on">Normale</button><button data-v="1">Reale</button></div>
+        <button class="btn" id="replay" disabled>Rivedi</button>
+      </div>
+      <div class="log" id="log"></div>
+      <h3>Giocatori</h3>
+      <label class="sl">Velocità corridori (m/s) <output id="oRun"></output><input type="range" id="vRun" min="5" max="9" step="0.1" value="7"></label>
+      <label class="sl">Velocità difensori (m/s) <output id="oDef"></output><input type="range" id="vDef" min="4.5" max="8.5" step="0.1" value="6"></label>
+      <label class="sl">Velocità del tiro (m/s) <output id="oThr"></output><input type="range" id="vThr" min="10" max="28" step="0.5" value="18"></label>
+      <label class="sl">Abilità della difesa <output id="oSkill"></output><input type="range" id="vSkill" min="0" max="100" step="5" value="50"></label>
+      <label class="sl">Forza della battuta <output id="oPow"></output><input type="range" id="vPow" min="60" max="140" step="5" value="100"></label>
+      <h3>Regole</h3>
+      <label class="ck"><input type="checkbox" id="rNoise" checked> Variabilità realistica (reazioni, prese sporche)</label>
+      <label class="ck"><input type="checkbox" id="rFoul" checked> Battuta foul = battitore eliminato</label>
+      <label class="ck"><input type="checkbox" id="rInfield" checked> Linee e volate devono toccare terra prima nel diamante interno</label>
+      <label class="ck"><input type="checkbox" id="rHR" checked> Pallina che esce dal campo dopo un rimbalzo = fuoricampo</label>
+      <p class="note">Campo 21×21 m, territorio buono 18×18 m, basi a 13 m. Regole e misure cambiano tra le edizioni del regolamento WBSC: verifica quello in vigore e adatta le opzioni.</p>
+    </section>
+
+    <section class="pane" id="p-schemi" hidden>
+      <p class="note">Sistema i giocatori e premi «Aggiungi passo». Spostali e aggiungi il passo successivo. «Riproduci» anima lo schema da un passo all'altro.</p>
+      <div class="row"><button class="btn" id="addFrame">+ Aggiungi passo</button><button class="btn pri" id="playFrames">▶ Riproduci</button><button class="btn" id="clearFrames">Cancella passi</button></div>
+      <div class="frames" id="frames"></div>
+      <h3>Schemi salvati</h3>
+      <div class="row"><input class="inp" id="schemaName" placeholder="Nome dello schema" style="flex:1"><button class="btn" id="saveSchema">Salva</button></div>
+      <div class="row"><select id="schemaList" style="flex:1" aria-label="Schemi salvati"></select><button class="btn" id="loadSchema">Apri</button><button class="btn" id="delSchema">Elimina</button></div>
+      <p class="note" id="schemaMsg"></p>
+    </section>
+
+    <section class="pane" id="p-penna" hidden>
+      <div class="seg" id="penMode"><button data-v="free" class="on">Mano libera</button><button data-v="arrow">Freccia</button><button data-v="erase">Gomma</button></div>
+      <div class="swatches" id="penColors"></div>
+      <div class="row"><button class="btn" id="undoDraw">Annulla tratto</button><button class="btn" id="clearDraw">Cancella tutto</button></div>
+      <p class="note">In questa scheda il dito disegna sul campo. I disegni vengono salvati insieme agli schemi.</p>
+    </section>
+
+    <section class="pane" id="p-squadre" hidden>
+      <div id="teamsEd" class="roster"></div>
+      <div class="row"><button class="btn" id="newGame">Nuova partita (azzera punteggio)</button></div>
+      <p class="note">I giocatori di esempio hanno nomi inventati: sostituiscili con i tuoi. Tutto viene salvato da solo.</p>
+    </section>
+  </aside>
+</div>
+
+<script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
+<script>
+(() => {
+'use strict';
+// =================== geometria ===================
+// u lungo la linea di 1ª, v lungo la linea di 3ª, casa = (0,0), metri.
+const FAIR = 18, FOUL = 3, BASE = 13;
+const BASES = [[0, 0], [BASE, 0], [BASE, BASE], [0, BASE]];
+const cv = document.getElementById('f'), g = cv.getContext('2d'), W = cv.width;
+const S = W / ((FAIR + FOUL) * Math.SQRT2 + 2.2);
+const toS = (u, v) => [W / 2 + (u - v) * S * Math.SQRT1_2, W - S * 1.1 - (u + v + 2 * FOUL) * S * Math.SQRT1_2];
+const toF = (x, y) => { const a = (x - W / 2) / (S * Math.SQRT1_2), b = (W - S * 1.1 - y) / (S * Math.SQRT1_2) - 2 * FOUL; return [(a + b) / 2, (b - a) / 2]; };
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+const inFair = p => p[0] >= 0 && p[1] >= 0 && p[0] <= FAIR && p[1] <= FAIR;
+const inField = p => p[0] >= -FOUL && p[1] >= -FOUL && p[0] <= FAIR && p[1] <= FAIR;
+const inInfield = p => p[0] >= 0 && p[1] >= 0 && p[0] <= BASE && p[1] <= BASE;
+const clampF = p => [Math.max(-FOUL + .5, Math.min(FAIR - .5, p[0])), Math.max(-FOUL + .5, Math.min(FAIR - .5, p[1]))];
+const RUN_SPOT = [[-0.7, -0.7], [BASE + .1, 1.1], [BASE - 1.1, BASE - 1.1], [1.1, BASE + .1]]; // battitore e corridori
+const COVER_SPOT = [[0.9, 0.9], [BASE - .2, -.9], [BASE + .9, BASE + .9], [-.9, BASE - .2]]; // difensore che copre la base
+const FORMS = {
+  std: [[11.5, 2.2], [14.5, 9], [9, 14.5], [2.2, 11.5], [7.5, 7.5]],
+  in: [[10.5, 1.5], [11, 6.5], [6.5, 11], [1.5, 10.5], [5, 5]],
+  deep: [[12.5, 3], [16, 11], [11, 16], [3, 12.5], [11.5, 11.5]],
+  left: [[10.5, 2], [11.5, 11.5], [6, 15.5], [2, 12], [5.5, 9.5]],
+  right: [[12, 2], [15.5, 6], [11.5, 11.5], [2, 10.5], [9.5, 5.5]],
+  dp: [[11.5, 1.6], [12.4, 10.4], [10.4, 12.4], [1.6, 11.5], [7, 7]],
+};
+const COLORS = ['#ff7a2f', '#4fd6e0', '#ffd23f', '#ff5a8a', '#7ee06a', '#b98cff', '#f4f1e6'];
+
+// =================== stato (salvato) ===================
+const sample = (names, start) => names.map((n, i) => ({id: start + i, n, num: [4, 7, 10, 11, 14, 17, 21, 23][i]}));
+const DEFAULT = () => ({
+  v: 1,
+  teams: [
+    {name: 'Squali', color: '#ff7a2f', players: sample(['Giulia', 'Marco', 'Sara', 'Luca', 'Elena', 'Davide', 'Chiara', 'Paolo'], 1)},
+    {name: 'Falchi', color: '#4fd6e0', players: sample(['Anna', 'Matteo', 'Irene', 'Simone', 'Marta', 'Andrea', 'Laura', 'Fabio'], 101)},
+  ],
+  game: {inning: 1, top: true, outs: 0, score: [0, 0], next: [0, 0], over: false},
+  field: {def: {}, batter: null, runners: [null, null, null], draw: []},
+  forms: {}, schemes: {},
+  set: {run: 7, def: 6, thr: 18, skill: 50, pow: 100, noise: true, foul: true, infield: true, hr: true, speed: 0.6},
+});
+let D;
+try { D = window.__INITIAL_SAVE__ ? JSON.parse(window.__INITIAL_SAVE__) : JSON.parse(localStorage.getItem('b5-lavagna') || 'null'); } catch (e) { D = null; }
+if (!D || D.v !== 1) D = DEFAULT();
+
+const attIdx = () => D.game.top ? 0 : 1;
+const defIdx = () => 1 - attIdx();
+const player = id => { for (const t of D.teams) for (const p of t.players) if (p.id === id) return p; return null; };
+const teamOf = id => D.teams.findIndex(t => t.players.some(p => p.id === id));
+const onField = id => id in D.field.def || D.field.batter === id || D.field.runners.includes(id);
+
+// salvataggio: localStorage + ponte verso Scriptable
+let saveTimer = null, pending = null, resolver = null;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const s = JSON.stringify(D);
+    try { localStorage.setItem('b5-lavagna', s); } catch (e) {}
+    if (resolver) { const r = resolver; resolver = null; r(s); } else pending = s;
+  }, 400);
+}
+window.__waitSave = cb => { if (pending) { const s = pending; pending = null; cb(s); } else resolver = cb; };
+
+// =================== disegno del campo ===================
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function poly(pts, fill, stroke, lw) { g.beginPath(); pts.forEach((p, i) => { const [x, y] = toS(...p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath(); if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 2; g.stroke(); } }
+function seg(a, b, c, lw, dash) { const [x0, y0] = toS(...a), [x1, y1] = toS(...b); g.save(); g.strokeStyle = c; g.lineWidth = lw; if (dash) g.setLineDash(dash); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore(); }
+let fieldCache = null;
+function drawField() {
+  if (!fieldCache) {
+    fieldCache = document.createElement('canvas'); fieldCache.width = fieldCache.height = W;
+    const keep = g; const c = fieldCache.getContext('2d');
+    const old = gRef; gRef = c;
+    drawFieldTo();
+    gRef = old; void keep;
+  }
+  g.drawImage(fieldCache, 0, 0);
+}
+let gRef = null;
+function drawFieldTo() {
+  const save = g; const c = gRef;
+  const P = (pts, fill, stroke, lw) => { c.beginPath(); pts.forEach((p, i) => { const [x, y] = toS(...p); i ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); if (fill) { c.fillStyle = fill; c.fill(); } if (stroke) { c.strokeStyle = stroke; c.lineWidth = lw || 2; c.stroke(); } };
+  const L = (a, b, col, lw, dash) => { const [x0, y0] = toS(...a), [x1, y1] = toS(...b); c.save(); c.strokeStyle = col; c.lineWidth = lw; if (dash) c.setLineDash(dash); c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke(); c.restore(); };
+  P([[-FOUL, -FOUL], [FAIR, -FOUL], [FAIR, FAIR], [-FOUL, FAIR]], css('--court2'));
+  P([[0, 0], [FAIR, 0], [FAIR, FAIR], [0, FAIR]], css('--court'));
+  // texture cemento
+  const rnd = (() => { let s = 7; return () => (s = (s * 16807) % 2147483647) / 2147483647; })();
+  c.fillStyle = 'rgba(255,255,255,.035)';
+  for (let i = 0; i < 1400; i++) { const p = [-FOUL + rnd() * (FAIR + FOUL), -FOUL + rnd() * (FAIR + FOUL)]; const [x, y] = toS(...p); c.fillRect(x, y, 2, 2); }
+  P(BASES, 'rgba(255,255,255,.055)');
+  L(BASES[1], BASES[2], 'rgba(244,241,230,.5)', 2, [10, 8]); L(BASES[2], BASES[3], 'rgba(244,241,230,.5)', 2, [10, 8]);
+  const line = css('--line');
+  L([0, 0], [FAIR, 0], line, 3); L([0, 0], [0, FAIR], line, 3);
+  P([[-FOUL, -FOUL], [FAIR, -FOUL], [FAIR, FAIR], [-FOUL, FAIR]], null, line, 3);
+  c.fillStyle = 'rgba(244,241,230,.5)'; c.font = `600 ${Math.round(S * .55)}px Barlow, sans-serif`; c.textAlign = 'center';
+  const lab = (p, t) => { const [x, y] = toS(...p); c.fillText(t, x, y); };
+  lab([FAIR / 2 + 1.3, -1.4], '18 m'); lab([-1.4, FAIR / 2 + 1.3], '18 m'); lab([BASE / 2 + .8, BASE / 2 - 4.4], '13 m');
+  lab([FAIR - 1, -2.2], 'FOUL'); lab([-2.2, FAIR - 1], 'FOUL');
+  P([[-1.4, -1.4], [.4, -1.4], [.4, .4], [-1.4, .4]], null, 'rgba(244,241,230,.35)', 2);
+  BASES.forEach((b, i) => { const s = i ? .45 : .55; P([[b[0] - s, b[1] - s], [b[0] + s, b[1] - s], [b[0] + s, b[1] + s], [b[0] - s, b[1] + s]], '#fff', '#0b1418', 2); });
+  P([[.25, -.75], [.9, -.75], [.9, -.1], [.25, -.1]], '#ff9a5a', '#0b1418', 2);
+  void save;
+}
+function token(p, id, opts = {}) {
+  const pl = player(id); const col = D.teams[teamOf(id)]?.color || '#ccc';
+  const [x, y] = toS(...p); const r = S * .78;
+  g.save();
+  g.globalAlpha = opts.alpha ?? 1;
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y + r * .55, r * .95, r * .42, 0, 0, 7); g.fill();
+  if (opts.glow) { g.fillStyle = 'rgba(255,210,63,.35)'; g.beginPath(); g.arc(x, y, r * 1.55, 0, 7); g.fill(); }
+  g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  g.lineWidth = 3; g.strokeStyle = opts.ring || '#0b1418'; g.stroke();
+  g.fillStyle = '#0b1418'; g.font = `800 ${Math.round(r * .95)}px "Saira Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(pl ? pl.num : '?', x, y + 1);
+  if (pl) {
+    g.font = `600 ${Math.round(S * .42)}px Barlow, sans-serif`;
+    const w = g.measureText(pl.n).width + 10;
+    g.fillStyle = 'rgba(8,16,20,.78)'; g.fillRect(x - w / 2, y + r + 2, w, S * .55);
+    g.fillStyle = '#e8eef0'; g.fillText(pl.n, x, y + r + 2 + S * .28);
+  }
+  if (opts.mark) {
+    const c = opts.mark === 'OUT' ? css('--bad') : opts.mark === 'PUNTO' ? css('--warn') : css('--ok');
+    g.font = `800 ${Math.round(S * .95)}px "Saira Condensed", sans-serif`;
+    g.lineWidth = 4; g.strokeStyle = '#0b1418'; g.strokeText(opts.mark, x, y - r - S * .55); g.fillStyle = c; g.fillText(opts.mark, x, y - r - S * .55);
+  }
+  g.restore();
+}
+function drawStrokes(list) {
+  for (const s of list) {
+    if (s.pts.length < 2) continue;
+    g.save(); g.strokeStyle = s.color; g.lineWidth = 5; g.lineCap = g.lineJoin = 'round';
+    g.beginPath(); s.pts.forEach((p, i) => { const [x, y] = toS(...p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    if (s.arrow) { const a = toS(...s.pts[s.pts.length - 2]), b = toS(...s.pts[s.pts.length - 1]); const an = Math.atan2(b[1] - a[1], b[0] - a[0]);
+      g.fillStyle = s.color; g.beginPath(); g.moveTo(...b); g.lineTo(b[0] - 22 * Math.cos(an - .45), b[1] - 22 * Math.sin(an - .45)); g.lineTo(b[0] - 22 * Math.cos(an + .45), b[1] - 22 * Math.sin(an + .45)); g.fill(); }
+    g.restore();
+  }
+}
+
+// =================== rendering ===================
+let target = [6.5, 9.5], hitType = 'ground';
+let anim = null;      // {plan, t0, speed, t}
+let ret = null;       // ritorno in posizione dopo l'azione
+let ghostField = null; // trascinamento in corso sul campo
+function render() {
+  drawField();
+  drawStrokes(D.field.draw);
+  if (anim && anim.plan) return renderPlan();
+  if (tab === 'batti' && target) {
+    const [x, y] = toS(...target);
+    seg([0, 0], target, 'rgba(255,255,255,.5)', 2, [6, 7]);
+    g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, S * .6, 0, 7); g.stroke();
+    g.beginPath(); g.moveTo(x - S, y); g.lineTo(x + S, y); g.moveTo(x, y - S); g.lineTo(x, y + S); g.stroke();
+  }
+  const pos = currentPositions();
+  const list = Object.entries(pos).sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+  for (const [id, p] of list) token(p, +id, {alpha: ghostField && ghostField.id === +id ? .9 : 1});
+  drawMini();
+}
+function currentPositions() {
+  const out = {};
+  for (const [id, p] of Object.entries(D.field.def)) out[id] = p;
+  D.field.runners.forEach((id, i) => { if (id != null) out[id] = RUN_SPOT[i + 1]; });
+  if (D.field.batter != null) out[D.field.batter] = RUN_SPOT[0];
+  if (ret) { const k = ret.k; for (const id in ret.from) if (out[id]) out[id] = lerp(ret.from[id], out[id], k); }
+  if (frameAnim) Object.assign(out, frameAnim.pos);
+  return out;
+}
+function drawMini() {
+  const c = document.getElementById('mini').getContext('2d'); c.clearRect(0, 0, 68, 68);
+  [[56, 34], [34, 12], [12, 34]].forEach(([x, y], i) => { c.save(); c.translate(x, y); c.rotate(Math.PI / 4); c.fillStyle = D.field.runners[i] != null ? css('--accent') : 'transparent'; c.strokeStyle = css('--muted'); c.lineWidth = 2; c.fillRect(-7, -7, 14, 14); c.strokeRect(-7, -7, 14, 14); c.restore(); });
+}
+
+// =================== tabellone e panchine ===================
+function chipHtml(p, team, cls = '') { return `<div class="chip ${cls}" data-id="${p.id}"><span class="n" style="background:${team.color}">${p.num}</span><span class="t">${esc(p.n)}</span></div>`; }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
+function nextBatterId(ti) {
+  const ps = D.teams[ti].players; if (!ps.length) return null;
+  for (let k = 0; k < ps.length; k++) { const p = ps[(D.game.next[ti] + k) % ps.length]; if (!D.field.runners.includes(p.id)) return p.id; }
+  return null;
+}
+function updateUI() {
+  const G = D.game;
+  [0, 1].forEach(i => {
+    const t = D.teams[i];
+    document.getElementById('n' + i).textContent = t.name; document.getElementById('n' + i).style.color = t.color;
+    document.getElementById('p' + i).textContent = G.score[i];
+    document.getElementById('b' + i).textContent = attIdx() === i ? 'IN BATTUTA' : '';
+    document.getElementById('bt' + i).textContent = `Panchina ${t.name}`;
+    const tag = document.getElementById('bg' + i); tag.textContent = attIdx() === i ? 'attacco' : 'difesa'; tag.className = 'tag' + (attIdx() === i ? ' att' : '');
+    const nb = attIdx() === i ? (D.field.batter ?? nextBatterId(i)) : null;
+    const ordered = t.players.filter(p => !onField(p.id)).concat(t.players.filter(p => onField(p.id)));
+    document.getElementById('chips' + i).innerHTML = ordered.map(p => chipHtml(p, t, (onField(p.id) ? 'on' : '') + (p.id === nb && D.field.batter == null ? ' next' : ''))).join('');
+  });
+  document.getElementById('inn').textContent = G.over ? 'FINALE' : `${G.inning}° ${G.top ? '▲' : '▼'}`;
+  document.querySelectorAll('#outs i').forEach((d, i) => d.classList.toggle('on', i < G.outs));
+  drawMini();
+}
+let bannerTimer = null;
+function banner(html, ms = 1800) { const b = document.getElementById('banner'); b.innerHTML = html; b.hidden = false; clearTimeout(bannerTimer); bannerTimer = setTimeout(() => b.hidden = true, ms); }
+
+// =================== trascinamento (panchina ⇄ campo) ===================
+let drag = null, ghost = null, pressTimer = null;
+function evField(e) { const r = cv.getBoundingClientRect(); return toF((e.clientX - r.left) * W / r.width, (e.clientY - r.top) * W / r.height); }
+function overEl(e, el) { const r = el.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; }
+function makeGhost(id) {
+  const t = D.teams[teamOf(id)], p = player(id);
+  ghost = document.createElement('div'); ghost.className = 'ghost'; ghost.innerHTML = chipHtml(p, t); document.body.appendChild(ghost);
+}
+function moveGhost(e) { if (ghost) { ghost.style.left = e.clientX + 'px'; ghost.style.top = e.clientY + 'px'; } }
+function endGhost() { if (ghost) ghost.remove(); ghost = null; document.querySelectorAll('.bench').forEach(b => b.classList.remove('drop')); }
+document.addEventListener('pointerdown', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip || anim || frameAnim) return;
+  const id = +chip.dataset.id;
+  if (onField(id)) { banner(`${esc(player(id).n)} è già in campo`, 1200); return; }
+  e.preventDefault();
+  drag = {id, from: 'bench', sx: e.clientX, sy: e.clientY, started: false};
+});
+document.addEventListener('pointermove', e => {
+  if (!drag || drag.from !== 'bench') return;
+  if (!drag.started && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) > 6) { drag.started = true; makeGhost(drag.id); }
+  if (drag.started) { moveGhost(e); e.preventDefault(); }
+});
+document.addEventListener('pointerup', e => {
+  if (!drag || drag.from !== 'bench') return;
+  const d = drag; drag = null; endGhost();
+  if (!d.started) return;
+  if (overEl(e, cv)) placeOnField(d.id, evField(e));
+});
+function placeOnField(id, p) {
+  const ti = teamOf(id);
+  removeFromField(id);
+  if (ti === defIdx()) {
+    if (Object.keys(D.field.def).length >= 5) { banner('In difesa ci sono già 5 giocatori', 1500); return; }
+    D.field.def[id] = clampF(p);
+  } else {
+    // attaccante: va sulla base più vicina, o in battuta
+    let best = 0, bd = Infinity; BASES.forEach((b, i) => { const dd = dist(b, p); if (dd < bd) { bd = dd; best = i; } });
+    if (best === 0) { if (D.field.batter != null) removeFromField(D.field.batter); D.field.batter = id; }
+    else D.field.runners[best - 1] = id;
+  }
+  changed();
+}
+function removeFromField(id) {
+  delete D.field.def[id];
+  if (D.field.batter === id) D.field.batter = null;
+  D.field.runners = D.field.runners.map(r => r === id ? null : r);
+}
+// trascinamento dei gettoni già in campo
+function hitToken(p) {
+  let best = null, bd = 1.2;
+  for (const [id, q] of Object.entries(currentPositions())) { const d = dist(p, q); if (d < bd) { bd = d; best = +id; } }
+  return best;
+}
+cv.addEventListener('pointerdown', e => {
+  if (anim || frameAnim) return;
+  cv.setPointerCapture(e.pointerId);
+  const p = evField(e);
+  if (tab === 'penna') { if (pen.mode === 'erase') { eraseAt(p); drag = {erase: true}; } else { D.field.draw.push({color: pen.color, arrow: pen.mode === 'arrow', pts: [p]}); drag = {pen: true}; } render(); return; }
+  if (tab === 'batti') { target = p; render(); describeTarget(); return; }
+  const id = hitToken(p);
+  if (id == null) return;
+  drag = {id, from: 'field', start: p, moved: false};
+  ghostField = {id};
+  if (D.field.runners.includes(id) || D.field.batter === id) pressTimer = setTimeout(() => { removeFromField(id); drag = null; ghostField = null; changed(); banner(`${esc(player(id).n)} torna in panchina`, 1000); }, 650);
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag || drag.from === 'bench') return;
+  const p = evField(e);
+  if (drag.erase) { eraseAt(p); return; }
+  if (drag.pen) { const s = D.field.draw[D.field.draw.length - 1]; if (s.arrow) s.pts = [s.pts[0], p]; else s.pts.push(p); render(); return; }
+  if (dist(p, drag.start) > .35) { drag.moved = true; clearTimeout(pressTimer); }
+  if (!drag.moved) return;
+  const id = drag.id;
+  if (id in D.field.def) D.field.def[id] = clampF(p);
+  else { if (!ghost) makeGhost(id); moveGhost(e); }
+  document.querySelectorAll('.bench').forEach((b, i) => b.classList.toggle('drop', i === teamOf(id) && overEl(e, b)));
+  render();
+});
+cv.addEventListener('pointerup', e => {
+  if (drag && drag.from === 'bench') return; // lo gestisce il documento
+  clearTimeout(pressTimer);
+  const d = drag; drag = null; ghostField = null;
+  if (!d) return;
+  if (d.pen || d.erase) { changed(); return; }
+  const benchEl = document.getElementById('bench' + teamOf(d.id));
+  if (d.moved && overEl(e, benchEl)) { removeFromField(d.id); endGhost(); changed(); return; }
+  if (d.moved && !(d.id in D.field.def) && overEl(e, cv)) placeOnField(d.id, evField(e));
+  else if (!d.moved) { const i = D.field.runners.indexOf(d.id); if (i >= 0) advanceRunner(i); }
+  endGhost(); changed();
+});
+cv.addEventListener('pointercancel', () => { clearTimeout(pressTimer); drag = null; ghostField = null; endGhost(); render(); });
+function advanceRunner(i) {
+  const id = D.field.runners[i]; if (id == null) return;
+  D.field.runners[i] = null;
+  if (i === 2) { D.game.score[attIdx()]++; banner(`<span class="run">Punto!</span><small>${esc(player(id).n)} arriva a casa</small>`, 1300); }
+  else { if (D.field.runners[i + 1] != null) advanceRunner(i + 1); D.field.runners[i + 1] = id; }
+  changed();
+}
+function changed() { updateUI(); render(); save(); }
+
+// =================== schede ===================
+let tab = 'campo';
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => setTab(b.dataset.t));
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.t === t));
+  ['campo', 'batti', 'schemi', 'penna', 'squadre'].forEach(x => document.getElementById('p-' + x).hidden = x !== t);
+  if (t === 'squadre') renderTeamsEd();
+  hint(); render();
+}
+function hint() {
+  const h = document.getElementById('hint');
+  if (anim || frameAnim) { h.innerHTML = ''; return; }
+  h.innerHTML = tab === 'batti' ? 'Tocca il campo: <b>dove va la pallina</b>' : tab === 'penna' ? 'Disegna sul campo' : tab === 'campo' ? 'Trascina i giocatori dalla <b>panchina</b> al campo' : '';
+}
+
+// ---- Campo ----
+document.getElementById('applyForm').onclick = () => {
+  const f = FORMS[document.getElementById('formation').value];
+  const ids = Object.keys(D.field.def).map(Number);
+  if (!ids.length) { autoDefense(); return; }
+  // assegna ogni posizione al difensore più vicino
+  const left = ids.slice(); const nd = {};
+  f.forEach(p => { if (!left.length) return; let bi = 0, bd = Infinity; left.forEach((id, i) => { const d = dist(D.field.def[id], p); if (d < bd) { bd = d; bi = i; } }); nd[left[bi]] = p.slice(); left.splice(bi, 1); });
+  left.forEach(id => nd[id] = D.field.def[id]);
+  D.field.def = nd; changed();
+};
+function autoDefense() {
+  const t = D.teams[defIdx()];
+  const saved = D.forms[defIdx()];
+  D.field.def = {};
+  if (saved && Object.keys(saved).every(id => t.players.some(p => p.id === +id))) { for (const id in saved) D.field.def[id] = saved[id].slice(); }
+  else { const f = FORMS[document.getElementById('formation').value]; t.players.slice(0, 5).forEach((p, i) => D.field.def[p.id] = f[i].slice()); }
+  changed();
+}
+document.getElementById('autoDef').onclick = () => { D.forms[defIdx()] = null; autoDefense(); };
+document.getElementById('applySit').onclick = () => {
+  const v = document.getElementById('situation').value;
+  const ti = attIdx(); const used = new Set([D.field.batter]);
+  D.field.runners = [null, null, null];
+  const pool = D.teams[ti].players.map(p => p.id).filter(id => !used.has(id));
+  [3, 2, 1].forEach(b => { if (v.includes(b)) D.field.runners[b - 1] = pool.pop() ?? null; });
+  changed();
+};
+document.getElementById('clearField').onclick = () => { D.field.def = {}; D.field.batter = null; D.field.runners = [null, null, null]; changed(); };
+document.getElementById('swapSides').onclick = () => { D.game.top = !D.game.top; D.field.def = {}; D.field.batter = null; D.field.runners = [null, null, null]; autoDefense(); };
+
+// ---- Battuta ----
+document.querySelectorAll('#hitType button').forEach(b => b.onclick = () => { hitType = b.dataset.v; document.querySelectorAll('#hitType button').forEach(x => x.classList.toggle('on', x === b)); });
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => { D.set.speed = +b.dataset.v; document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', x === b)); save(); });
+const SL = {Run: 'run', Def: 'def', Thr: 'thr', Skill: 'skill', Pow: 'pow'};
+for (const [k, key] of Object.entries(SL)) {
+  const i = document.getElementById('v' + k), o = document.getElementById('o' + k);
+  i.value = D.set[key];
+  const f = () => { D.set[key] = +i.value; o.textContent = k === 'Skill' || k === 'Pow' ? i.value + '%' : Number(i.value).toLocaleString('it-IT', {minimumFractionDigits: 1}); };
+  i.oninput = () => { f(); save(); }; f();
+}
+const CK = {rNoise: 'noise', rFoul: 'foul', rInfield: 'infield', rHR: 'hr'};
+for (const [id, key] of Object.entries(CK)) { const c = document.getElementById(id); c.checked = D.set[key]; c.onchange = () => { D.set[key] = c.checked; save(); }; }
+document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', +x.dataset.v === D.set.speed));
+const logEl = document.getElementById('log');
+function log(html, t) { const p = document.createElement('p'); p.innerHTML = (t != null ? `<span class="t">${t.toFixed(2).replace('.', ',')} s</span>` : '') + html; logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight; }
+function describeTarget() {
+  const p = target; const w = !inField(p) ? 'fuori dal campo' : !inFair(p) ? 'in territorio foul' : inInfield(p) ? 'nel diamante interno' : 'nella zona esterna';
+  logEl.innerHTML = ''; log(`Pallina verso un punto a ${Math.round(Math.hypot(...p))} m da casa, ${w}. Premi <b>Batti</b>.`);
+}
+
+// =================== SIMULAZIONE ===================
+function computePlay() {
+  const set = D.set, skill = set.skill / 100, vR = set.run, vF = set.def, vT = set.thr;
+  const noise = set.noise, jit = a => noise ? Math.random() * a * (1.3 - skill) : 0;
+  const REACT = 0.42 - 0.22 * skill, REACH = 0.55 + 0.5 * skill, TRANSFER = 0.6 - 0.25 * skill + jit(.35);
+  const P = target, D0 = Math.hypot(...P) * set.pow / 100, dir = Math.atan2(P[1], P[0]);
+  const at = s => [Math.cos(dir) * s, Math.sin(dir) * s];
+  const DEC = hitType === 'ground' ? 9 : 6;
+  let ballPos, ballH, tLand, landP;
+  if (hitType === 'ground') { const v0 = Math.sqrt(2 * DEC * D0), ts = v0 / DEC; ballPos = t => at(t >= ts ? D0 : v0 * t - DEC * t * t / 2); ballH = t => Math.abs(Math.sin(t * 9)) * .35 * Math.max(0, 1 - t / ts); tLand = .1; landP = at(Math.min(D0, 1.5)); }
+  else {
+    const peak = hitType === 'line' ? 3 : 7.5; tLand = hitType === 'line' ? D0 / 22 : .8 + D0 / 15; const vA = D0 / tLand; landP = at(D0);
+    const roll = hitType === 'line' ? 6 : 2.5, vr = Math.sqrt(2 * DEC * roll), tr = vr / DEC;
+    ballPos = t => t <= tLand ? at(vA * t) : at(D0 + (t - tLand >= tr ? roll : vr * (t - tLand) - DEC * (t - tLand) ** 2 / 2));
+    ballH = t => t <= tLand ? 1 + 4 * peak * (t / tLand) * (1 - t / tLand) - t / tLand : 0;
+  }
+  const catchable = t => hitType === 'ground' || t > tLand || ballH(t) < 2.3;
+  const defs = Object.entries(D.field.def).map(([id, p]) => ({id: +id, p: p.slice(), react: REACT + jit(.3)}));
+  const occ = [D.field.batter, ...D.field.runners];             // 0 = battitore
+  const forced = [true, false, false, false]; for (let i = 1; i <= 3; i++) forced[i] = occ[i] != null && forced[i - 1];
+  const plan = {ev: [], actors: {}, marks: {}, ballPos, ballH, tLand, landP, throws: [], duration: 3, carry: null};
+  defs.forEach(d => plan.actors[d.id] = [[0, d.p]]);
+  const res = {outs: 0, runs: 0, runners: D.field.runners.slice(), batterSafe: false, text: ''};
+  plan.result = res;
+  const startT = [.35, .1, .1, .1];
+  const runnerPos0 = i => RUN_SPOT[i];
+  const runPath = (i, to, tOut) => {
+    const pts = [[0, runnerPos0(i)], [startT[i], runnerPos0(i)]]; let t = startT[i], cur = runnerPos0(i);
+    for (let b = i + 1; b <= to; b++) { const B = b === 4 ? RUN_SPOT[0] : RUN_SPOT[b]; t += dist(cur, B) / vR; pts.push([t, B]); cur = B; }
+    plan.actors[occ[i]] = pts; plan.marks[occ[i]] = tOut != null ? {t: tOut, m: 'OUT'} : {t, m: to >= 4 ? 'PUNTO' : to > i ? 'SALVO' : ''};
+    return t;
+  };
+  const holdAll = () => { for (let i = 0; i <= 3; i++) if (occ[i] != null) plan.actors[occ[i]] = [[0, runnerPos0(i)]]; };
+  // --- intercetto della pallina ---
+  let best = null;
+  defs.forEach(d => {
+    for (let t = .05; t < 6; t += .02) {
+      if (!catchable(t)) continue;
+      const b = ballPos(t); if (!inField(b)) break;
+      const spd = dist(ballPos(t + .02), b) / .02, dd = dist(d.p, b);
+      if ((spd <= 9 + 9 * skill || dd <= .45) && dd - REACH <= vF * Math.max(0, t - d.react)) { if (!best || t < best.t) best = {d, t, p: b}; break; }
+    }
+  });
+  const airCatch = best && hitType !== 'ground' && best.t <= tLand + .01;
+  const foulDir = P[0] < 0 || P[1] < 0;
+  // --- copertura delle basi: ogni base viene presa dal compagno libero più vicino ---
+  const cover = {};
+  const free = defs.filter(d => !best || d.id !== best.d.id);
+  [1, 2, 3, 4].forEach(b => {
+    const spot = COVER_SPOT[b % 4]; let bi = -1, bt = Infinity;
+    free.forEach((d, i) => { const t = d.react + dist(d.p, spot) / vF; if (t < bt) { bt = t; bi = i; } });
+    if (bi >= 0) { cover[b] = {d: free[bi], t: bt, spot}; free.splice(bi, 1); }
+  });
+  for (const b in cover) { const c = cover[b]; plan.actors[c.d.id] = [[0, c.d.p], [c.d.react, c.d.p], [c.t, c.spot]]; }
+  const backups = free;
+  const fielderName = d => esc(player(d.id).n);
+  if (best) plan.actors[best.d.id] = [[0, best.d.p], [best.d.react, best.d.p], [best.t, best.p]];
+
+  const done = (dur) => { plan.duration = dur; return plan; };
+  if (airCatch) {
+    holdAll(); res.outs = 1;
+    plan.marks[occ[0]] = {t: best.t, m: 'OUT'};
+    plan.ev.push({t: best.t, txt: `<b>${fielderName(best.d)}</b> prende al volo: <span class="out">battitore eliminato</span>.`});
+    plan.ballPos = t => t <= best.t ? ballPos(t) : best.p; plan.ballH = t => t <= best.t ? ballH(t) : 1.2;
+    res.text = 'Presa al volo. I corridori restano sulle basi.';
+    return done(best.t + 1.4);
+  }
+  if (hitType !== 'ground' && !inField(landP)) { holdAll(); res.outs = 1; plan.marks[occ[0]] = {t: tLand, m: 'OUT'}; res.text = 'La pallina esce dal campo al volo: <span class="out">battitore eliminato</span>.'; return done(tLand + 1); }
+  if (hitType === 'ground' ? foulDir : !inFair(landP)) {
+    holdAll(); defs.forEach(d => plan.actors[d.id] = [[0, d.p]]);
+    if (set.foul) { res.outs = 1; plan.marks[occ[0]] = {t: 1, m: 'OUT'}; }
+    res.text = set.foul ? 'Battuta foul: <span class="out">battitore eliminato</span>.' : 'Battuta foul: si ripete.';
+    res.repeat = !set.foul;
+    return done(hitType === 'ground' ? 1.6 : tLand + 1);
+  }
+  if (hitType !== 'ground' && set.infield && !inInfield(landP)) { holdAll(); res.outs = 1; plan.marks[occ[0]] = {t: tLand, m: 'OUT'}; res.text = 'Primo rimbalzo fuori dal diamante interno: <span class="out">battitore eliminato</span>.'; return done(tLand + 1.2); }
+  if (!best) {
+    // nessuno arriva: fuoricampo o valida lunga
+    if (set.hr) {
+      let runs = 0; for (let i = 0; i <= 3; i++) if (occ[i] != null) { runPath(i, 4); runs++; }
+      res.runs = runs; res.runners = [null, null, null];
+      res.text = `La pallina esce dal campo dopo il rimbalzo: <span class="run">fuoricampo, ${runs} ${runs > 1 ? 'punti' : 'punto'}</span>!`;
+      return done(.5 + 4 * BASE / vR);
+    }
+  }
+  // --- gioco a terra ---
+  let tF = best ? best.t : 3; const Q = best ? best.p : ballPos(3);
+  if (best) plan.ev.push({t: tF, txt: `<b>${fielderName(best.d)}</b> raccoglie la pallina a ${Math.round(Math.hypot(...Q))} m da casa.`});
+  if (best && noise && Math.random() < .18 * (1.1 - skill)) { tF += .7 + Math.random() * .5; plan.ev.push({t: tF, txt: `Presa sporca di ${fielderName(best.d)}!`}); plan.actors[best.d.id].push([tF, Q]); }
+  const deep = !inInfield(Q);
+  const dest = [1, 0, 0, 0];
+  for (let i = 1; i <= 3; i++) if (occ[i] != null) dest[i] = forced[i] || deep ? i + 1 : i;
+  const arrive = (i, to) => startT[i] + (to - i) * BASE / vR;
+  // tempo per eliminare sulla base b: tiro al compagno in copertura o corsa del difensore stesso
+  const outAt = (b, from, t0) => {
+    const B = BASES[b % 4], c = cover[b];
+    const self = t0 + dist(from, B) / vF;
+    const thr = c ? Math.max(t0 + TRANSFER + dist(from, c.spot) / vT, c.t) : Infinity;
+    return self <= thr ? {t: self, self: true} : {t: thr, self: false, c};
+  };
+  if (deep) for (let i = 3; i >= 0; i--) {
+    if (occ[i] == null) continue; const ex = dest[i] + 1; if (ex > 4) continue;
+    if (i < 3 && occ[i + 1] != null && dest[i + 1] <= ex) continue;
+    if (arrive(i, ex) + .5 < outAt(ex, Q, tF).t) dest[i] = ex;
+  }
+  const cands = [];
+  for (let i = 3; i >= 0; i--) {
+    if (occ[i] == null || dest[i] === i) continue;
+    const b = dest[i], tag = forced[i] && b === i + 1 ? 0 : .35, o = outAt(b, Q, tF);
+    cands.push({i, b, o, tOut: o.t + tag, tr: arrive(i, b)});
+  }
+  const outsLeft = 3 - D.game.outs;
+  const first = cands.find(c => c.tOut < c.tr) || cands.find(c => c.i === 0) || cands[0];
+  const outs = [];
+  const baseN = b => b === 4 ? 'casa base' : `${b}ª base`;
+  const nameR = i => `<b>${esc(player(occ[i]).n)}</b>`;
+  let ballEnd = Q, tBall = tF;
+  if (first) {
+    if (first.o.self) { plan.actors[best.d.id].push([first.o.t, BASES[first.b % 4]]); plan.carry = {id: best.d.id, t0: tF, t1: first.o.t}; ballEnd = BASES[first.b % 4]; }
+    else { plan.throws.push({from: Q, to: first.o.c.spot, t0: tF + TRANSFER * .6, t1: Math.max(tF + TRANSFER + dist(Q, first.o.c.spot) / vT, first.o.c.t)}); ballEnd = first.o.c.spot; }
+    tBall = first.o.t;
+    if (first.tOut < first.tr) {
+      outs.push(first.i);
+      plan.ev.push({t: first.tOut, txt: `${first.o.self ? `${fielderName(best.d)} va da solo in` : `Tiro a ${fielderName(first.o.c.d)} in`} ${baseN(first.b)}: ${nameR(first.i)} <span class="out">eliminato</span> (anticipo ${(first.tr - first.tOut).toFixed(2).replace('.', ',')} s).`});
+      const bat = cands.find(c => c.i === 0);
+      if (first.i !== 0 && bat && outsLeft > 1 && cover[1]) {
+        const from = first.o.self ? BASES[first.b % 4] : first.o.c.spot;
+        const t0 = first.tOut + .4, t2 = Math.max(t0 + dist(from, cover[1].spot) / vT, cover[1].t);
+        plan.throws.push({from, to: cover[1].spot, t0, t1: t2}); ballEnd = cover[1].spot; tBall = t2;
+        if (t2 < bat.tr) { outs.push(0); plan.ev.push({t: t2, txt: `Rilancio a ${fielderName(cover[1].d)} in 1ª: <span class="out">doppio gioco!</span>`}); }
+        else plan.ev.push({t: bat.tr, txt: `Rilancio in 1ª in ritardo: ${nameR(0)} <span class="safe">salvo</span>.`});
+      }
+    } else plan.ev.push({t: first.tr, txt: `Tiro in ${baseN(first.b)} troppo tardi: ${nameR(first.i)} <span class="safe">salvo</span> (${(first.tOut - first.tr).toFixed(2).replace('.', ',')} s).`});
+  }
+  // rinforzi: vanno dietro alla base del primo tiro
+  if (first) {
+    const B = BASES[first.b % 4], dirv = [B[0] - Q[0], B[1] - Q[1]], L = Math.hypot(...dirv) || 1;
+    const back = clampF([B[0] + dirv[0] / L * 3, B[1] + dirv[1] / L * 3]);
+    backups.forEach((d, k) => { const p = clampF([back[0] + k * 1.2, back[1] - k * 1.2]); plan.actors[d.id] = [[0, d.p], [d.react, d.p], [d.react + dist(d.p, p) / vF, p]]; });
+  }
+  const nOut = Math.min(outs.length, outsLeft);
+  const third = D.game.outs + nOut >= 3;
+  const thirdForce = third && outs.some(i => forced[i] && dest[i] === i + 1);
+  const nr = [null, null, null]; let runs = 0;
+  for (let i = 3; i >= 0; i--) {
+    if (occ[i] == null) continue;
+    if (outs.includes(i)) { runPath(i, dest[i], i === first.i ? first.tOut : tBall); continue; }
+    runPath(i, dest[i]);
+    if (dest[i] >= 4) runs++; else if (dest[i] >= 1) nr[dest[i] - 1] = occ[i];
+  }
+  if (thirdForce) runs = 0;
+  res.outs = nOut; res.runs = runs; res.runners = nr; res.batterSafe = !outs.includes(0);
+  res.text = (outs.length === 2 ? '<span class="out">Doppio gioco</span>' : outs.length ? '<span class="out">1 eliminato</span>' : '<span class="safe">Valida!</span>') + (runs ? ` <span class="run">${runs} ${runs > 1 ? 'punti' : 'punto'}</span>` : '');
+  plan.ballEnd = ballEnd; plan.tBall = tBall; plan.tF = tF; plan.Q = Q;
+  const tEnd = Math.max(tBall, ...Object.values(plan.actors).map(p => p[p.length - 1][0]));
+  return done(tEnd + .9);
+}
+const along = (path, t) => { if (t <= path[0][0]) return path[0][1]; for (let k = 1; k < path.length; k++) if (t <= path[k][0]) return lerp(path[k - 1][1], path[k][1], (t - path[k - 1][0]) / ((path[k][0] - path[k - 1][0]) || 1)); return path[path.length - 1][1]; };
+
+let lastPlan = null, lastFieldBefore = null;
+function simulate() {
+  if (anim || frameAnim || D.game.over) return;
+  if (!Object.keys(D.field.def).length) { banner('Prima metti la difesa in campo<small>Trascina i giocatori o usa «Schiera automaticamente»</small>', 2200); return; }
+  if (D.field.batter == null) { const id = nextBatterId(attIdx()); if (id == null) return; D.field.batter = id; }
+  D.forms[defIdx()] = JSON.parse(JSON.stringify(D.field.def));
+  lastFieldBefore = JSON.parse(JSON.stringify(D.field));
+  lastPlan = computePlay();
+  logEl.innerHTML = '';
+  log(`<b>${esc(player(D.field.batter).n)}</b> batte: ${{ground: 'rasoterra', line: 'linea', fly: 'volata'}[hitType]} verso ${Math.round(Math.hypot(...target))} m.`);
+  play(lastPlan, true);
+}
+function play(plan, apply) {
+  anim = {plan, t0: performance.now(), speed: D.set.speed, shown: 0, apply};
+  document.getElementById('replay').disabled = true; hint(); requestAnimationFrame(tick);
+}
+function tick() {
+  if (frameAnim) return tickFrames();
+  if (!anim) return;
+  const t = (performance.now() - anim.t0) / 1000 * anim.speed; anim.t = t;
+  const ev = anim.plan.ev.slice().sort((a, b) => a.t - b.t);
+  while (anim.shown < ev.length && ev[anim.shown].t <= t) { log(ev[anim.shown].txt, ev[anim.shown].t); anim.shown++; }
+  render();
+  if (t < anim.plan.duration) requestAnimationFrame(tick); else finish();
+}
+function renderPlan() {
+  const {plan, t} = anim;
+  const before = anim.apply ? lastFieldBefore : lastFieldBefore;
+  const items = [];
+  // tutti gli attori con un percorso
+  for (const id in plan.actors) {
+    const p = along(plan.actors[id], t); const mk = plan.marks[id];
+    let mark = mk && t >= mk.t && mk.m ? mk.m : null;
+    let pp = p; if (mk && mk.m === 'OUT' && t >= mk.t) pp = along(plan.actors[id], mk.t);
+    items.push([+id, pp, mark]);
+  }
+  items.sort((a, b) => (b[1][0] + b[1][1]) - (a[1][0] + a[1][1]));
+  const fielder = plan.carry ? plan.carry.id : null;
+  for (const [id, p, mark] of items) token(p, id, {mark, glow: id === fielder, alpha: mark === 'OUT' ? .75 : 1});
+  // pallina
+  let bp, h = 0;
+  const th = plan.throws.find(x => t >= x.t0 && t <= x.t1);
+  const doneThrow = plan.throws.filter(x => t > x.t1).pop();
+  if (th) { const k = (t - th.t0) / (th.t1 - th.t0); bp = lerp(th.from, th.to, k); h = 1.1 + Math.sin(k * Math.PI) * dist(th.from, th.to) / 8; }
+  else if (plan.carry && t >= plan.carry.t0) bp = along(plan.actors[plan.carry.id], Math.min(t, plan.carry.t1));
+  else if (doneThrow) bp = doneThrow.to;
+  else if (plan.tF != null && t >= plan.tF) bp = plan.Q;
+  else { bp = plan.ballPos(t); h = plan.ballH(t); }
+  const [sx, sy] = toS(...bp);
+  g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(sx, sy, S * .3, S * .14, 0, 0, 7); g.fill();
+  g.fillStyle = '#fff'; g.strokeStyle = '#0b1418'; g.lineWidth = 2; g.beginPath(); g.arc(sx, sy - h * S * .6, S * (.26 + h * .02), 0, 7); g.fill(); g.stroke();
+  if (t < plan.tLand && plan.landP) { const [x, y] = toS(...plan.landP); g.strokeStyle = 'rgba(255,255,255,.7)'; g.setLineDash([4, 5]); g.beginPath(); g.arc(x, y, S * .7, 0, 7); g.stroke(); g.setLineDash([]); }
+  g.fillStyle = 'rgba(8,16,20,.8)'; g.fillRect(W - 168, 14, 154, 44);
+  g.fillStyle = '#fff'; g.font = '500 26px "JetBrains Mono", monospace'; g.textAlign = 'right'; g.textBaseline = 'middle';
+  g.fillText(t.toFixed(2).replace('.', ',') + ' s', W - 26, 37);
+  void before;
+}
+function finish() {
+  const {plan, apply} = anim;
+  const finalPos = {};
+  for (const id in plan.actors) finalPos[id] = along(plan.actors[id], plan.duration);
+  anim = null;
+  log(plan.result.text);
+  if (!apply) { document.getElementById('replay').disabled = false; hint(); render(); return; }
+  const r = plan.result, G = D.game, ti = attIdx();
+  if (!r.repeat) {
+    G.score[ti] += r.runs;
+    D.field.runners = r.runners;
+    G.next[ti] = (D.teams[ti].players.findIndex(p => p.id === D.field.batter) + 1) % D.teams[ti].players.length;
+    D.field.batter = null;
+    G.outs += r.outs;
+  }
+  if (r.runs) banner(`<span class="run">${r.runs} ${r.runs > 1 ? 'punti' : 'punto'}!</span>`, 1300);
+  document.getElementById('replay').disabled = false;
+  // i difensori tornano in posizione con un'animazione
+  ret = {from: finalPos, k: 0};
+  const t0 = performance.now();
+  const step = () => { ret.k = Math.min(1, (performance.now() - t0) / 900); render(); if (ret.k < 1) requestAnimationFrame(step); else { ret = null; afterPlay(); } };
+  setTimeout(() => requestAnimationFrame(step), 700);
+  updateUI(); save();
+}
+function afterPlay() {
+  const G = D.game;
+  if (G.outs >= 3) {
+    G.outs = 0;
+    const endGame = G.inning >= 5 && !G.top && G.score[0] !== G.score[1] || (G.inning >= 5 && G.top && G.score[1] > G.score[0]);
+    if (endGame) { G.over = true; const w = G.score[0] > G.score[1] ? 0 : 1; banner(`Fine partita<small>Vince ${esc(D.teams[w].name)} ${G.score[w]}–${G.score[1 - w]}</small>`, 4000); D.field = {def: {}, batter: null, runners: [null, null, null], draw: D.field.draw}; changed(); return; }
+    if (G.top) G.top = false; else { G.top = true; G.inning++; }
+    D.field.def = {}; D.field.batter = null; D.field.runners = [null, null, null];
+    banner(`Cambio campo<small>${esc(D.teams[attIdx()].name)} in battuta · ${G.inning}° inning</small>`, 2000);
+    autoDefense();
+  }
+  D.field.batter = nextBatterId(attIdx());
+  changed(); hint();
+}
+document.getElementById('simulate').onclick = simulate;
+document.getElementById('replay').onclick = () => { if (!lastPlan || anim) return; const cur = D.field; D.field = lastFieldBefore; logEl.innerHTML = ''; log('Replay dell\'ultima azione (il punteggio non cambia).');
+  anim = {plan: lastPlan, t0: performance.now(), speed: D.set.speed, shown: 0, apply: false, restore: cur};
+  const orig = finish; requestAnimationFrame(function loop() { if (!anim) return; const t = (performance.now() - anim.t0) / 1000 * anim.speed; anim.t = t; render(); if (t < anim.plan.duration) requestAnimationFrame(loop); else { const rs = anim.restore; anim = null; D.field = rs; render(); document.getElementById('replay').disabled = false; } });
+  void orig; };
+document.getElementById('randHit').onclick = () => {
+  const ty = ['ground', 'ground', 'ground', 'line', 'fly'][Math.floor(Math.random() * 5)];
+  hitType = ty; document.querySelectorAll('#hitType button').forEach(x => x.classList.toggle('on', x.dataset.v === ty));
+  const ang = Math.random() * Math.PI / 2 * 1.06 - .03 * Math.PI / 2, d = ty === 'ground' ? 14 + Math.random() * 12 : ty === 'line' ? 5 + Math.random() * 9 : 6 + Math.random() * 10;
+  target = [Math.cos(ang) * d, Math.sin(ang) * d]; simulate();
+};
+
+// =================== schemi ===================
+let frames = [], frameAnim = null;
+const snapF = () => JSON.parse(JSON.stringify(D.field));
+function renderFrames() {
+  const el = document.getElementById('frames');
+  el.innerHTML = frames.map((_, i) => `<button class="btn" data-i="${i}">Passo ${i + 1}</button>`).join('') || '<span class="note">Nessun passo.</span>';
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { D.field = JSON.parse(JSON.stringify(frames[b.dataset.i])); changed(); });
+}
+document.getElementById('addFrame').onclick = () => { frames.push(snapF()); renderFrames(); };
+document.getElementById('clearFrames').onclick = () => { frames = []; renderFrames(); };
+document.getElementById('playFrames').onclick = () => {
+  if (frames.length < 2) { document.getElementById('schemaMsg').textContent = 'Servono almeno 2 passi.'; return; }
+  if (anim) return; frameAnim = {t0: performance.now(), pos: {}}; hint(); requestAnimationFrame(tick);
+};
+function posOf(fr) { const o = {}; for (const [id, p] of Object.entries(fr.def)) o[id] = p; fr.runners.forEach((id, i) => { if (id != null) o[id] = RUN_SPOT[i + 1]; }); if (fr.batter != null) o[fr.batter] = RUN_SPOT[0]; return o; }
+function tickFrames() {
+  const t = (performance.now() - frameAnim.t0) / 1200;
+  const k = Math.min(frames.length - 1, Math.floor(t)), f = Math.min(1, t - k), e = f < .5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2;
+  const A = posOf(frames[k]), B = posOf(frames[Math.min(frames.length - 1, k + 1)]);
+  D.field = JSON.parse(JSON.stringify(frames[e < .5 ? k : Math.min(frames.length - 1, k + 1)]));
+  const pos = {};
+  for (const id of new Set([...Object.keys(A), ...Object.keys(B)])) pos[id] = A[id] && B[id] ? lerp(A[id], B[id], e) : (A[id] || B[id]);
+  frameAnim.pos = pos;
+  render();
+  if (t < frames.length - 1) requestAnimationFrame(tick); else { frameAnim = null; D.field = JSON.parse(JSON.stringify(frames[frames.length - 1])); changed(); hint(); }
+}
+function refreshSchemes() {
+  const sel = document.getElementById('schemaList'), names = Object.keys(D.schemes);
+  sel.innerHTML = names.length ? names.map(n => `<option>${esc(n)}</option>`).join('') : '<option value="">Nessuno schema salvato</option>';
+}
+document.getElementById('saveSchema').onclick = () => {
+  const n = document.getElementById('schemaName').value.trim() || `Schema ${Object.keys(D.schemes).length + 1}`;
+  D.schemes[n] = {frames: frames.length ? frames : [snapF()]}; refreshSchemes(); document.getElementById('schemaList').value = n;
+  document.getElementById('schemaMsg').textContent = `Salvato «${n}».`; save();
+};
+document.getElementById('loadSchema').onclick = () => { const n = document.getElementById('schemaList').value, s = D.schemes[n]; if (!s) return; frames = JSON.parse(JSON.stringify(s.frames)); D.field = JSON.parse(JSON.stringify(frames[0])); renderFrames(); changed(); document.getElementById('schemaMsg').textContent = `Aperto «${n}».`; };
+document.getElementById('delSchema').onclick = () => { const n = document.getElementById('schemaList').value; if (D.schemes[n]) { delete D.schemes[n]; refreshSchemes(); save(); document.getElementById('schemaMsg').textContent = `Eliminato «${n}».`; } };
+
+// =================== penna ===================
+const pen = {mode: 'free', color: '#ffd23f'};
+const PENS = ['#ffd23f', '#ff5a5a', '#4ad37a', '#ffffff', '#b98cff'];
+document.getElementById('penColors').innerHTML = PENS.map((c, i) => `<button class="sw${i ? '' : ' on'}" style="background:${c}" data-c="${c}" aria-label="Colore"></button>`).join('');
+document.querySelectorAll('#penColors .sw').forEach(b => b.onclick = () => { pen.color = b.dataset.c; document.querySelectorAll('#penColors .sw').forEach(x => x.classList.toggle('on', x === b)); if (pen.mode === 'erase') setPen('free'); });
+function setPen(m) { pen.mode = m; document.querySelectorAll('#penMode button').forEach(x => x.classList.toggle('on', x.dataset.v === m)); }
+document.querySelectorAll('#penMode button').forEach(b => b.onclick = () => setPen(b.dataset.v));
+function eraseAt(p) { const n = D.field.draw.length; D.field.draw = D.field.draw.filter(s => !s.pts.some(q => dist(q, p) < 1)); if (n !== D.field.draw.length) render(); }
+document.getElementById('undoDraw').onclick = () => { D.field.draw.pop(); changed(); };
+document.getElementById('clearDraw').onclick = () => { D.field.draw = []; changed(); };
+
+// =================== squadre ===================
+function renderTeamsEd() {
+  const box = document.getElementById('teamsEd');
+  box.innerHTML = D.teams.map((t, ti) => `<div class="teamcard">
+      <div class="row"><input class="inp" data-tn="${ti}" value="${esc(t.name)}" aria-label="Nome squadra" style="flex:1;font-weight:700"></div>
+      <div class="swatches">${COLORS.map(c => `<button class="sw${c === t.color ? ' on' : ''}" style="background:${c}" data-tc="${ti}" data-c="${c}" aria-label="Colore squadra"></button>`).join('')}</div>
+      ${t.players.map((p, pi) => `<div class="prow"><input class="inp" type="number" min="0" max="99" value="${p.num}" data-pn="${ti}:${pi}" aria-label="Numero"><input class="inp" value="${esc(p.n)}" data-pp="${ti}:${pi}" aria-label="Nome giocatore"><button class="btn" data-pd="${ti}:${pi}" aria-label="Togli giocatore" ${t.players.length <= 5 ? 'disabled' : ''}>✕</button></div>`).join('')}
+      <div class="row"><button class="btn" data-pa="${ti}" ${t.players.length >= 12 ? 'disabled' : ''}>+ Aggiungi giocatore</button><span class="note">L'ordine dell'elenco è l'ordine di battuta.</span></div>
+    </div>`).join('');
+  box.querySelectorAll('[data-tn]').forEach(i => i.oninput = () => { D.teams[i.dataset.tn].name = i.value || 'Squadra'; updateUI(); save(); });
+  box.querySelectorAll('[data-tc]').forEach(b => b.onclick = () => { D.teams[b.dataset.tc].color = b.dataset.c; renderTeamsEd(); changed(); });
+  box.querySelectorAll('[data-pn]').forEach(i => i.oninput = () => { const [a, b] = i.dataset.pn.split(':'); D.teams[a].players[b].num = Math.max(0, Math.min(99, parseInt(i.value) || 0)); changed(); });
+  box.querySelectorAll('[data-pp]').forEach(i => i.oninput = () => { const [a, b] = i.dataset.pp.split(':'); D.teams[a].players[b].n = i.value || '?'; changed(); });
+  box.querySelectorAll('[data-pd]').forEach(b => b.onclick = () => { const [a, c] = b.dataset.pd.split(':'); const p = D.teams[a].players[c]; removeFromField(p.id); D.teams[a].players.splice(c, 1); D.game.next[a] = 0; renderTeamsEd(); changed(); });
+  box.querySelectorAll('[data-pa]').forEach(b => b.onclick = () => { const t = D.teams[b.dataset.pa]; const id = Math.max(0, ...D.teams.flatMap(x => x.players.map(p => p.id))) + 1; t.players.push({id, n: 'Nuovo', num: id % 100}); renderTeamsEd(); changed(); });
+}
+document.getElementById('newGame').onclick = () => { D.game = {inning: 1, top: true, outs: 0, score: [0, 0], next: [0, 0], over: false}; D.field = {def: {}, batter: null, runners: [null, null, null], draw: []}; autoDefense(); D.field.batter = nextBatterId(attIdx()); changed(); banner('Nuova partita', 1200); };
+
+// =================== avvio ===================
+if (!Object.keys(D.field.def).length && !D.game.over) {
+  // partita di esempio: difesa schierata, corridore in 1ª, battitore pronto
+  autoDefense();
+  const att = D.teams[attIdx()].players;
+  if (D.game.outs === 0 && D.game.score.every(s => !s)) { D.field.runners[0] = att[att.length - 1].id; }
+  D.field.batter = nextBatterId(attIdx());
+}
+window.__b5test = {computePlay, setT: (p, t) => { target = p; hitType = t; }, D: () => D};
+refreshSchemes(); renderFrames(); updateUI(); setTab('campo');
+logEl.innerHTML = '<p class="note">Esempio pronto: difesa schierata e corridore in 1ª. Apri «Battuta», tocca il campo e premi Batti.</p>';
+if (document.fonts) document.fonts.ready.then(() => { fieldCache = null; render(); });
+render();
+})();
+</script>
+</body>
+</html>
