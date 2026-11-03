@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fauni di Valcorona</title>
+<style>
+:root{--c0:#e3f2cd;--c1:#9cc47a;--c2:#4b7a5a;--c3:#17301f;--shell:#d8d4cc;--shell2:#b9b4aa;--ink:#3b3a4a;--btn:#8a2a52}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#2b2b33;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body{display:flex;justify-content:center;font-family:"Courier New",Courier,monospace}
+#console{display:flex;flex-direction:column;align-items:center;width:100%;max-width:520px;height:100%;
+  background:var(--shell);padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 10px);border-radius:0 0 28px 28px}
+#bezel{background:#5c5a68;border-radius:10px 10px 36px 10px;padding:14px 22px 10px;width:100%}
+#screen{position:relative;width:100%;aspect-ratio:10/9;background:var(--c0);overflow:hidden;--u:2px}
+#cv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+#ui canvas{image-rendering:pixelated}
+#screen.fade::after,#screen.flash::after,#screen.battleflash::after{content:"";position:absolute;inset:0;z-index:50}
+#screen.fade::after{background:var(--c3);animation:none}
+#screen.flash::after{background:var(--c0);animation:blink .3s steps(2) infinite}
+#screen.battleflash::after{background:var(--c3);animation:blink .18s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.brand{color:#d6d3e0;font:bold 11px/1 sans-serif;letter-spacing:.12em;margin-top:6px;text-align:center}
+#ui{position:absolute;inset:0;z-index:10;color:var(--c3);font-weight:bold;font-size:calc(var(--u)*7);line-height:1.45}
+#ui>div{position:absolute}
+.box{background:var(--c0);border:calc(var(--u)*1.5) double var(--c3);padding:calc(var(--u)*3) calc(var(--u)*4);border-radius:calc(var(--u)*2)}
+.text .t{white-space:pre;letter-spacing:.02em}
+.text .more{position:absolute;right:calc(var(--u)*4);bottom:calc(var(--u)*1);animation:blink .8s steps(2) infinite}
+.menu .it{white-space:pre;height:calc(var(--u)*10);line-height:calc(var(--u)*10)}
+.menu .up,.menu .dn{position:absolute;right:calc(var(--u)*3);font-size:.8em}
+.menu .up{top:0}.menu .dn{bottom:0}
+.menu.grid{display:grid;grid-template-columns:1fr 1fr;align-content:center}
+.banner{white-space:nowrap;padding-top:calc(var(--u)*1.5)}
+.full{border-radius:0}
+.full .spr{position:absolute;left:calc(var(--u)*6);top:calc(var(--u)*6);width:calc(var(--u)*48);height:calc(var(--u)*48);image-rendering:pixelated}
+.dexname{position:absolute;left:calc(var(--u)*60);top:calc(var(--u)*8)}
+.dexdesc{position:absolute;left:calc(var(--u)*6);right:calc(var(--u)*6);top:calc(var(--u)*62);line-height:1.6}
+.stats{position:absolute;left:calc(var(--u)*6);right:calc(var(--u)*6);top:calc(var(--u)*58);line-height:1.35}
+.stats .r,.r{float:right}
+.card{line-height:1.55}
+.pm{position:relative;height:calc(var(--u)*20);padding-left:calc(var(--u)*20)}
+.pm canvas{position:absolute;left:0;top:calc(var(--u)*1);width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated}
+.pm.swap{outline:calc(var(--u)*1) dashed var(--c2)}
+.pn span{font-size:.85em}
+.ph{font-size:.85em}
+.pprompt{position:absolute;bottom:calc(var(--u)*2);left:calc(var(--u)*4)}
+.bar{display:inline-block;vertical-align:middle;width:calc(var(--u)*48);height:calc(var(--u)*4);border:calc(var(--u)*.7) solid var(--c3);background:var(--c0);border-radius:calc(var(--u)*2);overflow:hidden}
+.bar span{display:block;height:100%}
+.bar .g{background:var(--c2)}.bar .y{background:var(--c1)}.bar .r{background:var(--c3)}
+.hud{padding:calc(var(--u)*2) calc(var(--u)*3);line-height:1.25;font-size:calc(var(--u)*6.5)}
+.hud .hl{position:absolute;right:calc(var(--u)*4);top:calc(var(--u)*2)}
+.hud .hp{text-align:right}
+.hud .xp{height:calc(var(--u)*2);background:var(--c1);margin-top:calc(var(--u)*1)}
+.hud .xp span{display:block;height:100%;background:var(--c3)}
+.evo{display:flex;align-items:center;justify-content:center}
+.evo canvas{width:calc(var(--u)*48);height:calc(var(--u)*48);image-rendering:pixelated}
+.title{text-align:center;color:var(--c3)}
+.title .t1{font-size:calc(var(--u)*24);letter-spacing:.12em;text-shadow:calc(var(--u)*1.5) calc(var(--u)*1.5) 0 var(--c1)}
+.title .t2{font-size:calc(var(--u)*6.5);letter-spacing:.06em}
+#pad{flex:1;width:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;align-items:center;padding:6px 4px 0;min-height:190px}
+#dpad{position:relative;width:150px;height:150px;justify-self:start}
+#dpad button{position:absolute;width:50px;height:50px;background:var(--ink);border:none;color:#9d9aaa;font-size:16px}
+#dpad .u{left:50px;top:0;border-radius:6px 6px 0 0}#dpad .d{left:50px;top:100px;border-radius:0 0 6px 6px}
+#dpad .l{left:0;top:50px;border-radius:6px 0 0 6px}#dpad .r{left:100px;top:50px;border-radius:0 6px 6px 0}
+#dpad .c{position:absolute;left:50px;top:50px;width:50px;height:50px;background:var(--ink)}
+#ab{position:relative;width:160px;height:120px;justify-self:end;transform:rotate(-22deg)}
+#ab button{position:absolute;width:62px;height:62px;border-radius:50%;background:var(--btn);border:none;color:#f1d6e2;font:bold 18px sans-serif;box-shadow:0 3px 0 #5a1734}
+#ab .b{left:0;top:40px}#ab .a{right:0;top:10px}
+#ss{grid-column:1/3;display:flex;justify-content:center;gap:28px;padding:10px 0 4px}
+#ss button{width:64px;height:16px;border-radius:8px;background:var(--shell2);border:none;transform:rotate(-22deg);color:#56536a;font:bold 9px sans-serif;padding-top:22px;overflow:visible}
+button.on{filter:brightness(.75)}
+button{-webkit-tap-highlight-color:transparent;touch-action:none}
+</style>
+</head>
+<body>
+<div id="console">
+  <div id="bezel">
+    <div id="screen"><canvas id="cv"></canvas><div id="ui"></div></div>
+    <div class="brand">FAUNI · VALCORONA</div>
+  </div>
+  <div id="pad">
+    <div id="dpad">
+      <button class="u" data-k="up">▲</button><button class="d" data-k="down">▼</button>
+      <button class="l" data-k="left">◀</button><button class="r" data-k="right">▶</button><div class="c"></div>
+    </div>
+    <div id="ab"><button class="b" data-k="B">B</button><button class="a" data-k="A">A</button></div>
+    <div id="ss"><button data-k="SELECT">SELECT</button><button data-k="START">START</button></div>
+  </div>
+</div>
+<script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
+<script>
+/*__DATA__*/
+/*__ENGINE__*/
+/*__WORLD__*/
+start();
+</script>
+</body>
+</html>

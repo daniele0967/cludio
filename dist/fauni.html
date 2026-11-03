@@ -1,0 +1,2306 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Fauni di Valcorona</title>
+<style>
+:root{--c0:#e3f2cd;--c1:#9cc47a;--c2:#4b7a5a;--c3:#17301f;--shell:#d8d4cc;--shell2:#b9b4aa;--ink:#3b3a4a;--btn:#8a2a52}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#2b2b33;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+body{display:flex;justify-content:center;font-family:"Courier New",Courier,monospace}
+#console{display:flex;flex-direction:column;align-items:center;width:100%;max-width:520px;height:100%;
+  background:var(--shell);padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 10px);border-radius:0 0 28px 28px}
+#bezel{background:#5c5a68;border-radius:10px 10px 36px 10px;padding:14px 22px 10px;width:100%}
+#screen{position:relative;width:100%;aspect-ratio:10/9;background:var(--c0);overflow:hidden;--u:2px}
+#cv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+#ui canvas{image-rendering:pixelated}
+#screen.fade::after,#screen.flash::after,#screen.battleflash::after{content:"";position:absolute;inset:0;z-index:50}
+#screen.fade::after{background:var(--c3);animation:none}
+#screen.flash::after{background:var(--c0);animation:blink .3s steps(2) infinite}
+#screen.battleflash::after{background:var(--c3);animation:blink .18s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.brand{color:#d6d3e0;font:bold 11px/1 sans-serif;letter-spacing:.12em;margin-top:6px;text-align:center}
+#ui{position:absolute;inset:0;z-index:10;color:var(--c3);font-weight:bold;font-size:calc(var(--u)*7);line-height:1.45}
+#ui>div{position:absolute}
+.box{background:var(--c0);border:calc(var(--u)*1.5) double var(--c3);padding:calc(var(--u)*3) calc(var(--u)*4);border-radius:calc(var(--u)*2)}
+.text .t{white-space:pre;letter-spacing:.02em}
+.text .more{position:absolute;right:calc(var(--u)*4);bottom:calc(var(--u)*1);animation:blink .8s steps(2) infinite}
+.menu .it{white-space:pre;height:calc(var(--u)*10);line-height:calc(var(--u)*10)}
+.menu .up,.menu .dn{position:absolute;right:calc(var(--u)*3);font-size:.8em}
+.menu .up{top:0}.menu .dn{bottom:0}
+.menu.grid{display:grid;grid-template-columns:1fr 1fr;align-content:center}
+.banner{white-space:nowrap;padding-top:calc(var(--u)*1.5)}
+.full{border-radius:0}
+.full .spr{position:absolute;left:calc(var(--u)*6);top:calc(var(--u)*6);width:calc(var(--u)*48);height:calc(var(--u)*48);image-rendering:pixelated}
+.dexname{position:absolute;left:calc(var(--u)*60);top:calc(var(--u)*8)}
+.dexdesc{position:absolute;left:calc(var(--u)*6);right:calc(var(--u)*6);top:calc(var(--u)*62);line-height:1.6}
+.stats{position:absolute;left:calc(var(--u)*6);right:calc(var(--u)*6);top:calc(var(--u)*58);line-height:1.35}
+.stats .r,.r{float:right}
+.card{line-height:1.55}
+.pm{position:relative;height:calc(var(--u)*20);padding-left:calc(var(--u)*20)}
+.pm canvas{position:absolute;left:0;top:calc(var(--u)*1);width:calc(var(--u)*18);height:calc(var(--u)*18);image-rendering:pixelated}
+.pm.swap{outline:calc(var(--u)*1) dashed var(--c2)}
+.pn span{font-size:.85em}
+.ph{font-size:.85em}
+.pprompt{position:absolute;bottom:calc(var(--u)*2);left:calc(var(--u)*4)}
+.bar{display:inline-block;vertical-align:middle;width:calc(var(--u)*48);height:calc(var(--u)*4);border:calc(var(--u)*.7) solid var(--c3);background:var(--c0);border-radius:calc(var(--u)*2);overflow:hidden}
+.bar span{display:block;height:100%}
+.bar .g{background:var(--c2)}.bar .y{background:var(--c1)}.bar .r{background:var(--c3)}
+.hud{padding:calc(var(--u)*2) calc(var(--u)*3);line-height:1.25;font-size:calc(var(--u)*6.5)}
+.hud .hl{position:absolute;right:calc(var(--u)*4);top:calc(var(--u)*2)}
+.hud .hp{text-align:right}
+.hud .xp{height:calc(var(--u)*2);background:var(--c1);margin-top:calc(var(--u)*1)}
+.hud .xp span{display:block;height:100%;background:var(--c3)}
+.evo{display:flex;align-items:center;justify-content:center}
+.evo canvas{width:calc(var(--u)*48);height:calc(var(--u)*48);image-rendering:pixelated}
+.title{text-align:center;color:var(--c3)}
+.title .t1{font-size:calc(var(--u)*24);letter-spacing:.12em;text-shadow:calc(var(--u)*1.5) calc(var(--u)*1.5) 0 var(--c1)}
+.title .t2{font-size:calc(var(--u)*6.5);letter-spacing:.06em}
+#pad{flex:1;width:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;align-items:center;padding:6px 4px 0;min-height:190px}
+#dpad{position:relative;width:150px;height:150px;justify-self:start}
+#dpad button{position:absolute;width:50px;height:50px;background:var(--ink);border:none;color:#9d9aaa;font-size:16px}
+#dpad .u{left:50px;top:0;border-radius:6px 6px 0 0}#dpad .d{left:50px;top:100px;border-radius:0 0 6px 6px}
+#dpad .l{left:0;top:50px;border-radius:6px 0 0 6px}#dpad .r{left:100px;top:50px;border-radius:0 6px 6px 0}
+#dpad .c{position:absolute;left:50px;top:50px;width:50px;height:50px;background:var(--ink)}
+#ab{position:relative;width:160px;height:120px;justify-self:end;transform:rotate(-22deg)}
+#ab button{position:absolute;width:62px;height:62px;border-radius:50%;background:var(--btn);border:none;color:#f1d6e2;font:bold 18px sans-serif;box-shadow:0 3px 0 #5a1734}
+#ab .b{left:0;top:40px}#ab .a{right:0;top:10px}
+#ss{grid-column:1/3;display:flex;justify-content:center;gap:28px;padding:10px 0 4px}
+#ss button{width:64px;height:16px;border-radius:8px;background:var(--shell2);border:none;transform:rotate(-22deg);color:#56536a;font:bold 9px sans-serif;padding-top:22px;overflow:visible}
+button.on{filter:brightness(.75)}
+button{-webkit-tap-highlight-color:transparent;touch-action:none}
+</style>
+</head>
+<body>
+<div id="console">
+  <div id="bezel">
+    <div id="screen"><canvas id="cv"></canvas><div id="ui"></div></div>
+    <div class="brand">FAUNI · VALCORONA</div>
+  </div>
+  <div id="pad">
+    <div id="dpad">
+      <button class="u" data-k="up">▲</button><button class="d" data-k="down">▼</button>
+      <button class="l" data-k="left">◀</button><button class="r" data-k="right">▶</button><div class="c"></div>
+    </div>
+    <div id="ab"><button class="b" data-k="B">B</button><button class="a" data-k="A">A</button></div>
+    <div id="ss"><button data-k="SELECT">SELECT</button><button data-k="START">START</button></div>
+  </div>
+</div>
+<script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
+<script>
+// ============================================================
+//  FAUNI DI VALCORONA — dati di gioco (tipi, mosse, specie, strumenti)
+// ============================================================
+
+const TYPES = ['NORMALE','FUOCO','ACQUA','PIANTA','ELETTRO','ROCCIA','VENTO','OMBRA','MENTE','INSETTO','VELENO'];
+const SPECIAL_TYPES = new Set(['FUOCO','ACQUA','PIANTA','ELETTRO','MENTE']);
+
+// efficacia [attacco][difesa]; valori assenti = 1
+const CHART = {
+  NORMALE: {ROCCIA:.5, OMBRA:0},
+  FUOCO:   {PIANTA:2, INSETTO:2, FUOCO:.5, ACQUA:.5, ROCCIA:.5},
+  ACQUA:   {FUOCO:2, ROCCIA:2, ACQUA:.5, PIANTA:.5},
+  PIANTA:  {ACQUA:2, ROCCIA:2, FUOCO:.5, PIANTA:.5, VENTO:.5, INSETTO:.5, VELENO:.5},
+  ELETTRO: {ACQUA:2, VENTO:2, ELETTRO:.5, PIANTA:.5, ROCCIA:0},
+  ROCCIA:  {FUOCO:2, ELETTRO:2, VENTO:2, INSETTO:2, PIANTA:.5},
+  VENTO:   {PIANTA:2, INSETTO:2, ELETTRO:.5, ROCCIA:.5},
+  OMBRA:   {MENTE:2, OMBRA:2, NORMALE:0},
+  MENTE:   {VELENO:2, MENTE:.5},
+  INSETTO: {PIANTA:2, MENTE:2, FUOCO:.5, VENTO:.5, VELENO:.5},
+  VELENO:  {PIANTA:2, VELENO:.5, ROCCIA:.5, OMBRA:.5},
+};
+
+// p = potenza, a = precisione (0 = non manca mai), pp, fx = effetti
+const MOVES = {
+  botta:       {n:'BOTTA', t:'NORMALE', p:40, a:100, pp:35},
+  graffio:     {n:'GRAFFIO', t:'NORMALE', p:40, a:100, pp:35},
+  ringhio:     {n:'RINGHIO', t:'NORMALE', p:0, a:100, pp:40, fx:{stat:'atk', d:-1, foe:1}},
+  sguardo:     {n:'SGUARDO TORVO', t:'NORMALE', p:0, a:100, pp:30, fx:{stat:'def', d:-1, foe:1}},
+  sabbia:      {n:'PUGNO DI SABBIA', t:'ROCCIA', p:0, a:100, pp:15, fx:{stat:'acc', d:-1, foe:1}},
+  zuffa:       {n:'ZUFFA', t:'NORMALE', p:70, a:100, pp:20},
+  rapido:      {n:'SCATTO', t:'NORMALE', p:40, a:100, pp:30, prio:1},
+  brace:       {n:'BRACE', t:'FUOCO', p:40, a:100, pp:25, fx:{st:'brn', ch:.1}},
+  fiammata:    {n:'FIAMMATA', t:'FUOCO', p:70, a:100, pp:15, fx:{st:'brn', ch:.1}},
+  rogo:        {n:'ROGO', t:'FUOCO', p:95, a:100, pp:15, fx:{st:'brn', ch:.1}},
+  spruzzo:     {n:'SPRUZZO', t:'ACQUA', p:40, a:100, pp:25},
+  getto:       {n:"GETTO D'ACQUA", t:'ACQUA', p:65, a:100, pp:20},
+  maroso:      {n:'MAROSO', t:'ACQUA', p:95, a:100, pp:15},
+  frustata:    {n:'FRUSTA FOGLIA', t:'PIANTA', p:45, a:100, pp:25},
+  assorbi:     {n:'SORSO DI LINFA', t:'PIANTA', p:30, a:100, pp:20, fx:{drain:.5}},
+  lamafoglia:  {n:'LAMA FOGLIA', t:'PIANTA', p:70, a:95, pp:15},
+  sonnifero:   {n:'POLLINE SONNIFERO', t:'PIANTA', p:0, a:75, pp:15, fx:{st:'slp', ch:1}},
+  crescita:    {n:'GERMOGLIO', t:'PIANTA', p:0, a:0, pp:20, fx:{stat:'atk', d:1}},
+  velenpolvere:{n:'POLVERE TOSSICA', t:'VELENO', p:0, a:75, pp:30, fx:{st:'psn', ch:1}},
+  pungiglione: {n:'PUNGIGLIONE', t:'VELENO', p:20, a:100, pp:35, fx:{st:'psn', ch:.3}},
+  acido:       {n:'ACIDO', t:'VELENO', p:45, a:100, pp:30, fx:{stat:'def', d:-1, foe:1, ch:.1}},
+  raffica:     {n:'RAFFICA', t:'VENTO', p:40, a:100, pp:35},
+  beccata:     {n:'BECCATA', t:'VENTO', p:35, a:100, pp:35},
+  picchiata:   {n:'PICCHIATA', t:'VENTO', p:75, a:95, pp:15},
+  scossa:      {n:'SCOSSA', t:'ELETTRO', p:40, a:100, pp:30, fx:{st:'par', ch:.1}},
+  ondavolt:    {n:'ONDA VOLT', t:'ELETTRO', p:0, a:100, pp:20, fx:{st:'par', ch:1}},
+  saetta:      {n:'SAETTA', t:'ELETTRO', p:90, a:100, pp:15, fx:{st:'par', ch:.1}},
+  sassata:     {n:'SASSATA', t:'ROCCIA', p:50, a:90, pp:20},
+  frana:       {n:'FRANA', t:'ROCCIA', p:75, a:90, pp:10},
+  indurisci:   {n:'INDURIMENTO', t:'NORMALE', p:0, a:0, pp:30, fx:{stat:'def', d:1}},
+  agilita:     {n:'AGILITÀ', t:'MENTE', p:0, a:0, pp:30, fx:{stat:'spd', d:2}},
+  pensiero:    {n:'PENSIERO', t:'MENTE', p:50, a:100, pp:25},
+  psicoonda:   {n:'PSICOONDA', t:'MENTE', p:85, a:100, pp:10},
+  leccata:     {n:'LECCATA', t:'OMBRA', p:30, a:100, pp:30, fx:{st:'par', ch:.3}},
+  morso:       {n:'MORSO', t:'OMBRA', p:60, a:100, pp:25},
+  tenebra:     {n:'TENEBRA', t:'OMBRA', p:80, a:100, pp:15},
+  filo:        {n:'FILO DI SETA', t:'INSETTO', p:0, a:95, pp:40, fx:{stat:'spd', d:-1, foe:1}},
+  mandibola:   {n:'MANDIBOLA', t:'INSETTO', p:50, a:100, pp:20},
+  riposo:      {n:'RIPOSINO', t:'NORMALE', p:0, a:0, pp:10, fx:{heal:.5}},
+};
+
+// b = statistiche base [ps, att, dif, vel, spe]
+// fam = famiglia (stesso seme grafico), st = stadio evolutivo
+// evo = [livello, specie], cr = tasso di cattura, xp = esperienza ceduta
+const SPECIES_LIST = [
+  ['fogliotto','FOGLIOTTO',['PIANTA'],[45,49,49,45,65],{fam:'fog',st:1,evo:[16,'rovetto'],cr:45,xp:64,
+    learn:[[1,'botta'],[1,'ringhio'],[7,'assorbi'],[12,'velenpolvere'],[15,'frustata'],[20,'sonnifero'],[27,'lamafoglia']],
+    d:'Nasce dai semi portati dal mare. Dorme con le foglie rivolte al sole e si sveglia solo quando ha sete.'}],
+  ['rovetto','ROVETTO',['PIANTA','VELENO'],[60,62,63,60,80],{fam:'fog',st:2,evo:[32,'selvarco'],cr:45,xp:141,
+    learn:[[1,'botta'],[1,'ringhio'],[7,'assorbi'],[12,'velenpolvere'],[15,'frustata'],[20,'sonnifero'],[30,'lamafoglia'],[36,'crescita']],
+    d:'Le spine sulla schiena crescono di notte. Chi lo accarezza contropelo se ne pente per giorni.'}],
+  ['selvarco','SELVARCO',['PIANTA','VELENO'],[80,82,83,80,100],{fam:'fog',st:3,cr:45,xp:208,
+    learn:[[1,'botta'],[1,'velenpolvere'],[1,'frustata'],[20,'sonnifero'],[30,'lamafoglia'],[36,'crescita']],
+    d:'Una piccola foresta che cammina. Gli uccelli vi fanno il nido senza che lui se ne accorga.'}],
+
+  ['fiammolo','FIAMMOLO',['FUOCO'],[39,52,43,65,50],{fam:'fia',st:1,evo:[16,'braciore'],cr:45,xp:65,
+    learn:[[1,'graffio'],[1,'ringhio'],[7,'brace'],[13,'sguardo'],[17,'rapido'],[22,'fiammata'],[38,'rogo']],
+    d:'Tiene sempre in bocca una piccola brace. Se la perde, piange finché non la riaccende.'}],
+  ['braciore','BRACIORE',['FUOCO'],[58,64,58,80,65],{fam:'fia',st:2,evo:[36,'vulcanide'],cr:45,xp:142,
+    learn:[[1,'graffio'],[1,'brace'],[13,'sguardo'],[17,'rapido'],[24,'fiammata'],[40,'rogo']],
+    d:'Il suo pelo scintilla come carbone acceso. Quando è nervoso, l\'aria intorno trema per il calore.'}],
+  ['vulcanide','VULCANIDE',['FUOCO','ROCCIA'],[78,84,78,100,85],{fam:'fia',st:3,cr:45,xp:209,
+    learn:[[1,'graffio'],[1,'brace'],[1,'fiammata'],[36,'frana'],[44,'rogo']],
+    d:'Sul dorso porta una cresta di roccia fusa. Dove si addormenta, il terreno resta caldo per una settimana.'}],
+
+  ['gocciolo','GOCCIOLO',['ACQUA'],[44,48,65,43,50],{fam:'goc',st:1,evo:[16,'ondalo'],cr:45,xp:66,
+    learn:[[1,'botta'],[1,'sguardo'],[7,'spruzzo'],[13,'morso'],[18,'getto'],[24,'indurisci'],[38,'maroso']],
+    d:'Il suo corpo è per metà acqua di mare. Se si secca, rotola fino alla pozzanghera più vicina.'}],
+  ['ondalo','ONDALO',['ACQUA'],[59,63,80,58,65],{fam:'goc',st:2,evo:[36,'abissaldo'],cr:45,xp:143,
+    learn:[[1,'botta'],[1,'spruzzo'],[13,'morso'],[19,'getto'],[25,'indurisci'],[42,'maroso']],
+    d:'Nuota controcorrente per allenarsi. Il suo guscio risuona come una conchiglia.'}],
+  ['abissaldo','ABISSALDO',['ACQUA'],[79,83,100,78,85],{fam:'goc',st:3,cr:45,xp:210,
+    learn:[[1,'botta'],[1,'spruzzo'],[1,'getto'],[25,'indurisci'],[46,'maroso']],
+    d:'Riposa sui fondali più profondi. Quando emerge, il livello del mare si alza di un palmo.'}],
+
+  ['bruchetto','BRUCHETTO',['INSETTO'],[45,30,35,45,20],{fam:'bru',st:1,evo:[7,'bozzolino'],cr:255,xp:53,
+    learn:[[1,'botta'],[1,'filo']],
+    d:'Mangia il doppio del suo peso in foglie ogni giorno. Ha sempre l\'aria soddisfatta.'}],
+  ['bozzolino','BOZZOLINO',['INSETTO'],[50,20,55,30,25],{fam:'bru',st:2,evo:[10,'farfalia'],cr:120,xp:72,
+    learn:[[1,'indurisci']],
+    d:'Resta immobile appeso ai rami. Dentro il bozzolo si sente un ronzio leggero.'}],
+  ['farfalia','FARFALIA',['INSETTO','VENTO'],[60,45,50,70,80],{fam:'bru',st:3,cr:45,xp:160,
+    learn:[[1,'raffica'],[12,'sonnifero'],[15,'pensiero'],[18,'velenpolvere'],[26,'picchiata']],
+    d:'Le sue ali lasciano una scia di polvere colorata. Le notti di luna piena danza sui laghi.'}],
+
+  ['passerillo','PASSERILLO',['NORMALE','VENTO'],[40,45,40,56,35],{fam:'pas',st:1,evo:[18,'falcastro'],cr:255,xp:55,
+    learn:[[1,'beccata'],[5,'sabbia'],[12,'rapido'],[19,'raffica']],
+    d:'Si posa sui fili dei mulini e chiacchiera tutto il giorno con i suoi simili.'}],
+  ['falcastro','FALCASTRO',['NORMALE','VENTO'],[63,60,55,71,50],{fam:'pas',st:2,cr:120,xp:113,
+    learn:[[1,'beccata'],[1,'sabbia'],[12,'rapido'],[21,'raffica'],[28,'picchiata']],
+    d:'Plana per ore senza battere le ali. Dall\'alto riconosce un bruco a cento metri.'}],
+
+  ['topino','TOPINO',['NORMALE'],[30,56,35,72,25],{fam:'top',st:1,evo:[20,'rosicone'],cr:255,xp:57,
+    learn:[[1,'botta'],[1,'ringhio'],[7,'rapido'],[14,'morso'],[23,'zuffa']],
+    d:'Rosicchia qualsiasi cosa per tenere a bada i denti, che non smettono mai di crescere.'}],
+  ['rosicone','ROSICONE',['NORMALE'],[55,81,60,97,50],{fam:'top',st:2,cr:90,xp:116,
+    learn:[[1,'botta'],[1,'ringhio'],[7,'rapido'],[14,'morso'],[27,'zuffa']],
+    d:'Scava tane con dieci uscite diverse. Se ne chiudi una, ne apre altre due.'}],
+
+  ['lucciolo','LUCCIOLO',['INSETTO','ELETTRO'],[40,35,40,60,55],{fam:'luc',st:1,evo:[22,'fulgella'],cr:190,xp:62,
+    learn:[[1,'scossa'],[1,'filo'],[9,'ondavolt'],[14,'mandibola']],
+    d:'La sua coda si illumina quando è felice. Nei boschi, gruppi di LUCCIOLO sembrano stelle cadute.'}],
+  ['fulgella','FULGELLA',['INSETTO','ELETTRO'],[65,55,60,90,85],{fam:'luc',st:2,cr:75,xp:150,
+    learn:[[1,'scossa'],[1,'ondavolt'],[14,'mandibola'],[30,'saetta']],
+    d:'Accumula elettricità durante i temporali e la rilascia in lampi accecanti.'}],
+
+  ['sassolo','SASSOLO',['ROCCIA'],[40,80,100,20,30],{fam:'sas',st:1,evo:[25,'macigno'],cr:255,xp:73,
+    learn:[[1,'botta'],[1,'indurisci'],[6,'sabbia'],[11,'sassata'],[26,'frana']],
+    d:'Passa giornate intere fermo nelle cave. I minatori lo scambiano spesso per un sasso qualunque.'}],
+  ['macigno','MACIGNO',['ROCCIA'],[55,95,115,35,45],{fam:'sas',st:2,cr:120,xp:134,
+    learn:[[1,'botta'],[1,'indurisci'],[6,'sabbia'],[11,'sassata'],[29,'frana']],
+    d:'Rotola giù dai pendii per spostarsi. Non frena mai: sono gli ostacoli a spostarsi.'}],
+
+  ['ombretto','OMBRETTO',['OMBRA'],[30,35,30,80,100],{fam:'omb',st:1,evo:[25,'spettrillo'],cr:190,xp:95,
+    learn:[[1,'leccata'],[1,'sguardo'],[12,'morso'],[29,'tenebra']],
+    d:'Vive nell\'ombra dei vecchi alberi. Se lo guardi fisso, sparisce e riappare alle tue spalle.'}],
+  ['spettrillo','SPETTRILLO',['OMBRA','VELENO'],[45,50,45,95,115],{fam:'omb',st:2,cr:90,xp:126,
+    learn:[[1,'leccata'],[1,'sguardo'],[12,'morso'],[29,'tenebra']],
+    d:'Ride sottovoce nelle notti senza luna. La sua risata fa appassire i fiori.'}],
+
+  ['funghetto','FUNGHETTO',['PIANTA','VELENO'],[35,70,55,25,55],{fam:'fun',st:1,evo:[24,'fungone'],cr:190,xp:70,
+    learn:[[1,'graffio'],[1,'velenpolvere'],[8,'assorbi'],[13,'sonnifero'],[20,'mandibola']],
+    d:'Cresce ai piedi delle querce. Le spore del suo cappello fanno starnutire per ore.'}],
+  ['fungone','FUNGONE',['PIANTA','VELENO'],[60,95,80,30,80],{fam:'fun',st:2,cr:75,xp:128,
+    learn:[[1,'graffio'],[1,'velenpolvere'],[8,'assorbi'],[13,'sonnifero'],[20,'mandibola'],[30,'lamafoglia']],
+    d:'Il cappello è così grande che ci si ripara sotto quando piove.'}],
+
+  ['pipistrino','PIPISTRINO',['VENTO','OMBRA'],[40,45,35,55,40],{fam:'pip',st:1,evo:[22,'notturlo'],cr:255,xp:54,
+    learn:[[1,'leccata'],[6,'raffica'],[10,'morso'],[22,'picchiata']],
+    d:'Dorme a testa in giù nelle grotte. Si orienta col suono e non sbatte mai contro niente.'}],
+  ['notturlo','NOTTURLO',['VENTO','OMBRA'],[75,80,70,90,75],{fam:'pip',st:2,cr:90,xp:171,
+    learn:[[1,'leccata'],[6,'raffica'],[10,'morso'],[26,'picchiata'],[34,'tenebra']],
+    d:'Caccia solo nelle notti senza vento. Le sue ali non fanno alcun rumore.'}],
+
+  ['ranocchio','RANOCCHIO',['ACQUA'],[40,50,40,90,40],{fam:'ran',st:1,evo:[25,'ranone'],cr:225,xp:58,
+    learn:[[1,'spruzzo'],[5,'rapido'],[15,'getto']],
+    d:'Salta da una ninfea all\'altra senza bagnarsi le zampe. Gracida solo quando piove.'}],
+  ['ranone','RANONE',['ACQUA','MENTE'],[65,65,65,90,85],{fam:'ran',st:2,cr:75,xp:140,
+    learn:[[1,'spruzzo'],[5,'rapido'],[15,'getto'],[25,'pensiero'],[34,'psicoonda']],
+    d:'Medita sulle rive dei laghi. Si dice che preveda i temporali con tre giorni d\'anticipo.'}],
+
+  ['serpillo','SERPILLO',['VELENO'],[35,60,44,55,40],{fam:'ser',st:1,evo:[22,'serpentano'],cr:255,xp:62,
+    learn:[[1,'morso'],[1,'sguardo'],[9,'pungiglione'],[17,'acido']],
+    d:'Si arrotola sui sassi caldi per digerire. Il sibilo che emette ricorda una teiera.'}],
+  ['serpentano','SERPENTANO',['VELENO'],[60,85,69,80,65],{fam:'ser',st:2,cr:90,xp:147,
+    learn:[[1,'morso'],[1,'sguardo'],[9,'pungiglione'],[17,'acido'],[30,'zuffa']],
+    d:'I disegni sulle sue squame cambiano da valle a valle. Nessuno ne ha mai visti due uguali.'}],
+];
+
+const SPECIES = {};
+const DEX_ORDER = [];
+SPECIES_LIST.forEach(([id,name,types,b,o],i)=>{
+  SPECIES[id] = Object.assign({id, name, types, b, num:i+1}, o);
+  DEX_ORDER.push(id);
+});
+
+const ITEMS = {
+  tonico:      {n:'TONICO', price:200, heal:20, d:'Ridà 20 PS a un FAUNO.'},
+  supertonico: {n:'SUPERTONICO', price:700, heal:50, d:'Ridà 50 PS a un FAUNO.'},
+  antidoto:    {n:'ANTIDOTO', price:100, cure:'psn', d:'Cura l\'avvelenamento.'},
+  scioglinervi:{n:'SCIOGLINERVI', price:200, cure:'par', d:'Cura la paralisi.'},
+  campanella:  {n:'CAMPANELLA', price:250, cure:'slp', d:'Sveglia un FAUNO addormentato.'},
+  unguento:    {n:'UNGUENTO', price:250, cure:'brn', d:'Cura le scottature.'},
+  sfera:       {n:'SFERA', price:200, ball:1, d:'Serve a catturare FAUNI selvatici.'},
+  sferaforte:  {n:'SFERA FORTE', price:600, ball:1.5, d:'Una SFERA più efficace.'},
+  fiala:       {n:'FIALA DI LINFA', key:1, d:'LINFA pura della SORGENTE del BOSCO SUSSURRO. Brilla debolmente.'},
+};
+
+const STATUS_LABEL = {psn:'VEL', par:'PAR', slp:'SON', brn:'SCO'};
+const STAT_LABEL = {atk:'ATTACCO', def:'DIFESA', spd:'VELOCITÀ', spc:'SPECIALE', acc:'PRECISIONE'};
+
+// ============================================================
+//  FAUNI DI VALCORONA — motore
+// ============================================================
+'use strict';
+
+const PAL = ['#e3f2cd', '#9cc47a', '#4b7a5a', '#17301f'];
+const TS = 16, VW = 160, VH = 144;
+const $ = s => document.querySelector(s);
+const cv = $('#cv'), ctx = cv.getContext('2d');
+cv.width = VW; cv.height = VH; ctx.imageSmoothingEnabled = false;
+const screenEl = $('#screen'), uiEl = $('#ui');
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+
+function hashStr(s) { let h = 2166136261; for (const c of s) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function mulberry(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ------------------------------------------------------------
+//  Stato di gioco
+// ------------------------------------------------------------
+let G = null;            // dati salvati
+let MAP = null, mapId = null;
+let NPCS = [];
+const player = {x: 0, y: 0, dir: 'down', mv: null, look: 'player'};
+let mode = 'title';      // title | intro | world | battle
+let busy = false;
+let frame = 0;
+let overlay = null;      // {type:'mon', sp} disegnato sopra il mondo
+let B = null;            // stato lotta
+
+function newGame() {
+  return {
+    v: 1, name: 'ALE', rival: 'TEO', map: 'casa_p', x: 3, y: 4, dir: 'down',
+    party: [], box: [], bag: {}, money: 3000, flags: {}, seen: {}, caught: {},
+    badges: [], lastHeal: {map: 'casa_p', x: 3, y: 4}, starter: null, rivalStarter: null, time: 0,
+  };
+}
+const F = k => !!(G && G.flags[k]);
+const setF = (k, v = true) => { G.flags[k] = v; };
+
+function fmt(t) {
+  return String(t).replace(/\{NAME\}/g, G ? G.name : '').replace(/\{RIVAL\}/g, G ? G.rival : '');
+}
+
+// ------------------------------------------------------------
+//  Input
+// ------------------------------------------------------------
+const held = {up: 0, down: 0, left: 0, right: 0};
+const DIRS = {up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0]};
+const OPP = {up: 'down', down: 'up', left: 'right', right: 'left'};
+let waiter = null;
+let heldOrder = [];
+
+function press(k) {
+  if (DIRS[k]) { held[k] = 1; heldOrder = heldOrder.filter(d => d !== k); heldOrder.push(k); }
+  if (waiter) { const w = waiter; waiter = null; w(k); return; }
+  if (mode === 'world' && !busy) worldKey(k);
+  else if (mode === 'title') titleKey(k);
+}
+function release(k) { if (DIRS[k]) { held[k] = 0; heldOrder = heldOrder.filter(d => d !== k); } }
+function waitKey() { return new Promise(r => { waiter = r; }); }
+async function waitAB() { for (;;) { const k = await waitKey(); if (k === 'A' || k === 'B') return k; } }
+
+const KEYMAP = {ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+  z: 'A', Z: 'A', x: 'B', X: 'B', Enter: 'START', ' ': 'A', Shift: 'SELECT', Escape: 'B'};
+addEventListener('keydown', e => { const k = KEYMAP[e.key]; if (!k) return; e.preventDefault(); if (!e.repeat) press(k); });
+addEventListener('keyup', e => { const k = KEYMAP[e.key]; if (k) release(k); });
+
+document.querySelectorAll('[data-k]').forEach(b => {
+  const k = b.dataset.k;
+  const down = e => { e.preventDefault(); b.classList.add('on'); press(k); };
+  const up = e => { e.preventDefault(); b.classList.remove('on'); release(k); };
+  b.addEventListener('pointerdown', down);
+  b.addEventListener('pointerup', up);
+  b.addEventListener('pointercancel', up);
+  b.addEventListener('pointerleave', up);
+});
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+// ------------------------------------------------------------
+//  Disegno: tessere
+// ------------------------------------------------------------
+function R(g, c, x, y, w = 1, h = 1) { g.fillStyle = PAL[c]; g.fillRect(x, y, w, h); }
+const SOLID = new Set('T~FRCMGWwSrYOxobtcpk#Xn'.split(''));
+
+const PAINT = {
+  '.': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 3, 4); R(g, 1, 11, 10); R(g, 1, 7, 13); R(g, 1, 13, 2); },
+  '=': g => { R(g, 0, 0, 0, 16, 16); for (let y = 1; y < 16; y += 4) for (let x = (y % 8 === 1 ? 1 : 3); x < 16; x += 4) R(g, 1, x, y); },
+  ',': (g, f) => {
+    R(g, 1, 0, 0, 16, 16);
+    for (const [x, y] of [[1, 2], [9, 1], [5, 7], [12, 9], [1, 11], [8, 12]]) {
+      const o = f ? 1 : 0;
+      R(g, 2, x, y + 1, 1, 3); R(g, 2, x + 2, y + 1, 1, 3); R(g, 3, x + 1, y + o, 1, 3); R(g, 2, x + 3, y + 2, 1, 2);
+    }
+  },
+  'f': (g, f) => { PAINT['.'](g); for (const [x, y] of [[3, 3], [11, 4], [6, 10], [12, 12]]) { R(g, 3, x, y + (f ? 1 : 0), 3, 3); R(g, 0, x + 1, y + 1 + (f ? 1 : 0)); R(g, 2, x + 1, y + 3, 1, 2); } },
+  'T': g => {
+    R(g, 0, 0, 0, 16, 16); R(g, 3, 2, 1, 12, 11); R(g, 3, 1, 3, 14, 7);
+    R(g, 2, 3, 2, 10, 9); R(g, 2, 2, 4, 12, 5); R(g, 1, 5, 3, 3, 2); R(g, 1, 4, 5, 2, 1); R(g, 1, 10, 6, 2, 2);
+    R(g, 3, 6, 12, 4, 3); R(g, 2, 7, 12, 2, 3);
+  },
+  '~': (g, f) => { R(g, 1, 0, 0, 16, 16); const o = f ? 4 : 0; R(g, 0, (2 + o) % 16, 4, 5, 1); R(g, 0, (10 + o) % 16, 11, 4, 1); R(g, 2, (9 + o) % 16, 5, 3, 1); R(g, 2, (1 + o) % 16, 12, 3, 1); },
+  'F': g => { PAINT['.'](g); R(g, 3, 0, 5, 16, 1); R(g, 3, 0, 10, 16, 1); for (const x of [2, 13]) { R(g, 3, x, 3, 2, 11); R(g, 1, x, 4, 1, 8); } },
+  'R': g => { R(g, 2, 0, 0, 16, 16); for (let y = 3; y < 16; y += 4) R(g, 3, 0, y, 16, 1); for (let y = 0; y < 16; y += 4) for (let x = (y % 8 ? 2 : 6); x < 16; x += 8) R(g, 3, x, y, 1, 3); R(g, 1, 0, 0, 16, 1); },
+  'C': g => { PAINT.R(g); R(g, 0, 5, 3, 6, 10); R(g, 3, 7, 4, 2, 8); R(g, 3, 6, 7, 4, 2); },
+  'M': g => { R(g, 3, 0, 0, 16, 16); for (let x = 0; x < 16; x += 4) R(g, 2, x, 0, 2, 16); R(g, 1, 0, 0, 16, 1); R(g, 1, 0, 14, 16, 2); },
+  'G': g => { R(g, 3, 0, 0, 16, 16); R(g, 2, 0, 2, 16, 2); R(g, 2, 0, 8, 16, 2); R(g, 1, 0, 0, 16, 1); R(g, 1, 6, 4, 4, 3); },
+  'W': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 0, 5, 16, 1); R(g, 1, 0, 10, 16, 1); R(g, 1, 0, 15, 16, 1); R(g, 2, 0, 0, 16, 1); },
+  'w': g => { PAINT.W(g); R(g, 3, 3, 3, 10, 9); R(g, 1, 4, 4, 8, 7); R(g, 0, 5, 5, 2, 2); R(g, 3, 7, 4, 1, 7); },
+  'D': g => { PAINT.W(g); R(g, 3, 3, 2, 10, 14); R(g, 2, 4, 3, 8, 13); R(g, 1, 10, 9, 1, 1); R(g, 3, 4, 7, 8, 1); },
+  'S': g => { PAINT['.'](g); R(g, 3, 7, 9, 2, 6); R(g, 3, 1, 2, 14, 8); R(g, 1, 2, 3, 12, 6); R(g, 2, 4, 5, 8, 1); R(g, 2, 4, 7, 6, 1); },
+  'v': g => { PAINT['.'](g); R(g, 2, 0, 10, 16, 2); R(g, 3, 0, 12, 16, 1); R(g, 1, 0, 13, 16, 3); },
+  'r': g => { (MAP && MAP.indoor ? PAINT._ : PAINT['.'])(g); R(g, 3, 2, 4, 12, 11); R(g, 3, 3, 3, 10, 13); R(g, 2, 3, 5, 10, 9); R(g, 2, 4, 4, 8, 11); R(g, 1, 5, 5, 3, 2); R(g, 3, 9, 9, 3, 1); },
+  'B': g => { R(g, 1, 0, 0, 16, 16); for (let x = 0; x < 16; x += 4) R(g, 2, x, 0, 1, 16); R(g, 3, 0, 0, 16, 1); R(g, 3, 0, 15, 16, 1); },
+  'Y': g => { PAINT['.'](g); R(g, 2, 5, 3, 6, 13); R(g, 3, 5, 3, 1, 13); R(g, 3, 10, 3, 1, 13); R(g, 3, 7, 11, 2, 5); R(g, 3, 1, 1, 14, 1); R(g, 3, 7, 0, 1, 9); R(g, 1, 6, 4, 4, 2); },
+  'O': (g, f) => {
+    R(g, 3, 0, 0, 16, 16); R(g, 2, 1, 1, 14, 14);
+    const alive = MAP && MAP.spring && F(MAP.spring);
+    if (alive) { R(g, 1, 2, 2, 12, 12); R(g, 0, 4 + (f ? 2 : 0), 5, 2, 2); R(g, 0, 9 - (f ? 2 : 0), 9, 2, 2); R(g, 0, 7, 3 + (f ? 1 : 0), 1, 1); }
+    else { R(g, 3, 3, 3, 10, 10); R(g, 2, 6, 6, 4, 4); R(g, 1, 7, 7, 2, 2); }
+  },
+  // interni
+  '#': g => { R(g, 2, 0, 0, 16, 16); R(g, 3, 0, 14, 16, 2); R(g, 1, 0, 3, 16, 1); for (let x = 3; x < 16; x += 8) R(g, 3, x, 4, 1, 10); },
+  '_': g => { R(g, 0, 0, 0, 16, 16); R(g, 1, 0, 15, 16, 1); R(g, 1, 15, 0, 1, 16); },
+  'b': g => { R(g, 3, 0, 0, 16, 16); R(g, 2, 1, 1, 14, 14); for (let y = 2; y < 15; y += 5) { R(g, 3, 1, y + 3, 14, 1); for (let x = 2; x < 14; x += 3) R(g, (x / 3) % 2 ? 0 : 1, x, y, 2, 3); } },
+  't': g => { R(g, 3, 0, 1, 16, 14); R(g, 1, 1, 2, 14, 10); R(g, 0, 2, 3, 6, 2); R(g, 2, 1, 12, 14, 2); },
+  'c': g => { R(g, 3, 0, 0, 16, 16); R(g, 1, 0, 1, 16, 5); R(g, 2, 0, 7, 16, 8); R(g, 0, 0, 2, 16, 1); },
+  'p': g => { PAINT._(g); R(g, 3, 2, 1, 12, 11); R(g, 1, 3, 2, 10, 7); R(g, 0, 4, 3, 3, 2); R(g, 3, 6, 12, 4, 3); },
+  'm': g => { PAINT._(g); R(g, 2, 1, 4, 14, 10); R(g, 1, 2, 5, 12, 8); for (let x = 3; x < 13; x += 3) R(g, 2, x, 6, 1, 6); },
+  'k': g => { PAINT._(g); R(g, 3, 1, 0, 14, 16); R(g, 0, 2, 1, 12, 4); R(g, 1, 2, 6, 12, 9); R(g, 2, 2, 8, 12, 1); },
+  'x': g => { PAINT._(g); R(g, 3, 5, 10, 6, 6); R(g, 2, 6, 11, 4, 4); R(g, 3, 3, 1, 10, 10); R(g, 2, 4, 2, 8, 8); R(g, 1, 5, 3, 2, 2); R(g, 1, 9, 6, 2, 2); },
+  'o': g => { PAINT._(g); R(g, 3, 4, 1, 8, 15); R(g, 2, 5, 2, 6, 13); R(g, 1, 6, 3, 2, 3); R(g, 3, 6, 6, 1, 1); R(g, 3, 9, 6, 1, 1); R(g, 3, 3, 13, 10, 3); },
+  'X': g => { R(g, 3, 0, 0, 16, 16); },
+};
+const tileCache = {};
+function tileImg(ch, f) {
+  const springState = ch === 'O' ? (MAP && MAP.spring && F(MAP.spring) ? 1 : 0) : 0;
+  const ind = ch === 'r' && MAP && MAP.indoor ? 1 : 0;
+  const key = ch + f + springState + ind;
+  if (tileCache[key]) return tileCache[key];
+  const c = document.createElement('canvas'); c.width = c.height = 16;
+  const g = c.getContext('2d');
+  (PAINT[ch] || PAINT['.'])(g, f);
+  return (tileCache[key] = c);
+}
+
+// ------------------------------------------------------------
+//  Disegno: personaggi
+// ------------------------------------------------------------
+const LOOKS = {
+  player: {hair: 3, shirt: 2, cap: 1},
+  rival:  {hair: 2, shirt: 3, spiky: 1},
+  prof:   {hair: 1, shirt: 0, coat: 1},
+  mom:    {hair: 3, shirt: 1, long: 1},
+  dad:    {hair: 2, shirt: 1, beard: 1},
+  man:    {hair: 3, shirt: 1},
+  woman:  {hair: 2, shirt: 2, long: 1},
+  old:    {hair: 1, shirt: 2, beard: 1},
+  oldw:   {hair: 1, shirt: 1, long: 1},
+  kid:    {hair: 3, shirt: 1, small: 1, cap: 1},
+  girl:   {hair: 3, shirt: 2, long: 1, small: 1},
+  scout:  {hair: 2, shirt: 1, cap: 1},
+  hiker:  {hair: 3, shirt: 2, beard: 1, cap: 1},
+  grigio: {hair: 3, shirt: 3, cap: 1, coat: 1},
+  nurse:  {hair: 2, shirt: 0, long: 1, cross: 1},
+  clerk:  {hair: 3, shirt: 1, apron: 1},
+  leader: {hair: 3, shirt: 2, long: 1, coat: 1},
+  miner:  {hair: 3, shirt: 2, cap: 1},
+  worker: {hair: 3, shirt: 1, cap: 1, apron: 1},
+};
+const charCache = {};
+function charImg(look, dir, step) {
+  const key = look + dir + step;
+  if (charCache[key]) return charCache[key];
+  const c = document.createElement('canvas'); c.width = c.height = 16;
+  const g = c.getContext('2d');
+  if (look === 'ball') {
+    R(g, 3, 4, 5, 8, 9); R(g, 3, 3, 6, 10, 7); R(g, 2, 4, 6, 8, 3); R(g, 0, 4, 10, 8, 3); R(g, 3, 3, 9, 10, 1); R(g, 0, 7, 8, 2, 3); R(g, 3, 7, 9, 2, 1); R(g, 1, 5, 7, 1, 1);
+  } else {
+    const L = LOOKS[look] || LOOKS.man;
+    const o = L.small ? 1 : 0;
+    const side = dir === 'left' || dir === 'right';
+    // gambe
+    const lg = step ? 1 : 0;
+    if (side) { R(g, 3, 6 - lg, 13, 2, 3); R(g, 3, 9 + lg, 13, 2, 3); }
+    else { R(g, 3, 5, 13, 2, 3 - (step === 1 ? 1 : 0)); R(g, 3, 9, 13, 2, 3 - (step === 2 ? 1 : 0)); }
+    // corpo
+    R(g, 3, 4, 8 + o, 8, 6 - o); R(g, L.shirt, 5, 9 + o, 6, 4 - o);
+    if (L.coat) { R(g, 0, 4, 9 + o, 2, 5 - o); R(g, 0, 10, 9 + o, 2, 5 - o); R(g, 3, 4, 13, 8, 1); }
+    if (L.apron) R(g, 0, 6, 10 + o, 4, 3 - o);
+    if (L.cross && dir === 'down') { R(g, 3, 7, 10, 2, 1); R(g, 3, 7, 9, 1, 3); }
+    // braccia
+    if (!side) { R(g, 3, 3, 9 + o, 1, 3); R(g, 3, 12, 9 + o, 1, 3); }
+    // testa
+    R(g, 3, 3, 1 + o, 10, 8); R(g, 3, 4, 0 + o, 8, 10 - o);
+    R(g, 0, 4, 2 + o, 8, 6);
+    // capelli
+    R(g, L.hair, 4, 1 + o, 8, 2);
+    if (dir === 'up') { R(g, L.hair, 4, 1 + o, 8, 7); R(g, L.hair === 3 ? 2 : 1, 5, 3 + o, 6, 1); R(g, L.hair === 3 ? 2 : 1, 6, 5 + o, 4, 1); }
+    if (L.long) { R(g, L.hair, 3, 2 + o, 1, 7); R(g, L.hair, 12, 2 + o, 1, 7); if (dir === 'up') R(g, L.hair, 4, 8, 8, 2); }
+    if (L.spiky) { R(g, 3, 4, 0, 1, 1); R(g, 3, 7, 0, 1, 1); R(g, 3, 10, 0, 1, 1); R(g, L.hair, 5, 0 + o, 2, 1); R(g, L.hair, 8, 0 + o, 2, 1); }
+    if (L.cap) { R(g, 3, 4, 0 + o, 8, 3); R(g, 2, 5, 1 + o, 6, 1); if (dir === 'down') R(g, 3, 3, 3 + o, 10, 1); if (dir === 'up') R(g, 1, 6, 1 + o, 4, 1); }
+    // viso
+    if (dir === 'down') {
+      R(g, 3, 5, 5 + o, 1, 2); R(g, 3, 10, 5 + o, 1, 2);
+      if (L.beard) R(g, L.hair === 1 ? 1 : 2, 5, 7 + o, 6, 2);
+    } else if (side) {
+      const ex = dir === 'left' ? 5 : 10;
+      R(g, 3, ex, 5 + o, 1, 2);
+      R(g, L.hair, dir === 'left' ? 9 : 4, 2 + o, 3, 5);
+      if (L.beard) R(g, 2, dir === 'left' ? 4 : 8, 7 + o, 4, 2);
+    }
+    if (dir === 'right') { // specchia
+      const c2 = document.createElement('canvas'); c2.width = c2.height = 16;
+      const g2 = c2.getContext('2d'); g2.translate(16, 0); g2.scale(-1, 1); g2.drawImage(c, 0, 0);
+      g.clearRect(0, 0, 16, 16); g.drawImage(c2, 0, 0);
+    }
+  }
+  return (charCache[key] = c);
+}
+
+// ------------------------------------------------------------
+//  Disegno: sprite dei FAUNI (generati proceduralmente)
+// ------------------------------------------------------------
+const monCache = {};
+function monSprite(spId, back) {
+  const key = spId + (back ? 'b' : 'f');
+  if (monCache[key]) return monCache[key];
+  const sp = SPECIES[spId];
+  const N = 16, H = 8;
+  const rnd = mulberry(hashStr(sp.fam));
+  const extra = mulberry(hashStr(sp.id));
+  const stage = sp.st || 1;
+  const halfW = [0, 5, 6, 8][stage];
+  const top = [0, 5, 3, 1][stage];
+  const grid = Array.from({length: N}, () => Array(N).fill(0));
+  // forma base condivisa dalla famiglia
+  const base = [];
+  for (let y = 0; y < N; y++) { base[y] = []; for (let x = 0; x < H; x++) base[y][x] = rnd(); }
+  for (let y = top; y < N - 1; y++) {
+    for (let x = 0; x < H; x++) {
+      const cx = H - 1 - x; // distanza dal centro
+      if (cx >= halfW) continue;
+      const cy = (y - top) / (N - 1 - top);
+      let p = 0.92 - cx / halfW * 0.75 - Math.abs(cy - 0.55) * 0.5;
+      if (stage > 1 && extra() < 0.12) p += 0.25;
+      if (base[y][x] < p) grid[y][x] = 1;
+    }
+    // il centro è sempre pieno in basso
+    if (y > top + 2) grid[y][H - 1] = 1;
+  }
+  // specchia
+  for (let y = 0; y < N; y++) for (let x = 0; x < H; x++) grid[y][N - 1 - x] = grid[y][x];
+  // pulizia: elimina pixel isolati
+  const filled = (x, y) => x >= 0 && y >= 0 && x < N && y < N && grid[y][x] >= 1;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (grid[y][x] && !filled(x - 1, y) && !filled(x + 1, y) && !filled(x, y - 1) && !filled(x, y + 1)) grid[y][x] = 0;
+  }
+  // colore: corpo 1, macchie 2
+  const tone = sp.types.includes('OMBRA') || sp.types.includes('ROCCIA') ? 2 : 1;
+  const spots = mulberry(hashStr(sp.fam + 'spots'));
+  const col = Array.from({length: N}, () => Array(N).fill(-1));
+  for (let y = 0; y < N; y++) for (let x = 0; x < H; x++) {
+    if (!grid[y][x]) continue;
+    let c = tone;
+    if (spots() < 0.22) c = tone === 1 ? 2 : 1;
+    if (y < top + 3 && tone === 1 && spots() < 0.4) c = 0;
+    col[y][x] = c; col[y][N - 1 - x] = c;
+  }
+  // contorno
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (grid[y][x]) {
+      if (!filled(x - 1, y) || !filled(x + 1, y) || !filled(x, y - 1) || !filled(x, y + 1)) col[y][x] = 3;
+    }
+  }
+  // occhi
+  if (!back) {
+    let ey = top + 3 + Math.floor(rnd() * 2);
+    for (let tries = 0; tries < 6; tries++, ey++) {
+      const ex = 5 + (stage === 1 ? 1 : 0);
+      if (filled(ex, ey) && filled(N - 1 - ex, ey) && filled(ex, ey + 1)) {
+        for (const x of [ex, N - 1 - ex]) { col[ey][x] = 3; col[ey + 1][x] = 3; col[ey][x + (x < H ? 1 : -1)] = 0; }
+        break;
+      }
+    }
+  }
+  const c = document.createElement('canvas'); c.width = c.height = 48;
+  const g = c.getContext('2d');
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    if (col[y][x] < 0) continue;
+    const v = back && col[y][x] === 0 ? 1 : col[y][x];
+    R(g, v, x * 3, y * 3, 3, 3);
+  }
+  return (monCache[key] = c);
+}
+
+// ------------------------------------------------------------
+//  Interfaccia (finestre di testo e menu in HTML)
+// ------------------------------------------------------------
+function U(n) { return `calc(var(--u) * ${n})`; }
+function el(cls, x, y, w, h, parent = uiEl) {
+  const d = document.createElement('div'); d.className = cls;
+  d.style.left = U(x); d.style.top = U(y);
+  if (w != null) d.style.width = U(w);
+  if (h != null) d.style.height = U(h);
+  parent.appendChild(d); return d;
+}
+function resize() {
+  const u = screenEl.getBoundingClientRect().width / VW;
+  screenEl.style.setProperty('--u', u + 'px');
+}
+addEventListener('resize', resize);
+
+const LINE = 28; // caratteri per riga
+function wrap(text) {
+  const out = [];
+  for (const para of text.split('\n')) {
+    let line = '';
+    for (const w of para.split(' ')) {
+      if (!line) line = w;
+      else if ((line + ' ' + w).length <= LINE) line += ' ' + w;
+      else { out.push(line); line = w; }
+    }
+    out.push(line);
+  }
+  return out;
+}
+let textBox = null;
+function showTextBox() {
+  if (!textBox) {
+    textBox = el('box text', 0, 100, 160, 44);
+    textBox.innerHTML = '<div class="t"></div><div class="more">▼</div>';
+  }
+  return textBox;
+}
+function hideTextBox() { if (textBox) { textBox.remove(); textBox = null; } }
+
+function typeOut(str) {
+  return new Promise(res => {
+    const box = showTextBox(); const t = box.querySelector('.t'); const more = box.querySelector('.more');
+    more.style.visibility = 'hidden';
+    let i = 0; let done = false;
+    const finish = () => { if (done) return; done = true; clearInterval(iv); t.textContent = str; if (waiter === h) waiter = null; res(); };
+    const h = k => { if (k === 'A' || k === 'B') finish(); else waiter = h; };
+    waiter = h;
+    const iv = setInterval(() => { i += 2; t.textContent = str.slice(0, i); if (i >= str.length) finish(); }, 18);
+  });
+}
+// Mostra un testo; "|" forza una nuova pagina.
+async function say(text, opt = {}) {
+  const pages = [];
+  for (const chunk of fmt(text).split('|')) {
+    const lines = wrap(chunk.trim());
+    for (let i = 0; i < lines.length; i += 2) pages.push(lines.slice(i, i + 2).join('\n'));
+  }
+  for (let p = 0; p < pages.length; p++) {
+    await typeOut(pages[p]);
+    const last = p === pages.length - 1;
+    if (last && opt.noWait) return;
+    if (last && opt.auto) { await sleep(opt.auto); return; }
+    textBox.querySelector('.more').style.visibility = 'visible';
+    await waitAB();
+  }
+  if (!opt.keep) hideTextBox();
+}
+
+// Menu a lista. Ritorna l'indice scelto o -1 se annullato.
+async function choose(opts, o = {}) {
+  const rows = Math.min(opts.length, o.rows || 7);
+  const w = o.w || Math.max(...opts.map(s => String(s).length)) * 5.2 + 18;
+  const h = rows * 10 + 8;
+  const x = o.x != null ? o.x : 160 - w;
+  const y = o.y != null ? o.y : 100 - h;
+  const box = el('box menu', x, y, w, h);
+  let i = o.start || 0, top = 0;
+  const draw = () => {
+    if (i < top) top = i; if (i >= top + rows) top = i - rows + 1;
+    box.innerHTML = opts.slice(top, top + rows).map((s, j) =>
+      `<div class="it">${top + j === i ? '▶' : '&nbsp;'}${s}</div>`).join('') +
+      (top > 0 ? '<div class="up">▲</div>' : '') + (top + rows < opts.length ? '<div class="dn">▼</div>' : '');
+    if (o.onMove) o.onMove(i);
+  };
+  draw();
+  for (;;) {
+    const k = await waitKey();
+    if (k === 'up') { i = (i - 1 + opts.length) % opts.length; draw(); }
+    else if (k === 'down') { i = (i + 1) % opts.length; draw(); }
+    else if (k === 'A') { box.remove(); return i; }
+    else if ((k === 'B' || k === 'START') && o.cancel !== false) { box.remove(); return -1; }
+  }
+}
+async function ask(text) {
+  await say(text, {keep: true});
+  const r = await choose(['SÌ', 'NO'], {x: 118, y: 66, w: 42, cancel: true});
+  hideTextBox();
+  return r === 0;
+}
+
+// Selettore di quantità
+async function qty(max, price) {
+  let n = 1;
+  const box = el('box menu', 84, 70, 76, 28);
+  const draw = () => { box.innerHTML = `<div class="it">×${String(n).padStart(2, '0')}  ${price ? (n * price) + 'M' : ''}</div>`; };
+  draw();
+  for (;;) {
+    const k = await waitKey();
+    if (k === 'up') n = n >= max ? 1 : n + 1;
+    else if (k === 'down') n = n <= 1 ? max : n - 1;
+    else if (k === 'right') n = Math.min(max, n + 10);
+    else if (k === 'left') n = Math.max(1, n - 10);
+    else if (k === 'A') { box.remove(); return n; }
+    else if (k === 'B') { box.remove(); return 0; }
+    draw();
+  }
+}
+
+function banner(text) {
+  const b = el('box banner', 4, 4, null, 18); b.textContent = text;
+  setTimeout(() => b.remove(), 1600);
+}
+
+// ------------------------------------------------------------
+//  FAUNI: creazione, statistiche, esperienza
+// ------------------------------------------------------------
+function xpFor(l) { return l <= 1 ? 0 : Math.floor(l * l * l * 0.9); }
+function calcStats(m) {
+  const b = SPECIES[m.sp].b;
+  const s = i => Math.floor((b[i] * 2 + m.iv[i]) * m.lvl / 100);
+  return {hp: s(0) + m.lvl + 10, atk: s(1) + 5, def: s(2) + 5, spd: s(3) + 5, spc: s(4) + 5};
+}
+function movesAt(spId, lvl) {
+  const list = SPECIES[spId].learn.filter(([l]) => l <= lvl).map(([, m]) => m);
+  const uniq = [...new Set(list)];
+  return uniq.slice(-4).map(id => ({id, pp: MOVES[id].pp}));
+}
+function makeMon(spId, lvl, ot) {
+  const m = {sp: spId, name: SPECIES[spId].name, lvl, xp: xpFor(lvl), iv: [0, 0, 0, 0, 0].map(() => rand(0, 15)),
+    status: null, slp: 0, ot: ot || null};
+  m.st = calcStats(m); m.hp = m.st.hp; m.moves = movesAt(spId, lvl);
+  return m;
+}
+function healMon(m) { m.st = calcStats(m); m.hp = m.st.hp; m.status = null; m.slp = 0; m.moves.forEach(mv => mv.pp = MOVES[mv.id].pp); }
+function healParty() { G.party.forEach(healMon); }
+function alive(team) { return team.filter(m => m.hp > 0); }
+function seen(sp) { G.seen[sp] = 1; }
+function caught(sp) { G.seen[sp] = 1; G.caught[sp] = 1; }
+function addMon(m) {
+  caught(m.sp);
+  if (G.party.length < 6) { G.party.push(m); return 'party'; }
+  G.box.push(m); return 'box';
+}
+function addItem(id, n = 1) { G.bag[id] = (G.bag[id] || 0) + n; }
+function useItemCount(id) { G.bag[id]--; if (G.bag[id] <= 0) delete G.bag[id]; }
+async function give(id, n = 1) {
+  addItem(id, n);
+  await say(`{NAME} riceve ${n > 1 ? n + ' ' : ''}${ITEMS[id].n}!`);
+}
+function typeEff(mt, defTypes) { let e = 1; for (const t of defTypes) { const v = (CHART[mt] || {})[t]; if (v != null) e *= v; } return e; }
+
+// ------------------------------------------------------------
+//  Mappe
+// ------------------------------------------------------------
+function tileAt(x, y) {
+  if (y < 0 || y >= MAP.rows.length || x < 0 || x >= MAP.rows[0].length) return MAP.indoor ? 'X' : 'T';
+  return MAP.rows[y][x];
+}
+function npcAt(x, y) { return NPCS.find(n => n.visible() && n.x === x && n.y === y); }
+
+function loadMap(id, x, y, dir) {
+  MAP = MAPS[id]; mapId = id;
+  NPCS = (MAP.npcs || []).map(d => Object.assign({dir: 'down', mv: null}, d, {
+    visible: d.show ? d.show : () => true,
+  }));
+  player.x = x; player.y = y; if (dir) player.dir = dir; player.mv = null;
+  G.map = id; G.x = x; G.y = y; G.dir = player.dir;
+  if (MAP.name && !MAP.indoor) banner(MAP.name);
+}
+
+async function fadeOut() { screenEl.classList.add('fade'); await sleep(180); }
+async function fadeIn() { screenEl.classList.remove('fade'); await sleep(120); }
+async function warp(id, x, y, dir) {
+  await fadeOut();
+  loadMap(id, x, y, dir);
+  await fadeIn();
+  if (MAP.onEnter) await MAP.onEnter();
+}
+
+// Movimento a griglia (giocatore e PNG)
+const STEP_MS = 170;
+function startMove(actor, dir, dist = 1, jump = false) {
+  return new Promise(res => {
+    actor.dir = dir;
+    actor.mv = {dir, t: 0, dist, jump, res, step: (actor.stepToggle = !actor.stepToggle) ? 1 : 2};
+  });
+}
+function updateActor(a, dt) {
+  if (!a.mv) return;
+  a.mv.t += dt / (STEP_MS * a.mv.dist);
+  if (a.mv.t >= 1) {
+    const [dx, dy] = DIRS[a.mv.dir];
+    a.x += dx * a.mv.dist; a.y += dy * a.mv.dist;
+    const r = a.mv.res; a.mv = null; r();
+  }
+}
+function actorPx(a) {
+  let px = a.x * TS, py = a.y * TS, hop = 0;
+  if (a.mv) {
+    const [dx, dy] = DIRS[a.mv.dir];
+    px += dx * TS * a.mv.dist * a.mv.t; py += dy * TS * a.mv.dist * a.mv.t;
+    if (a.mv.jump) hop = Math.sin(a.mv.t * Math.PI) * 8;
+  }
+  return [px, py - hop];
+}
+
+function passable(x, y, fromDir) {
+  const t = tileAt(x, y);
+  if (SOLID.has(t)) return false;
+  if (t === 'v') return false;
+  if (npcAt(x, y)) return false;
+  if (player.x === x && player.y === y) return false;
+  return true;
+}
+
+async function tryMove(dir) {
+  player.dir = dir;
+  const [dx, dy] = DIRS[dir];
+  let nx = player.x + dx, ny = player.y + dy;
+  // uscita dal bordo
+  if (nx < 0 || ny < 0 || ny >= MAP.rows.length || nx >= MAP.rows[0].length) {
+    const link = MAP.links && MAP.links[dir];
+    if (!link) return;
+    const T = MAPS[link.to];
+    let tx = nx, ty = ny;
+    if (dir === 'up') { tx = nx + (link.d || 0); ty = T.rows.length - 1; }
+    if (dir === 'down') { tx = nx + (link.d || 0); ty = 0; }
+    if (dir === 'left') { ty = ny + (link.d || 0); tx = T.rows[0].length - 1; }
+    if (dir === 'right') { ty = ny + (link.d || 0); tx = 0; }
+    busy = true;
+    loadMap(link.to, tx, ty, dir);
+    busy = false;
+    return;
+  }
+  const t = tileAt(nx, ny);
+  if (t === 'v' && dir === 'down' && passable(nx, ny + 1)) {
+    busy = true; await startMove(player, dir, 2, true); busy = false;
+    await afterStep(); return;
+  }
+  if (!passable(nx, ny)) return;
+  busy = true;
+  await startMove(player, dir);
+  busy = false;
+  await afterStep();
+}
+
+async function afterStep() {
+  G.x = player.x; G.y = player.y; G.dir = player.dir;
+  const t = tileAt(player.x, player.y);
+  // porte
+  if (t === 'D' && MAP.doors) {
+    const to = MAP.doors[player.x + ',' + player.y];
+    if (to) { await run(async () => { const I = MAPS[to]; const e = entryOf(I); await warp(to, e.x, e.y, 'up'); }); return; }
+  }
+  if (t === 'm' && MAP.exit) {
+    await run(async () => { await warp(MAP.exit.to, MAP.exit.x, MAP.exit.y, 'down'); }); return;
+  }
+  // inneschi
+  for (const tr of MAP.triggers || []) {
+    const inX = player.x >= tr.x && player.x < tr.x + (tr.w || 1);
+    const inY = player.y >= tr.y && player.y < tr.y + (tr.h || 1);
+    if (inX && inY && (!tr.when || tr.when())) { await run(tr.run); return; }
+  }
+  // allenatori che ti vedono
+  for (const n of NPCS) {
+    if (!n.trainer || !n.visible() || F(trKey(n))) continue;
+    const s = n.trainer.sight || 4;
+    const [dx, dy] = DIRS[n.dir];
+    for (let i = 1; i <= s; i++) {
+      const cx = n.x + dx * i, cy = n.y + dy * i;
+      if (cx === player.x && cy === player.y) { await run(() => trainerSpot(n, i)); return; }
+      if (SOLID.has(tileAt(cx, cy)) || npcAt(cx, cy)) break;
+    }
+  }
+  // incontri nell'erba alta
+  if (t === ',' && MAP.wild && Math.random() < (MAP.wild.rate || 0.1)) {
+    await run(() => wildEncounter());
+  }
+}
+function entryOf(I) {
+  for (let y = 0; y < I.rows.length; y++) { const x = I.rows[y].indexOf('m'); if (x >= 0) return {x, y: y - 1}; }
+  return {x: 1, y: 1};
+}
+
+async function run(fn) {
+  busy = true;
+  try { await fn(); } catch (e) { console.error(e); hideTextBox(); }
+  finally { busy = false; hideTextBox(); }
+}
+
+function trKey(n) { return 'T:' + mapId + ':' + n.id; }
+
+async function npcWalk(n, dirs) { for (const d of dirs) await startMove(n, d); }
+async function playerWalk(dirs) { for (const d of dirs) await startMove(player, d); G.x = player.x; G.y = player.y; }
+function face(n, dir) { n.dir = dir; }
+function faceEachOther(n) {
+  if (n.x < player.x) { n.dir = 'right'; player.dir = 'left'; }
+  else if (n.x > player.x) { n.dir = 'left'; player.dir = 'right'; }
+  else if (n.y < player.y) { n.dir = 'down'; player.dir = 'up'; }
+  else { n.dir = 'up'; player.dir = 'down'; }
+}
+
+async function trainerSpot(n, dist) {
+  n.bang = true; await sleep(700); n.bang = false;
+  const [dx, dy] = DIRS[n.dir];
+  for (let i = 1; i < dist; i++) await startMove(n, n.dir);
+  faceEachOther(n);
+  await trainerBattle(n);
+}
+async function trainerBattle(n) {
+  const T = n.trainer;
+  await say(T.intro);
+  const res = await battle({trainer: T, canLose: T.canLose});
+  if (res === 'win') { setF(trKey(n)); if (T.onWin) await T.onWin(n); }
+  return res;
+}
+
+async function interact() {
+  const [dx, dy] = DIRS[player.dir];
+  let tx = player.x + dx, ty = player.y + dy;
+  let n = npcAt(tx, ty);
+  // parlare attraverso il bancone
+  if (!n && tileAt(tx, ty) === 'c') { n = npcAt(tx + dx, ty + dy); }
+  if (n) {
+    await run(async () => {
+      if (n.look !== 'ball' && !n.noTurn) faceEachOther(n);
+      if (n.trainer && !F(trKey(n))) { await trainerBattle(n); return; }
+      if (n.trainer && F(trKey(n))) { await say(n.trainer.after); return; }
+      if (n.talk) await n.talk(n);
+      else if (n.item) {
+        if (await pickItem(n)) n.show = () => false;
+      }
+      else if (n.text) { for (const t of [].concat(n.text)) await say(t); }
+    });
+    return;
+  }
+  const sign = (MAP.signs || []).find(s => s.x === tx && s.y === ty);
+  if (sign) { await run(async () => { for (const t of [].concat(sign.text)) await say(t); }); return; }
+  const t = tileAt(tx, ty);
+  if (t === 'p' && MAP.pc) { await run(pcMenu); return; }
+  if (t === 'b') { await run(() => say('Libri sui FAUNI, mappe vecchie e un ricettario con una pagina piegata.')); return; }
+  if (t === 'O' && MAP.spring && F(MAP.spring)) { await run(() => say('La SORGENTE brilla di una luce calda. Ti senti pieno di energia.')); return; }
+}
+async function pickItem(n) {
+  const k = 'I:' + mapId + ':' + n.id;
+  if (F(k)) return true;
+  setF(k);
+  await give(n.item, n.n || 1);
+  return true;
+}
+
+function worldKey(k) {
+  if (k === 'A') interact();
+  else if (k === 'START') run(startMenu);
+}
+
+// ------------------------------------------------------------
+//  Rendering
+// ------------------------------------------------------------
+function drawWorld() {
+  const [ppx, ppy] = actorPx(player);
+  const camX = Math.round(ppx - 72), camY = Math.round(ppy - 64);
+  const f = Math.floor(frame / 32) % 2;
+  const tx0 = Math.floor(camX / TS), ty0 = Math.floor(camY / TS);
+  R(ctx, 3, 0, 0, VW, VH);
+  for (let ty = ty0; ty <= ty0 + 10; ty++) for (let tx = tx0; tx <= tx0 + 11; tx++) {
+    ctx.drawImage(tileImg(tileAt(tx, ty), f), tx * TS - camX, ty * TS - camY);
+  }
+  const actors = NPCS.filter(n => n.visible()).concat([player]);
+  actors.sort((a, b) => actorPx(a)[1] - actorPx(b)[1]);
+  for (const a of actors) {
+    const [x, y] = actorPx(a);
+    const step = a.mv ? (a.mv.t > 0.25 && a.mv.t < 0.75 ? a.mv.step : 0) : 0;
+    ctx.drawImage(charImg(a.look, a.dir, step), Math.round(x - camX), Math.round(y - camY - 4));
+    if (a.bang) {
+      const bx = Math.round(x - camX) + 4, by = Math.round(y - camY) - 18;
+      R(ctx, 3, bx, by, 8, 11); R(ctx, 0, bx + 1, by + 1, 6, 9); R(ctx, 3, bx + 3, by + 2, 2, 4); R(ctx, 3, bx + 3, by + 7, 2, 2);
+    }
+  }
+}
+function drawOverlay() {
+  if (!overlay) return;
+  if (overlay.type === 'mon') {
+    R(ctx, 3, 52, 22, 56, 56); R(ctx, 0, 54, 24, 52, 52);
+    ctx.drawImage(monSprite(overlay.sp), 56, 26);
+  }
+}
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(50, now - last); last = now; frame++;
+  if (G) G.time += dt;
+  if (mode === 'world') {
+    updateActor(player, dt);
+    NPCS.forEach(n => updateActor(n, dt));
+    if (!busy && !player.mv && !waiter) {
+      const d = heldOrder[heldOrder.length - 1];
+      if (d && held[d]) tryMove(d);
+    }
+    drawWorld(); drawOverlay();
+  } else if (mode === 'battle') drawBattle();
+  else if (mode === 'title') drawTitle();
+  else if (mode === 'intro') drawIntro();
+  requestAnimationFrame(loop);
+}
+
+// ------------------------------------------------------------
+//  Menu START
+// ------------------------------------------------------------
+async function startMenu() {
+  let i = 0;
+  for (;;) {
+    const opts = [];
+    if (F('faunario')) opts.push('FAUNARIO');
+    if (G.party.length) opts.push('FAUNI');
+    opts.push('BORSA', G.name, 'SALVA', 'ESCI');
+    i = await choose(opts, {x: 104, y: 0, w: 56, start: Math.min(i, opts.length - 1), rows: 8});
+    if (i < 0 || opts[i] === 'ESCI') return;
+    const o = opts[i];
+    if (o === 'FAUNARIO') await dexMenu();
+    else if (o === 'FAUNI') await partyScreen('field');
+    else if (o === 'BORSA') await bagMenu('field');
+    else if (o === G.name) await trainerCard();
+    else if (o === 'SALVA') { if (await ask('Vuoi salvare la partita?')) { saveGame(); await say('{NAME} ha salvato la partita.'); } return; }
+  }
+}
+
+async function dexMenu() {
+  const labels = DEX_ORDER.map((id, i) => {
+    const n = String(i + 1).padStart(3, '0');
+    return G.caught[id] ? `${n} ●${SPECIES[id].name}` : G.seen[id] ? `${n}  ${SPECIES[id].name}` : `${n}  ----------`;
+  });
+  const head = el('box', 0, 0, 160, 18);
+  head.textContent = `VISTI ${Object.keys(G.seen).length}  PRESI ${Object.keys(G.caught).length}`;
+  let i = 0;
+  for (;;) {
+    i = await choose(labels, {x: 0, y: 18, w: 160, rows: 12, start: i});
+    if (i < 0) break;
+    const id = DEX_ORDER[i];
+    if (!G.seen[id]) continue;
+    const sp = SPECIES[id];
+    const page = el('box full', 0, 0, 160, 144);
+    page.innerHTML = `<canvas class="spr" width="48" height="48"></canvas>
+      <div class="dexname">${String(sp.num).padStart(3, '0')} ${sp.name}<br>${sp.types.join('/')}</div>
+      <div class="dexdesc">${G.caught[id] ? sp.d : 'Dati incompleti. Cattura questo FAUNO per saperne di più.'}</div>`;
+    page.querySelector('canvas').getContext('2d').drawImage(monSprite(id), 0, 0);
+    await waitAB(); page.remove();
+  }
+  head.remove();
+}
+
+async function trainerCard() {
+  const p = el('box full', 0, 0, 160, 144);
+  const t = Math.floor(G.time / 60000);
+  p.innerHTML = `<div class="card">TESSERA ALLENATORE<br><br>NOME: ${G.name}<br>MONETE: ${G.money}M<br>FAUNARIO: ${Object.keys(G.caught).length}<br>TEMPO: ${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}<br><br>MEDAGLIE:<br>${
+    ['CIOTTOLO', '?', '?', '?', '?', '?', '?', '?'].map((n, i) => G.badges.includes(i + 1) ? '◆' + n : '◇').join(' ')}</div>`;
+  await waitAB(); p.remove();
+}
+
+function hpBar(m) {
+  const r = m.hp / m.st.hp;
+  const cls = r > .5 ? 'g' : r > .2 ? 'y' : 'r';
+  return `<span class="bar"><span class="${cls}" style="width:${Math.round(r * 100)}%"></span></span>`;
+}
+// Schermata squadra. purpose: field | battle | forced | item
+async function partyScreen(purpose, prompt) {
+  const page = el('box full', 0, 0, 160, 144);
+  let i = 0;
+  const draw = () => {
+    page.innerHTML = G.party.map((m, j) => `<div class="pm ${j === i ? 'sel' : ''}">
+      <canvas width="48" height="48"></canvas>
+      <div class="pn">${j === i ? '▶' : ''}${m.name} <span>Lv${m.lvl}</span> ${m.status ? STATUS_LABEL[m.status] : ''}</div>
+      <div class="ph">PS ${hpBar(m)} ${m.hp}/${m.st.hp}</div></div>`).join('') +
+      `<div class="pprompt">${prompt || 'Scegli un FAUNO.'}</div>`;
+    page.querySelectorAll('canvas').forEach((c, j) => c.getContext('2d').drawImage(monSprite(G.party[j].sp), 0, 0));
+  };
+  draw();
+  for (;;) {
+    const k = await waitKey();
+    if (k === 'up') { i = (i - 1 + G.party.length) % G.party.length; draw(); }
+    else if (k === 'down') { i = (i + 1) % G.party.length; draw(); }
+    else if (k === 'B' && purpose !== 'forced') { page.remove(); return -1; }
+    else if (k === 'A') {
+      if (purpose !== 'field') { page.remove(); return i; }
+      const c = await choose(['SCHEDA', 'SPOSTA', 'ANNULLA'], {x: 100, y: 100, w: 60});
+      if (c === 0) await summary(G.party[i]);
+      else if (c === 1) {
+        const p2 = el('box', 0, 130, 160, 14); p2.textContent = 'Con chi lo scambi?';
+        let j = i;
+        for (;;) {
+          const k2 = await waitKey();
+          if (k2 === 'up') j = (j - 1 + G.party.length) % G.party.length;
+          else if (k2 === 'down') j = (j + 1) % G.party.length;
+          else if (k2 === 'A') { [G.party[i], G.party[j]] = [G.party[j], G.party[i]]; i = j; break; }
+          else if (k2 === 'B') break;
+          page.querySelectorAll('.pm').forEach((e, q) => e.classList.toggle('swap', q === j));
+        }
+        p2.remove();
+      }
+      draw();
+    }
+  }
+}
+async function summary(m) {
+  const p = el('box full', 0, 0, 160, 144);
+  const sp = SPECIES[m.sp];
+  const next = m.lvl < 100 ? xpFor(m.lvl + 1) - m.xp : 0;
+  p.innerHTML = `<canvas class="spr" width="48" height="48"></canvas>
+    <div class="dexname">${m.name}<br>Lv${m.lvl} ${sp.types.join('/')}<br>PS ${m.hp}/${m.st.hp}</div>
+    <div class="stats">ATT ${m.st.atk}  DIF ${m.st.def}<br>VEL ${m.st.spd}  SPE ${m.st.spc}<br>ESP. AL PROSSIMO LV: ${next}<br>STATO: ${m.status ? STATUS_LABEL[m.status] : 'OK'}<br><br>${
+      m.moves.map(mv => `${MOVES[mv.id].n} <span class="r">${mv.pp}/${MOVES[mv.id].pp}</span>`).join('<br>')}</div>`;
+  p.querySelector('canvas').getContext('2d').drawImage(monSprite(m.sp), 0, 0);
+  await waitAB(); p.remove();
+}
+
+// Borsa. Ritorna {item, target} in lotta, oppure null.
+async function bagMenu(ctxName) {
+  for (;;) {
+    const ids = Object.keys(G.bag).filter(id => G.bag[id] > 0);
+    if (!ids.length) { await say('La BORSA è vuota.'); return null; }
+    const labels = ids.map(id => `${ITEMS[id].n}${ITEMS[id].key ? '' : ' ×' + G.bag[id]}`).concat(['CHIUDI']);
+    const i = await choose(labels, {x: 30, y: 0, w: 130, rows: 8});
+    if (i < 0 || i === ids.length) return null;
+    const id = ids[i], it = ITEMS[id];
+    if (it.key) { await say(it.d); continue; }
+    if (it.ball) {
+      if (ctxName !== 'battle') { await say('Non è il momento di usarla!'); continue; }
+      return {item: id};
+    }
+    if (it.heal || it.cure) {
+      const t = await partyScreen('item', 'Su quale FAUNO?');
+      if (t < 0) continue;
+      const m = G.party[t];
+      const ok = await applyItem(id, m);
+      if (ok && ctxName === 'battle') return {item: id, target: t, done: true};
+      continue;
+    }
+  }
+}
+async function applyItem(id, m) {
+  const it = ITEMS[id];
+  if (it.heal) {
+    if (m.hp <= 0 || m.hp >= m.st.hp) { await say('Non avrebbe alcun effetto.'); return false; }
+    const before = m.hp; m.hp = Math.min(m.st.hp, m.hp + it.heal); useItemCount(id);
+    await say(`${m.name} recupera ${m.hp - before} PS.`); return true;
+  }
+  if (it.cure) {
+    if (m.status !== it.cure) { await say('Non avrebbe alcun effetto.'); return false; }
+    m.status = null; m.slp = 0; useItemCount(id);
+    await say(`${m.name} sta di nuovo bene.`); return true;
+  }
+  return false;
+}
+
+// Negozio
+async function shop(items) {
+  await say('Benvenuto alla BOTTEGA! Come posso aiutarti?', {keep: true});
+  for (;;) {
+    const c = await choose(['COMPRA', 'VENDI', 'ESCI'], {x: 104, y: 60, w: 56});
+    hideTextBox();
+    if (c === 0) {
+      for (;;) {
+        const money = el('box', 0, 0, 70, 18); money.textContent = G.money + 'M';
+        const labels = items.map(id => `${ITEMS[id].n.padEnd(12, ' ')}${String(ITEMS[id].price).padStart(5, ' ')}`).concat(['ANNULLA']);
+        const i = await choose(labels, {x: 20, y: 22, w: 140, rows: 7});
+        if (i < 0 || i === items.length) { money.remove(); break; }
+        const id = items[i];
+        const max = Math.min(99, Math.floor(G.money / ITEMS[id].price));
+        if (max < 1) { money.remove(); await say('Non hai abbastanza monete.'); continue; }
+        const n = await qty(max, ITEMS[id].price);
+        money.remove();
+        if (!n) continue;
+        if (await ask(`${ITEMS[id].n} ×${n}: sono ${n * ITEMS[id].price} monete. Va bene?`)) {
+          G.money -= n * ITEMS[id].price; addItem(id, n);
+          await say('Ecco a te! Grazie mille!');
+        }
+      }
+    } else if (c === 1) {
+      const ids = Object.keys(G.bag).filter(id => !ITEMS[id].key);
+      if (!ids.length) { await say('Non hai niente da vendere.'); continue; }
+      const i = await choose(ids.map(id => `${ITEMS[id].n} ×${G.bag[id]}`), {x: 20, y: 0, w: 140, rows: 8});
+      if (i < 0) continue;
+      const id = ids[i], price = Math.floor(ITEMS[id].price / 2);
+      const n = await qty(G.bag[id], price);
+      if (n && await ask(`Posso darti ${n * price} monete. Affare fatto?`)) {
+        G.bag[id] -= n; if (!G.bag[id]) delete G.bag[id]; G.money += n * price;
+      }
+    } else { await say('Torna presto!'); return; }
+    await say('Serve altro?', {keep: true});
+  }
+}
+
+async function nurse() {
+  if (await ask('Benvenuto al CENTRO CURA! Vuoi che rimetta in forma i tuoi FAUNI?')) {
+    await say('Lascia fare a me...', {auto: 300, keep: true});
+    screenEl.classList.add('flash'); await sleep(900); screenEl.classList.remove('flash');
+    healParty();
+    G.lastHeal = {map: MAP.exit.to, x: MAP.exit.x, y: MAP.exit.y};
+    await say('Fatto! I tuoi FAUNI sono in piena forma. Torna quando vuoi!');
+  } else await say('Torna quando vuoi!');
+}
+
+async function pcMenu() {
+  await say('{NAME} accende il PC. Accesso al BOX dei FAUNI.', {keep: true});
+  for (;;) {
+    const c = await choose(['PRELEVA', 'DEPOSITA', 'ESCI'], {x: 96, y: 60, w: 64});
+    hideTextBox();
+    if (c === 0) {
+      if (!G.box.length) { await say('Il BOX è vuoto.'); continue; }
+      if (G.party.length >= 6) { await say('La tua squadra è al completo.'); continue; }
+      const i = await choose(G.box.map(m => `${m.name} Lv${m.lvl}`), {x: 40, y: 0, w: 120, rows: 9});
+      if (i >= 0) { const m = G.box.splice(i, 1)[0]; G.party.push(m); await say(`${m.name} si unisce alla squadra.`); }
+    } else if (c === 1) {
+      if (G.party.length <= 1) { await say('Non puoi restare senza FAUNI!'); continue; }
+      const i = await partyScreen('item', 'Chi depositi?');
+      if (i >= 0) { const m = G.party.splice(i, 1)[0]; healMon(m); G.box.push(m); await say(`${m.name} è stato depositato nel BOX.`); }
+    } else return;
+  }
+}
+
+// ------------------------------------------------------------
+//  Lotta
+// ------------------------------------------------------------
+const stMul = s => s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
+const zeroStages = () => ({atk: 0, def: 0, spd: 0, spc: 0, acc: 0});
+
+function drawBattle() {
+  R(ctx, 0, 0, 0, VW, VH);
+  // pedane
+  ctx.fillStyle = PAL[1];
+  ctx.beginPath(); ctx.ellipse(124, 50, 32, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(36, 94, 36, 7, 0, 0, Math.PI * 2); ctx.fill();
+  if (!B) return;
+  const sh = n => (B.shake && B.shake.who === n ? (Math.floor(frame / 3) % 2 ? 2 : -2) : 0);
+  const blink = n => B.blink && B.blink.who === n && Math.floor(frame / 4) % 2;
+  if (B.e && !B.eHidden && !blink('e')) ctx.drawImage(monSprite(B.e.sp), 100 + sh('e') + (B.eSlide || 0), 4 + (B.eDrop || 0));
+  if (B.ball) { const b = charImg('ball', 'down', 0); ctx.drawImage(b, 116, 34 + (B.ballBob ? -2 : 0)); }
+  const pm = B.pm != null ? G.party[B.pm] : null;
+  if (pm && !B.pHidden && !blink('p')) ctx.drawImage(monSprite(pm.sp, true), 12 + sh('p') + (B.pSlide || 0), 50, 48, 48);
+}
+function hudHtml(m, enemy) {
+  return `<div class="hn">${m.name}${m.status ? ' ' + STATUS_LABEL[m.status] : ''}</div>
+    <div class="hl">Lv${m.lvl}</div><div class="hb">PS ${hpBar({hp: m._dhp ?? m.hp, st: m.st})}</div>
+    ${enemy ? '' : `<div class="hp">${Math.ceil(m._dhp ?? m.hp)}/${m.st.hp}</div><div class="xp"><span style="width:${xpPct(m)}%"></span></div>`}`;
+}
+function xpPct(m) { if (m.lvl >= 100) return 0; const a = xpFor(m.lvl), b = xpFor(m.lvl + 1); return clamp(Math.round((m.xp - a) / (b - a) * 100), 0, 100); }
+function hud() {
+  if (!B) return;
+  if (B.e && !B.eHidden) { B.eh.style.display = ''; B.eh.innerHTML = hudHtml(B.e, true); } else B.eh.style.display = 'none';
+  const pm = G.party[B.pm];
+  if (pm && !B.pHidden) { B.ph.style.display = ''; B.ph.innerHTML = hudHtml(pm, false); } else B.ph.style.display = 'none';
+}
+async function animHp(m) {
+  if (m._dhp == null) m._dhp = m.hp;
+  const diff = m.hp - m._dhp; if (!diff) return;
+  const steps = Math.min(30, Math.abs(diff));
+  for (let i = 1; i <= steps; i++) { m._dhp = m._dhp + diff / steps; hud(); await sleep(22); }
+  m._dhp = m.hp; hud();
+}
+const eName = () => B.wild ? `${B.e.name} selvatico` : `${B.e.name} nemico`;
+const nameOf = side => side === 'p' ? G.party[B.pm].name : eName();
+
+async function battle(opts) {
+  mode = 'battle';
+  hideTextBox();
+  screenEl.classList.add('battleflash'); await sleep(700); screenEl.classList.remove('battleflash');
+  B = {wild: !!opts.wild, trainer: opts.trainer, canLose: opts.canLose, stages: {p: zeroStages(), e: zeroStages()},
+    runs: 0, part: new Set(), levelled: new Set(), pm: null};
+  B.eh = el('box hud ehud', 4, 6, 92, 30);
+  B.ph = el('box hud phud', 70, 58, 88, 40);
+  if (opts.wild) {
+    B.team = [opts.wild];
+  } else {
+    B.team = opts.trainer.team.map(([sp, l]) => makeMon(sp, l));
+  }
+  B.ei = 0; B.e = B.team[0]; B.e._dhp = B.e.hp; seen(B.e.sp);
+  B.pHidden = true; hud();
+  B.eSlide = 60; for (let i = 0; i < 12; i++) { B.eSlide -= 5; await sleep(16); } B.eSlide = 0;
+  if (B.wild) await say(`Appare un ${B.e.name} selvatico!`);
+  else { await say(`${opts.trainer.cls} ${opts.trainer.name} vuole lottare!`); await say(`${opts.trainer.cls} ${opts.trainer.name} manda in campo ${B.e.name}!`); }
+  B.pm = G.party.findIndex(m => m.hp > 0);
+  await sendOut();
+  let result = null;
+  while (!result) {
+    const act = await chooseAction();
+    result = await doTurn(act);
+  }
+  // fine lotta
+  if (result === 'win' || result === 'catch') await afterBattleEvolve();
+  G.party.forEach(m => { delete m._dhp; });
+  B.eh.remove(); B.ph.remove(); hideTextBox();
+  B = null;
+  if (result === 'lose') {
+    if (opts.canLose) { healParty(); }
+    else await whiteout();
+  }
+  mode = 'world';
+  return result;
+}
+async function sendOut() {
+  const m = G.party[B.pm]; m._dhp = m.hp; B.part.add(B.pm); B.stages.p = zeroStages();
+  B.pHidden = false; B.pSlide = -50;
+  await say(`Vai, ${m.name}!`, {auto: 250, keep: true});
+  for (let i = 0; i < 10; i++) { B.pSlide += 5; await sleep(16); } B.pSlide = 0;
+  hud();
+}
+
+async function chooseAction() {
+  for (;;) {
+    const m = G.party[B.pm];
+    await say(`Cosa farà\n${m.name}?`, {noWait: true, keep: true});
+    const box = el('box menu grid', 80, 100, 80, 44);
+    const opts = ['LOTTA', 'FAUNI', 'BORSA', 'FUGA'];
+    let i = B.lastAct || 0;
+    const draw = () => { box.innerHTML = opts.map((s, j) => `<div class="it">${j === i ? '▶' : '&nbsp;'}${s}</div>`).join(''); };
+    draw();
+    let pick = -1;
+    while (pick < 0) {
+      const k = await waitKey();
+      if (k === 'up' || k === 'down') i ^= 2;
+      else if (k === 'left' || k === 'right') i ^= 1;
+      else if (k === 'A') pick = i;
+      draw();
+    }
+    box.remove(); B.lastAct = pick;
+    if (pick === 0) {
+      const mv = await moveMenu(m);
+      if (mv == null) continue;
+      if (m.moves.every(x => x.pp <= 0)) return {type: 'move', id: 'botta', struggle: true};
+      return {type: 'move', idx: mv};
+    }
+    if (pick === 1) {
+      hideTextBox();
+      const t = await partyScreen('battle', 'Chi mandi in campo?');
+      if (t < 0) continue;
+      if (G.party[t].hp <= 0) { await say(`${G.party[t].name} non ha energie per lottare!`); continue; }
+      if (t === B.pm) { await say(`${G.party[t].name} è già in campo!`); continue; }
+      return {type: 'switch', to: t};
+    }
+    if (pick === 2) {
+      hideTextBox();
+      const r = await bagMenu('battle');
+      if (!r) continue;
+      return {type: 'item', ...r};
+    }
+    if (pick === 3) return {type: 'run'};
+  }
+}
+async function moveMenu(m) {
+  const info = el('box', 0, 64, 76, 36);
+  const show = i => {
+    const mv = m.moves[i]; const d = MOVES[mv.id];
+    info.innerHTML = `TIPO/<br>&nbsp;${d.t}<br><span class="r">PP ${mv.pp}/${d.pp}</span>`;
+  };
+  for (;;) {
+    const i = await choose(m.moves.map(x => MOVES[x.id].n), {x: 40, y: 96, w: 120, rows: 4, onMove: show, start: B.lastMove || 0});
+    if (i < 0) { info.remove(); return null; }
+    if (m.moves.every(x => x.pp <= 0)) { info.remove(); await say(`${m.name} non ha più PP!`); return 0; }
+    if (m.moves[i].pp <= 0) { await say('Non ci sono più PP per questa mossa!', {keep: true}); continue; }
+    info.remove(); B.lastMove = i; return i;
+  }
+}
+
+function speedOf(m, side) { return m.st.spd * stMul(B.stages[side].spd) * (m.status === 'par' ? .25 : 1); }
+function enemyMoveIdx() {
+  const e = B.e, p = G.party[B.pm];
+  const opts = e.moves.map((mv, i) => ({mv, i})).filter(o => o.mv.pp > 0);
+  if (!opts.length) return -1;
+  const w = opts.map(({mv}) => {
+    const d = MOVES[mv.id];
+    if (!d.p) return d.fx && d.fx.st && p.status ? 0.1 : 0.6;
+    let s = d.p * typeEff(d.t, SPECIES[p.sp].types);
+    if (SPECIES[e.sp].types.includes(d.t)) s *= 1.5;
+    return Math.max(0.05, s / 40);
+  });
+  let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < opts.length; k++) { r -= w[k]; if (r <= 0) return opts[k].i; }
+  return opts[0].i;
+}
+
+async function doTurn(act) {
+  const p = () => G.party[B.pm];
+  const eIdx = enemyMoveIdx();
+  const eMove = eIdx >= 0 ? B.e.moves[eIdx] : null;
+  if (act.type === 'run') {
+    if (!B.wild) { await say('Non puoi fuggire da una lotta tra allenatori!'); return null; }
+    B.runs++;
+    const ps = speedOf(p(), 'p'), es = speedOf(B.e, 'e');
+    if (ps >= es || Math.random() < 0.35 + 0.2 * B.runs) { await say('Sei scappato senza problemi!'); return 'run'; }
+    await say('Non riesci a scappare!');
+  } else if (act.type === 'switch') {
+    await say(`Basta così, ${p().name}! Torna qui!`, {auto: 300, keep: true});
+    B.pHidden = true; hud();
+    B.pm = act.to; await sendOut();
+  } else if (act.type === 'item') {
+    if (ITEMS[act.item].ball) {
+      const r = await throwBall(act.item);
+      if (r) return r;
+    } else hud();
+  }
+  // mosse
+  const order = [];
+  if (act.type === 'move') {
+    const pmv = act.struggle ? {id: 'botta', pp: 99} : p().moves[act.idx];
+    const pp = MOVES[pmv.id].prio || 0, ep = eMove ? (MOVES[eMove.id].prio || 0) : -9;
+    let pFirst = pp > ep || (pp === ep && (speedOf(p(), 'p') > speedOf(B.e, 'e') || (speedOf(p(), 'p') === speedOf(B.e, 'e') && Math.random() < .5)));
+    const pa = ['p', pmv], ea = ['e', eMove];
+    if (pFirst) order.push(pa, ea); else order.push(ea, pa);
+  } else order.push(['e', eMove]);
+  for (const [side, mv] of order) {
+    if (!mv) { if (side === 'e') await useMove('e', {id: 'botta', pp: 99}); continue; }
+    const user = side === 'p' ? p() : B.e;
+    if (user.hp <= 0) continue;
+    const foe = side === 'p' ? B.e : p();
+    if (foe.hp <= 0) continue;
+    await useMove(side, mv);
+    const r = await checkFaints();
+    if (r !== undefined) return r;
+  }
+  // danni da stato a fine turno
+  for (const side of ['p', 'e']) {
+    const m = side === 'p' ? p() : B.e;
+    if (m.hp > 0 && (m.status === 'psn' || m.status === 'brn')) {
+      m.hp = Math.max(0, m.hp - Math.max(1, Math.floor(m.st.hp / 8)));
+      await say(`${nameOf(side)} soffre per ${m.status === 'psn' ? 'il veleno' : 'la scottatura'}!`, {keep: true});
+      await animHp(m);
+      const r = await checkFaints();
+      if (r !== undefined) return r;
+    }
+  }
+  return null;
+}
+
+async function useMove(side, mv) {
+  const user = side === 'p' ? G.party[B.pm] : B.e;
+  const foeSide = side === 'p' ? 'e' : 'p';
+  const foe = foeSide === 'p' ? G.party[B.pm] : B.e;
+  const d = MOVES[mv.id];
+  const uName = nameOf(side);
+  // stati che bloccano
+  if (user.status === 'slp') {
+    user.slp--;
+    if (user.slp > 0) { await say(`${uName} dorme profondamente.`, {keep: true}); return; }
+    user.status = null; hud(); await say(`${uName} si è svegliato!`, {keep: true});
+  }
+  if (user.status === 'par' && Math.random() < .25) { await say(`${uName} è paralizzato! Non riesce a muoversi!`, {keep: true}); return; }
+  if (mv.pp < 99) mv.pp = Math.max(0, mv.pp - 1);
+  await say(`${uName} usa ${d.n}!`, {keep: true, auto: 350});
+  const st = B.stages[side];
+  const selfTarget = d.fx && (d.fx.heal || (d.fx.stat && !d.fx.foe));
+  if (!selfTarget && d.a && Math.random() * 100 >= d.a * stMul(st.acc)) { await say(`Ma ${uName} manca il bersaglio!`, {keep: true}); return; }
+  if (d.p > 0) {
+    const eff = typeEff(d.t, SPECIES[foe.sp].types);
+    if (eff === 0) { await say(`Non ha effetto su ${nameOf(foeSide)}...`, {keep: true}); return; }
+    const special = SPECIAL_TYPES.has(d.t);
+    let A = (special ? user.st.spc : user.st.atk) * stMul(special ? st.spc : st.atk);
+    let D = (special ? foe.st.spc : foe.st.def) * stMul(special ? B.stages[foeSide].spc : B.stages[foeSide].def);
+    if (!special && user.status === 'brn') A /= 2;
+    const crit = Math.random() < SPECIES[user.sp].b[3] / 512;
+    const L = user.lvl * (crit ? 2 : 1);
+    let dmg = Math.floor(Math.floor(Math.floor(2 * L / 5 + 2) * d.p * A / Math.max(1, D)) / 50) + 2;
+    if (SPECIES[user.sp].types.includes(d.t)) dmg = Math.floor(dmg * 1.5);
+    dmg = Math.floor(dmg * eff * rand(217, 255) / 255);
+    dmg = Math.max(1, dmg);
+    B.blink = {who: foeSide}; await sleep(350); B.blink = null;
+    foe.hp = Math.max(0, foe.hp - dmg);
+    await animHp(foe);
+    if (crit) await say('Brutto colpo!', {keep: true});
+    if (eff > 1) await say('È superefficace!', {keep: true});
+    else if (eff < 1) await say('Non è molto efficace...', {keep: true});
+    if (d.fx && d.fx.drain) {
+      const h = Math.max(1, Math.floor(dmg * d.fx.drain));
+      if (user.hp < user.st.hp) { user.hp = Math.min(user.st.hp, user.hp + h); await animHp(user); await say(`${nameOf(foeSide)} perde energia!`, {keep: true}); }
+    }
+    if (foe.hp <= 0) return;
+  }
+  const fx = d.fx;
+  if (!fx) return;
+  if (fx.heal) {
+    if (user.hp >= user.st.hp) { await say('Ma non ha bisogno di recuperare!', {keep: true}); return; }
+    user.hp = Math.min(user.st.hp, user.hp + Math.floor(user.st.hp * fx.heal)); await animHp(user);
+    await say(`${uName} recupera energie!`, {keep: true}); return;
+  }
+  if (fx.ch != null && fx.ch < 1 && Math.random() >= fx.ch) return;
+  if (fx.stat) {
+    const tSide = fx.foe ? foeSide : side; const S = B.stages[tSide];
+    const cur = S[fx.stat];
+    const nv = clamp(cur + fx.d, -6, 6);
+    if (nv === cur) { if (!d.p) await say('Non succede nulla!', {keep: true}); return; }
+    S[fx.stat] = nv;
+    const who = nameOf(tSide);
+    await say(fx.d > 0 ? `${STAT_LABEL[fx.stat]} di ${who} ${fx.d > 1 ? 'aumenta molto' : 'aumenta'}!` : `${STAT_LABEL[fx.stat]} di ${who} diminuisce!`, {keep: true});
+    return;
+  }
+  if (fx.st) {
+    const types = SPECIES[foe.sp].types;
+    const immune = (fx.st === 'brn' && types.includes('FUOCO')) || (fx.st === 'psn' && types.includes('VELENO')) || (fx.st === 'par' && types.includes('ELETTRO'));
+    if (foe.status || immune) { if (!d.p) await say('Non ha effetto!', {keep: true}); return; }
+    foe.status = fx.st; if (fx.st === 'slp') foe.slp = rand(2, 4);
+    hud();
+    const msg = {psn: 'è stato avvelenato!', par: 'è paralizzato! Potrebbe non riuscire a muoversi!', slp: 'si è addormentato!', brn: 'si è scottato!'}[fx.st];
+    await say(`${nameOf(foeSide)} ${msg}`, {keep: true});
+  }
+}
+
+async function checkFaints() {
+  if (B.e.hp <= 0) {
+    B.eDrop = 0; for (let i = 0; i < 8; i++) { B.eDrop += 6; await sleep(20); } B.eHidden = true; B.eDrop = 0; hud();
+    await say(`${eName()} è esausto!`, {keep: true});
+    await giveXp();
+    B.ei++;
+    if (B.ei < B.team.length) {
+      B.e = B.team[B.ei]; B.e._dhp = B.e.hp; seen(B.e.sp); B.stages.e = zeroStages();
+      B.part = new Set([B.pm]);
+      B.eHidden = false; hud();
+      await say(`${B.trainer.cls} ${B.trainer.name} manda in campo ${B.e.name}!`, {keep: true});
+      if (G.party[B.pm].hp <= 0) return await playerFaint();
+      return null;
+    }
+    if (B.trainer) {
+      await say(`Hai sconfitto ${B.trainer.cls} ${B.trainer.name}!`);
+      if (B.trainer.lose) await say(B.trainer.lose);
+      const money = B.trainer.money || B.team[B.team.length - 1].lvl * 15;
+      G.money += money;
+      await say(`{NAME} riceve ${money} monete come premio.`);
+    }
+    return 'win';
+  }
+  if (G.party[B.pm].hp <= 0) return await playerFaint();
+  return undefined;
+}
+async function playerFaint() {
+  const m = G.party[B.pm];
+  B.pHidden = true; hud();
+  await say(`${m.name} è esausto!`, {keep: true});
+  B.part.delete(B.pm);
+  if (!alive(G.party).length) {
+    await say('{NAME} non ha più FAUNI in grado di lottare!');
+    return 'lose';
+  }
+  hideTextBox();
+  let t;
+  for (;;) {
+    t = await partyScreen('forced', 'Chi mandi in campo?');
+    if (G.party[t].hp > 0) break;
+    await say('Non ha energie per lottare!');
+  }
+  B.pm = t; await sendOut();
+  return null;
+}
+async function giveXp() {
+  const parts = [...B.part].filter(i => G.party[i] && G.party[i].hp > 0);
+  if (!parts.length) return;
+  const sp = SPECIES[B.e.sp];
+  let total = Math.floor(sp.xp * B.e.lvl / 7 * (B.trainer ? 1.5 : 1));
+  const each = Math.max(1, Math.floor(total / parts.length));
+  for (const i of parts) {
+    const m = G.party[i];
+    if (m.lvl >= 100) continue;
+    m.xp += each;
+    await say(`${m.name} guadagna ${each} punti esperienza!`, {keep: true});
+    while (m.lvl < 100 && m.xp >= xpFor(m.lvl + 1)) {
+      const oldMax = m.st.hp;
+      m.lvl++; m.st = calcStats(m); m.hp += m.st.hp - oldMax; m._dhp = m.hp;
+      hud();
+      await say(`${m.name} sale al livello ${m.lvl}!`, {keep: true});
+      B.levelled.add(m);
+      for (const [l, id] of SPECIES[m.sp].learn) if (l === m.lvl) await learnMove(m, id);
+    }
+    hud();
+  }
+}
+async function learnMove(m, id) {
+  if (m.moves.some(x => x.id === id)) return;
+  const n = MOVES[id].n;
+  if (m.moves.length < 4) { m.moves.push({id, pp: MOVES[id].pp}); await say(`${m.name} impara ${n}!`, {keep: true}); return; }
+  await say(`${m.name} vuole imparare ${n}, ma conosce già quattro mosse.`, {keep: true});
+  if (await ask(`Vuoi fargli dimenticare una mossa per far posto a ${n}?`)) {
+    const i = await choose(m.moves.map(x => MOVES[x.id].n), {x: 40, y: 40, w: 120});
+    if (i >= 0) {
+      const old = MOVES[m.moves[i].id].n;
+      m.moves[i] = {id, pp: MOVES[id].pp};
+      await say(`Uno, due e... puf! ${m.name} dimentica ${old}... e impara ${n}!`, {keep: true});
+      return;
+    }
+  }
+  await say(`${m.name} non ha imparato ${n}.`, {keep: true});
+}
+async function afterBattleEvolve() {
+  for (const m of B.levelled) {
+    const sp = SPECIES[m.sp];
+    if (!sp.evo || m.lvl < sp.evo[0]) continue;
+    const to = SPECIES[sp.evo[1]];
+    hideTextBox();
+    mode = 'battle'; B.eHidden = true; B.pHidden = true; hud();
+    const holdE = B.e; B.e = null;
+    await say(`Cosa? ${m.name} si sta evolvendo!`, {keep: true});
+    overlay = null;
+    const evoCanvas = el('box evo', 52, 22, 56, 56);
+    const c = document.createElement('canvas'); c.width = c.height = 48; evoCanvas.appendChild(c);
+    const g = c.getContext('2d');
+    for (let i = 0; i < 16; i++) { g.clearRect(0, 0, 48, 48); g.drawImage(monSprite(i % 2 && i > 4 ? to.id : m.sp), 0, 0); await sleep(140 - i * 5); }
+    g.clearRect(0, 0, 48, 48); g.drawImage(monSprite(to.id), 0, 0);
+    const wasDefault = m.name === sp.name;
+    const oldName = m.name;
+    m.sp = to.id; if (wasDefault) m.name = to.name;
+    const oldMax = m.st.hp; m.st = calcStats(m); m.hp += m.st.hp - oldMax;
+    caught(to.id);
+    await say(`Congratulazioni! ${oldName} si è evoluto in ${to.name}!`, {keep: true});
+    for (const [l, id] of to.learn) if (l === m.lvl) await learnMove(m, id);
+    evoCanvas.remove(); B.e = holdE;
+  }
+}
+async function throwBall(id) {
+  if (!B.wild) {
+    await say('{NAME} lancia una SFERA... ma l\'allenatore la devia!', {keep: true});
+    await say('Non si catturano i FAUNI degli altri!', {keep: true});
+    useItemCount(id); return null;
+  }
+  useItemCount(id);
+  await say(`{NAME} lancia una ${ITEMS[id].n}!`, {keep: true, auto: 300});
+  const e = B.e, sp = SPECIES[e.sp];
+  let a = (3 * e.st.hp - 2 * e.hp) * sp.cr * ITEMS[id].ball / (3 * e.st.hp);
+  if (e.status === 'slp') a *= 2; else if (e.status) a *= 1.5;
+  const p = Math.min(1, a / 255);
+  const ok = Math.random() < p;
+  const shakes = ok ? 3 : Math.min(2, Math.floor(Math.random() * 4 * p + Math.random() * 1.2));
+  B.eHidden = true; B.ball = true; hud();
+  for (let i = 0; i < shakes; i++) { await sleep(350); B.ballBob = true; await sleep(250); B.ballBob = false; }
+  await sleep(300);
+  if (ok) {
+    await say(`Preso! ${e.name} è stato catturato!`, {keep: true});
+    const isNew = !G.caught[e.sp];
+    delete e._dhp; e.status = e.status || null; e.ot = G.name;
+    const where = addMon(e);
+    if (isNew) await say(`I dati di ${e.name} sono stati registrati nel FAUNARIO!`, {keep: true});
+    if (where === 'box') await say(`La squadra è piena: ${e.name} è stato inviato al BOX.`, {keep: true});
+    B.ball = false;
+    return 'catch';
+  }
+  B.ball = false; B.eHidden = false; hud();
+  await say(['Oh no! Il FAUNO è uscito dalla SFERA!', 'Accidenti! Sembrava preso!', 'Uffa! Mancava pochissimo!'][shakes], {keep: true});
+  return null;
+}
+
+async function whiteout() {
+  hideTextBox();
+  const lost = Math.floor(G.money / 2);
+  G.money -= lost;
+  await say(`{NAME} perde i sensi...|Hai perso ${lost} monete.`);
+  healParty();
+  const L = G.lastHeal;
+  await warp(L.map, L.x, L.y, 'down');
+}
+
+async function wildEncounter() {
+  const list = MAP.wild.list;
+  const tot = list.reduce((a, x) => a + (x[3] || 1), 0);
+  let r = Math.random() * tot, pick = list[0];
+  for (const x of list) { r -= x[3] || 1; if (r <= 0) { pick = x; break; } }
+  const lv = rand(pick[1], pick[2]);
+  await battle({wild: makeMon(pick[0], lv)});
+}
+
+// ------------------------------------------------------------
+//  Titolo, introduzione, salvataggio
+// ------------------------------------------------------------
+let titleSel = 0, titleMenuEl = null, titleEl = null;
+const TITLE_MONS = ['fiammolo', 'gocciolo', 'fogliotto', 'lucciolo', 'ombretto', 'farfalia'];
+function drawTitle() {
+  R(ctx, 0, 0, 0, VW, VH);
+  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('~', Math.floor(frame / 32) % 2), x, 128);
+  for (let x = 0; x < VW; x += 16) ctx.drawImage(tileImg('T', 0), x, 112);
+  const sp = TITLE_MONS[Math.floor(frame / 180) % TITLE_MONS.length];
+  ctx.drawImage(monSprite(sp), 56, 54);
+}
+function showTitle() {
+  mode = 'title'; uiEl.innerHTML = ''; textBox = null;
+  titleEl = el('title', 0, 6, 160, 44);
+  titleEl.innerHTML = '<div class="t1">FAUNI</div><div class="t2">LE SORGENTI DI VALCORONA</div>';
+  const hasSave = !!loadSave();
+  const opts = hasSave ? ['CONTINUA', 'NUOVA PARTITA'] : ['NUOVA PARTITA'];
+  titleMenuEl = el('box menu', 38, 104, 84, opts.length * 10 + 8);
+  titleSel = 0;
+  const draw = () => { titleMenuEl.innerHTML = opts.map((s, j) => `<div class="it">${j === titleSel ? '▶' : '&nbsp;'}${s}</div>`).join(''); };
+  draw();
+  titleKey.opts = opts; titleKey.draw = draw;
+}
+function titleKey(k) {
+  const opts = titleKey.opts;
+  if (k === 'up' || k === 'down') { titleSel = (titleSel + 1) % opts.length; titleKey.draw(); }
+  if (k === 'A' || k === 'START') {
+    const o = opts[titleSel];
+    uiEl.innerHTML = ''; textBox = null;
+    if (o === 'CONTINUA') { G = loadSave(); mode = 'world'; loadMap(G.map, G.x, G.y, G.dir); }
+    else { G = newGame(); run(introScene); }
+  }
+}
+let introPic = null;
+function drawIntro() {
+  R(ctx, 0, 0, 0, VW, VH);
+  if (introPic === 'prof') { const c = charImg('prof', 'down', 0); ctx.drawImage(c, 0, 0, 16, 16, 56, 18, 48, 48); }
+  else if (introPic === 'player') { ctx.drawImage(charImg('player', 'down', 0), 0, 0, 16, 16, 56, 18, 48, 48); }
+  else if (introPic === 'rival') { ctx.drawImage(charImg('rival', 'down', 0), 0, 0, 16, 16, 56, 18, 48, 48); }
+  else if (introPic) ctx.drawImage(monSprite(introPic), 56, 22);
+}
+
+const SAVE_KEY = 'fauni-valcorona-save';
+function loadSave() {
+  try {
+    if (window.__INITIAL_SAVE__) return JSON.parse(window.__INITIAL_SAVE__);
+    const s = localStorage.getItem(SAVE_KEY); return s ? JSON.parse(s) : null;
+  } catch (e) { return null; }
+}
+let pendingSave = null, saveResolver = null;
+function saveGame() {
+  const data = JSON.stringify(G);
+  window.__INITIAL_SAVE__ = data;
+  try { localStorage.setItem(SAVE_KEY, data); } catch (e) {}
+  if (saveResolver) { const r = saveResolver; saveResolver = null; r(data); } else pendingSave = data;
+}
+// Ponte verso Scriptable: lo script chiama __waitSave() e riceve i dati ad ogni salvataggio.
+window.__waitSave = function (cb) {
+  if (pendingSave) { const d = pendingSave; pendingSave = null; cb(d); return; }
+  saveResolver = cb;
+};
+
+function start() {
+  resize();
+  showTitle();
+  requestAnimationFrame(loop);
+}
+
+// ============================================================
+//  FAUNI DI VALCORONA — mappe e storia (Capitolo 1)
+// ============================================================
+
+const MAPS = {};
+
+// ---------- interni riutilizzabili ----------
+const HOUSE_ROWS = [
+  '##########',
+  '#bb__x__k#',
+  '#________#',
+  '#__tt____#',
+  '#__tt____#',
+  '#________#',
+  '#x______x#',
+  '####mm####',
+];
+const CENTER_ROWS = [
+  '############',
+  '#x________p#',
+  '#___cccc___#',
+  '#__________#',
+  '#t________t#',
+  '#__________#',
+  '#x________x#',
+  '#####mm#####',
+];
+const SHOP_ROWS = [
+  '##########',
+  '#bbb__bbb#',
+  '#________#',
+  '#cc_____x#',
+  '#________#',
+  '#__tt____#',
+  '#________#',
+  '####mm####',
+];
+
+function house(id, exit, npcs, name) { MAPS[id] = {name: name || 'Casa', indoor: true, rows: HOUSE_ROWS, exit, npcs}; }
+function center(id, exit, extra = []) {
+  MAPS[id] = {name: 'Centro Cura', indoor: true, rows: CENTER_ROWS, exit, pc: true, npcs: [
+    {id: 'nurse', x: 5, y: 1, look: 'nurse', talk: nurse},
+    ...extra,
+  ]};
+}
+function bottega(id, exit, items, extra = []) {
+  MAPS[id] = {name: 'Bottega', indoor: true, rows: SHOP_ROWS, exit, npcs: [
+    {id: 'clerk', x: 1, y: 2, look: 'clerk', talk: () => shop(items)},
+    ...extra,
+  ]};
+}
+
+// ============================================================
+//  BORGO AURORA
+// ============================================================
+MAPS.borgo = {
+  name: 'Borgo Aurora',
+  rows: [
+    'TTTTTTTTT..TTTTTTTTT',
+    'T,,......==.......,T',
+    'T.RRRR...==...RRRR.T',
+    'T.WwDW...==...WwDW.T',
+    'T........==........T',
+    'T.fff..S.==...fff..T',
+    'T........==........T',
+    'T...RRRRRRRRRRR....T',
+    'T...RRRRRRRRRRR....T',
+    'T...WwwwwDwwwwW....T',
+    'T........=.........T',
+    'T.ff.....=.....ff..T',
+    'T........=......S..T',
+    'T~~~~~~~~~~~~~~~~~~T',
+    '~~~~~~~~~~~~~~~~~~~~',
+  ],
+  doors: {'4,3': 'casa_p', '16,3': 'casa_t', '9,9': 'lab'},
+  links: {up: {to: 'sentiero1'}},
+  signs: [
+    {x: 7, y: 5, text: 'BORGO AURORA|Dove ogni viaggio prende il largo.'},
+    {x: 16, y: 12, text: 'LABORATORIO VENTURA|Studi sulle SORGENTI e sui FAUNI di VALCORONA.'},
+  ],
+  npcs: [
+    {id: 'fisher', x: 13, y: 11, look: 'old', dir: 'down', text: 'Stanotte il mare ha portato a riva di tutto: alghe, conchiglie... e qualcosa che brillava.|La PROF è corsa in spiaggia prima dell\'alba.'},
+    {id: 'girl', x: 5, y: 6, look: 'girl', dir: 'right', text: 'Da grande voglio un FAUNO che voli! Così vado a scuola dall\'alto.'},
+  ],
+  triggers: [
+    {x: 9, y: 1, w: 2, when: () => !F('starter'), run: async () => {
+      player.dir = 'up';
+      await say('Una voce ti chiama da dietro: "{NAME}! Non andare nell\'erba alta senza un FAUNO!"');
+      await say('È meglio passare prima dal LABORATORIO della PROF.');
+      await playerWalk(['down']);
+    }},
+  ],
+};
+
+house('casa_p', {to: 'borgo', x: 4, y: 4}, [
+  {id: 'mom', x: 5, y: 3, look: 'mom', dir: 'left', talk: async () => {
+    if (!F('starter')) {
+      await say('Buongiorno! Hai sentito la tempesta stanotte? Il mare ha portato di tutto sulla spiaggia.');
+      await say('La PROF è passata presto: ti aspetta al LABORATORIO, qui sotto. Non farla aspettare!');
+    } else {
+      await say('Il tuo primo FAUNO! Che emozione... Riposatevi un momento.');
+      healParty();
+      await say('Ecco fatto! Siete in perfetta forma. Fai attenzione là fuori, d\'accordo?');
+    }
+  }},
+], 'Casa di {NAME}');
+MAPS.casa_p.signs = [{x: 1, y: 1, text: 'Una libreria piena di fumetti. Ce n\'è uno con una SORGENTE in copertina.'}];
+
+house('casa_t', {to: 'borgo', x: 16, y: 4}, [
+  {id: 'dad', x: 6, y: 3, look: 'dad', dir: 'down', text: [
+    'Sono il guardiano del faro, il padre di {RIVAL}.',
+    '{RIVAL} è uscito all\'alba. Diceva che oggi ti avrebbe battuto "una volta per tutte". Lo dice da quando avevate cinque anni.',
+  ]},
+], 'Casa di {RIVAL}');
+
+// ---------- LABORATORIO ----------
+MAPS.lab = {
+  name: 'Laboratorio', indoor: true,
+  rows: [
+    '############',
+    '#bbbb__bbbb#',
+    '#__________#',
+    '#____ttt___#',
+    '#__________#',
+    '#p________x#',
+    '#__________#',
+    '#x________x#',
+    '#__________#',
+    '#####mm#####',
+  ],
+  exit: {to: 'borgo', x: 9, y: 10},
+  pc: true,
+  npcs: [
+    {id: 'prof', x: 6, y: 2, look: 'prof', dir: 'down', talk: async () => {
+      if (!F('starter')) await say('Sono tutti e tre in quelle SFERE sul tavolo. Prenditi il tempo che ti serve.');
+      else if (!F('rival1')) await say('Avanti, conosci meglio il tuo nuovo compagno!');
+      else await say('Il BOSCO SUSSURRO è a nord di TORREVENTO. Fai attenzione, {NAME}. E registra tutto nel FAUNARIO!');
+    }},
+    {id: 'rival', x: 9, y: 4, look: 'rival', dir: 'left', show: () => !F('rival_left'), talk: async () => {
+      if (!F('starter')) await say('Dai, scegli! Io ho già deciso... più o meno.');
+      else await say('Il mio FAUNO è chiaramente il migliore. Vuoi una prova?');
+    }},
+    {id: 'aide', x: 2, y: 6, look: 'man', dir: 'right', text: 'Sono l\'assistente della PROF. Analizzo i campioni di LINFA delle SORGENTI.|Ultimamente sono sempre più deboli. Nessuno sa perché.'},
+    ...['fogliotto', 'fiammolo', 'gocciolo'].map((sp, i) => ({
+      id: 'ball_' + sp, x: 5 + i, y: 3, look: 'ball', noTurn: true,
+      show: () => G.starter !== sp && G.rivalStarter !== sp,
+      talk: () => pickStarter(sp),
+    })),
+  ],
+  triggers: [
+    {x: 1, y: 8, w: 10, when: () => !F('starter') && F('lab_intro'), run: async () => {
+      await say('PROF: Ehi, non andartene! Scegli prima il tuo FAUNO.');
+      await playerWalk(['up']);
+    }},
+    {x: 1, y: 7, w: 10, when: () => F('starter') && !F('rival1'), run: rivalBattle1},
+  ],
+  onEnter: async () => {
+    if (F('lab_intro')) return;
+    setF('lab_intro');
+    {
+      await playerWalk(['up', 'up', 'up', 'up']);
+      const rival = NPCS.find(n => n.id === 'rival');
+      face(rival, 'left');
+      await say('{RIVAL}: Era ora, {NAME}! La PROF non voleva dirmi niente finché non arrivavi.');
+      await say('PROF: Eccoti! Stanotte la tempesta ha spinto a riva tre giovani FAUNI, lontani dalla loro SORGENTE.');
+      await say('PROF: Li ho curati tutta la notte. Stanno bene, ma hanno bisogno di qualcuno che resti con loro.');
+      await say('PROF: Ognuno di voi due ne prenderà uno. Sono in quelle SFERE sul tavolo.|{NAME}, scegli tu per primo.');
+      await say('{RIVAL}: Cosa?! Perché sempre prima {NAME}?');
+      await say('PROF: Perché tu stamattina ti sei mangiato il mio budino, {RIVAL}.');
+      await say('{RIVAL}: ...Era un esperimento scientifico.');
+    }
+  },
+};
+
+const STARTER_INFO = {
+  fogliotto: 'È FOGLIOTTO, un FAUNO di tipo PIANTA. Dorme con le foglie al sole.',
+  fiammolo: 'È FIAMMOLO, un FAUNO di tipo FUOCO. Tiene sempre in bocca una piccola brace.',
+  gocciolo: 'È GOCCIOLO, un FAUNO di tipo ACQUA. Per metà è fatto di acqua di mare.',
+};
+const RIVAL_PICK = {fogliotto: 'fiammolo', fiammolo: 'gocciolo', gocciolo: 'fogliotto'};
+
+async function pickStarter(sp) {
+  if (F('starter')) { await say('È l\'ultimo FAUNO rimasto alla PROF. Sembra che si sia appena addormentato.'); return; }
+  overlay = {type: 'mon', sp};
+  const yes = await ask(STARTER_INFO[sp] + '|Scegli ' + SPECIES[sp].name + '?');
+  overlay = null;
+  if (!yes) return;
+  G.starter = sp; setF('starter');
+  const m = makeMon(sp, 5, G.name); addMon(m);
+  await say(`{NAME} riceve ${SPECIES[sp].name}!`);
+  await say(`PROF: Ottima scelta. ${SPECIES[sp].name} sembra già fidarsi di te.`);
+  const rs = RIVAL_PICK[sp]; G.rivalStarter = rs;
+  await say(`{RIVAL}: Allora io prendo questo! ${SPECIES[rs].name}, sei con me!`);
+  await say(`{RIVAL} riceve ${SPECIES[rs].name}!`);
+  await say('PROF: Prendete anche questi. Sono FAUNARI: registrano ogni FAUNO che incontrate.');
+  setF('faunario');
+  await say('{NAME} riceve il FAUNARIO!');
+  await say('PROF: E queste SFERE servono a stringere amicizia con i FAUNI selvatici. Indeboliscili prima di lanciarle!');
+  await give('sfera', 5);
+  await say('Premi START per aprire il menu: FAUNARIO, squadra, BORSA e salvataggio sono tutti lì.');
+}
+
+async function rivalBattle1() {
+  const rival = NPCS.find(n => n.id === 'rival');
+  player.dir = 'up';
+  await say('{RIVAL}: Aspetta, {NAME}! Vediamo subito chi ha scelto meglio!');
+  const res = await battle({canLose: true, trainer: {cls: 'RIVALE', name: G.rival, team: [[G.rivalStarter, 5]], money: 80,
+    lose: '{RIVAL}: Cosa?! Stavo solo... scaldando i motori.'}});
+  if (res === 'lose') await say('{RIVAL}: Visto? Sono nato per questo!');
+  setF('rival1');
+  healParty();
+  await say('PROF: Bella lotta, tutti e due. Ecco, vi rimetto in forma i FAUNI.');
+  await say('PROF: Ora ascoltatemi. Da qualche settimana le SORGENTI della valle si stanno spegnendo, una dopo l\'altra.');
+  await say('PROF: Senza la LINFA delle SORGENTI i FAUNI si indeboliscono, e i più giovani si perdono. Come i vostri tre, stanotte.');
+  await say('PROF: La più vicina è nel BOSCO SUSSURRO, oltre TORREVENTO. Andate a vedere cosa succede.');
+  await say('PROF: E lungo la strada registrate più FAUNI che potete. Ogni dato mi aiuta a capire.');
+  await say('{RIVAL}: Ci arriverò prima io! Ci vediamo, {NAME}!');
+  setF('rival_left');
+}
+
+// ============================================================
+//  SENTIERO 1
+// ============================================================
+MAPS.sentiero1 = {
+  name: 'Sentiero 1',
+  rows: [
+    'TTTTTTTTT..TTTTTTTTT',
+    'T,,,,....==....,,,,T',
+    'T,,,,....==....,,,,T',
+    'T........==........T',
+    'TTTTT....==....TTTTT',
+    'T,,,,,,..==........T',
+    'T,,,,,,..==..rr....T',
+    'T,,,,,,..==........T',
+    'Tvvvvvvvv..vvvvvvvvT',
+    'T........==....,,,,T',
+    'T..TT....==....,,,,T',
+    'T..TT....==....,,,,T',
+    'T........==........T',
+    'T,,,,,,,,==,,,,,,,,T',
+    'T,,,,,,,,==,,,,,,,,T',
+    'T........==..S.....T',
+    'TTTTTTTTT..TTTTTTTTT',
+  ],
+  links: {down: {to: 'borgo'}, up: {to: 'torrevento'}},
+  signs: [{x: 13, y: 15, text: 'SENTIERO 1|BORGO AURORA ↓   ↑ TORREVENTO'}],
+  wild: {rate: 0.12, list: [['topino', 2, 4, 4], ['passerillo', 2, 4, 4], ['bruchetto', 3, 4, 2]]},
+  npcs: [
+    {id: 'walker', x: 11, y: 10, look: 'woman', dir: 'left', talk: async () => {
+      if (!F('s1_gift')) {
+        await say('Ciao! Sei un allenatore alle prime armi, vero? Si vede da come tieni il FAUNARIO.');
+        setF('s1_gift');
+        await give('tonico', 2);
+        await say('Un TONICO rimette in sesto un FAUNO stanco. Usalo dalla BORSA, anche durante la lotta.');
+      } else await say('A TORREVENTO c\'è un CENTRO CURA. Lì curano i FAUNI gratis.');
+    }},
+    {id: 'jumper', x: 4, y: 9, look: 'kid', dir: 'up', text: 'Vedi quei gradini di terra? Puoi saltarli verso sud, ma non risalirli. È una scorciatoia per tornare a casa!'},
+  ],
+};
+
+// ============================================================
+//  TORREVENTO
+// ============================================================
+MAPS.torrevento = {
+  name: 'Torrevento',
+  rows: [
+    'TTTTTTTTT..TTTTTTTTT',
+    'T........==........T',
+    'T.RRRR...==...MMMM.T',
+    'T.WwDW...==...WwDW.T',
+    'T........==........T',
+    'T..S.....==.....YY.T',
+    'T........==.....YY.T',
+    'T.CCCC...==........T',
+    'T.WwDW...==...RRRR.T',
+    'T........==...WDwW.T',
+    'T.ff.....==........T',
+    'T........==....ff..T',
+    'TTTTTTTTT..TTTTTTTTT',
+  ],
+  doors: {'4,3': 'tv_casa1', '16,3': 'tv_bottega', '4,8': 'tv_centro', '15,9': 'tv_casa2'},
+  links: {down: {to: 'sentiero1'}, up: {to: 'sentiero2'}},
+  signs: [{x: 3, y: 5, text: 'TORREVENTO|La città dei mulini, dove il vento non dorme mai.'}],
+  npcs: [
+    {id: 'miller', x: 15, y: 6, look: 'old', dir: 'down', text: 'I mulini girano da trecento anni. Ma da un mese il vento ha uno strano odore... di ferro.'},
+    {id: 'woman', x: 12, y: 4, look: 'woman', dir: 'left', text: 'Sono passati degli uomini in giacca grigia. Hanno comprato tutte le SFERE della BOTTEGA!|Per fortuna stamattina è arrivato un carico nuovo.'},
+    {id: 'kid', x: 6, y: 10, look: 'kid', dir: 'up', text: 'Il CENTRO CURA è quello col tetto a croce. I FAUNI escono di lì pieni di energia!'},
+  ],
+};
+center('tv_centro', {to: 'torrevento', x: 4, y: 9}, [
+  {id: 'trav', x: 2, y: 4, look: 'hiker', dir: 'right', text: 'Il PC nell\'angolo serve a depositare i FAUNI in più. Puoi portarne con te al massimo sei.'},
+]);
+bottega('tv_bottega', {to: 'torrevento', x: 16, y: 4}, ['sfera', 'tonico', 'antidoto', 'scioglinervi', 'campanella'], [
+  {id: 'cust', x: 6, y: 5, look: 'man', dir: 'up', text: 'Un consiglio: porta sempre un ANTIDOTO. Nel BOSCO SUSSURRO ci sono FAUNI velenosi.'},
+]);
+house('tv_casa1', {to: 'torrevento', x: 4, y: 4}, [
+  {id: 'grandma', x: 5, y: 3, look: 'oldw', dir: 'down', text: 'Quando ero giovane, la SORGENTE del bosco si vedeva brillare fin da qui, di notte.|Ora c\'è solo buio.'},
+]);
+house('tv_casa2', {to: 'torrevento', x: 15, y: 10}, [
+  {id: 'teacher', x: 4, y: 2, look: 'man', dir: 'down', text: [
+    'Sono il maestro di TORREVENTO. Ecco la lezione di oggi!',
+    'L\'ACQUA spegne il FUOCO. Il FUOCO brucia le PIANTE. Le PIANTE bevono l\'ACQUA.',
+    'E la ROCCIA? Teme l\'ACQUA e le PIANTE, e l\'ELETTRO non le fa nemmeno il solletico.',
+  ]},
+]);
+
+// ============================================================
+//  SENTIERO 2
+// ============================================================
+MAPS.sentiero2 = {
+  name: 'Sentiero 2',
+  rows: [
+    'TTTTTTTTT..TTTTTTTTT',
+    'T,,,,,...==...,,,,,T',
+    'T,,,,,...==...,,,,,T',
+    'T.....TT.==.TT.....T',
+    'T.rr..TT.==.TT..rr.T',
+    'T........==........T',
+    'TTTTT....==....TTTTT',
+    'T,,,,,,,.==.,,,,,,,T',
+    'T,,,,,,,.==.,,,,,,,T',
+    'T........==........T',
+    'T..S.....==...TTT..T',
+    'T........==...TTT..T',
+    'Tvvvvvvv.==.vvvvvvvT',
+    'T........==........T',
+    'T,,,,,...==....,,,,T',
+    'T,,,,,...==....,,,,T',
+    'T........==........T',
+    'TTTTTTTTT..TTTTTTTTT',
+  ],
+  links: {down: {to: 'torrevento'}, up: {to: 'bosco'}},
+  signs: [{x: 3, y: 10, text: 'SENTIERO 2|↑ BOSCO SUSSURRO'}],
+  wild: {rate: 0.12, list: [['topino', 3, 5, 3], ['passerillo', 3, 5, 3], ['bruchetto', 3, 5, 2], ['serpillo', 4, 5, 1], ['lucciolo', 4, 5, 1]]},
+  npcs: [
+    {id: 'dario', x: 7, y: 5, look: 'kid', dir: 'right', trainer: {cls: 'RAGAZZINO', name: 'DARIO', sight: 4, team: [['topino', 4], ['topino', 5]], money: 60,
+      intro: 'Ehi! I nostri sguardi si sono incrociati. Si lotta!',
+      lose: 'Non vale! Il mio TOPINO aveva fame.',
+      after: 'Allenati nell\'erba alta: i FAUNI si rafforzano solo lottando.'}},
+    {id: 'elisa', x: 12, y: 9, look: 'scout', dir: 'left', trainer: {cls: 'ESPLORATRICE', name: 'ELISA', sight: 4, team: [['bruchetto', 5], ['bozzolino', 5]], money: 70,
+      intro: 'Gli insetti sono i FAUNI più sottovalutati di VALCORONA! Te lo dimostro!',
+      lose: 'Ok... forse qualche motivo per sottovalutarli c\'è.',
+      after: 'BRUCHETTO diventa un bozzolo prestissimo. E poi... aspetta e vedrai!'}},
+    {id: 'it1', x: 1, y: 9, look: 'ball', item: 'tonico', show: () => !F('I:sentiero2:it1')},
+  ],
+};
+
+// ============================================================
+//  BOSCO SUSSURRO
+// ============================================================
+MAPS.bosco = {
+  name: 'Bosco Sussurro',
+  spring: 'sorgente1',
+  rows: [
+    'TTTTTTTT..TTTTTTTTTT',
+    'TTTTTTTT..TTTTTTTTTT',
+    'TTTTTTTTT.TTTTTTTTTT',
+    'TTTTTT.....TTTTTTTTT',
+    'TTTTT..OO...TTTTTTTT',
+    'TTTTT..OO...TTTTTTTT',
+    'TTTTT.......,,,,TTTT',
+    'TT,,,,.......,,,,TTT',
+    'TT,,,,TTT..TTT,,,TTT',
+    'TT,,,,TTT..TTT,,,TTT',
+    'TT......T..T.....TTT',
+    'TTTTT...T..T...TTTTT',
+    'TTTTT,,,,..,,,,,TTTT',
+    'TT,,,,,,,..,,,,,,,TT',
+    'TT,,TTTTT..TTTTT,,TT',
+    'TT,,T.........T.,,TT',
+    'TT..T.TTTTTTT.T...TT',
+    'TT..T.T,,,,,T.T...TT',
+    'TT....T,,,,,T.....TT',
+    'TTTTTTT.....TTTT..TT',
+    'TT.......TTTTT....TT',
+    'TT.....,,,,,,.....TT',
+    'TTTTTTTTT..TTTTTTTTT',
+    'TTTTTTTTT..TTTTTTTTT',
+  ],
+  links: {down: {to: 'sentiero2'}, up: {to: 'pietrafonda', d: 0}},
+  wild: {rate: 0.14, list: [['bruchetto', 4, 6, 3], ['bozzolino', 5, 6, 2], ['lucciolo', 5, 7, 2], ['funghetto', 5, 7, 2], ['pipistrino', 5, 7, 2], ['ombretto', 6, 7, 1]]},
+  signs: [],
+  npcs: [
+    {id: 'nino', x: 2, y: 10, look: 'kid', dir: 'right', trainer: {cls: 'CACCIABRUCHI', name: 'NINO', sight: 5, team: [['bruchetto', 6], ['bozzolino', 6]], money: 70,
+      intro: 'Shhh! Stavo per prendere un LUCCIOLO! Adesso me la paghi!',
+      lose: 'Il LUCCIOLO è scappato E ho perso. Giornata no.',
+      after: 'Di notte il bosco brillava di LUCCIOLI. Da quando la SORGENTE si è spenta ne vedo pochissimi.'}},
+    {id: 'rita', x: 15, y: 15, look: 'woman', dir: 'left', trainer: {cls: 'ESCURSIONISTA', name: 'RITA', sight: 4, team: [['funghetto', 7]], money: 90,
+      intro: 'Ti sei perso? Tranquillo, dopo la lotta ti indico la strada!',
+      lose: 'Bene, almeno non ti sei perso nella lotta.',
+      after: 'La SORGENTE è a nord. Ho visto gente vestita di grigio armeggiare là intorno.'}},
+    {id: 'it1', x: 2, y: 13, look: 'ball', item: 'antidoto', show: () => !F('I:bosco:it1')},
+    {id: 'it2', x: 17, y: 20, look: 'ball', item: 'sfera', n: 2, show: () => !F('I:bosco:it2')},
+    {id: 'grigio', x: 9, y: 2, look: 'grigio', dir: 'down', show: () => !F('sorgente1'), talk: () => springScene()},
+    {id: 'rival', x: 6, y: 4, look: 'rival', dir: 'right', show: () => F('rival_bosco') && !F('rival_bosco_left'), text: '{RIVAL}: Alla PALESTRA di PIETRAFONDA vinco io. Tienilo a mente!'},
+  ],
+  triggers: [
+    {x: 6, y: 3, w: 5, when: () => !F('sorgente1'), run: () => springScene()},
+  ],
+};
+
+async function springScene() {
+  const g = NPCS.find(n => n.id === 'grigio');
+  await say('???: Ehi, tu! Zona chiusa. Lavori del CONSORZIO GRIGIO.');
+  if (player.x !== 9) await npcWalk(g, ['down']); // il Grigio scende verso di te
+  faceEachOther(g);
+  await say('RECLUTA GRIGIA: Questa SORGENTE adesso è proprietà del CONSORZIO. La LINFA vale oro, e noi la imbottigliamo.');
+  await say('RECLUTA GRIGIA: Hai visto la VALVOLA che ho montato? Un capolavoro. Neanche una goccia va sprecata.');
+  await say('RECLUTA GRIGIA: Non ti piace? Allora fatti da parte... o te ne faccio pentire!');
+  const res = await battle({trainer: {cls: 'RECLUTA', name: 'GRIGIA', team: [['pipistrino', 7], ['topino', 8]], money: 150,
+    lose: 'Che cosa?! Un ragazzino mi ha messo al tappeto?'}});
+  if (res !== 'win') return;
+  await say('RECLUTA GRIGIA: Va bene, va bene! Me ne vado... ma il DIRETTORE CENERI non ne sarà contento.');
+  await say('RECLUTA GRIGIA: E la VALVOLA... tienila pure. Ne abbiamo a centinaia!');
+  setF('sorgente1');
+  screenEl.classList.add('flash'); await sleep(800); screenEl.classList.remove('flash');
+  await say('{NAME} stacca la VALVOLA GRIGIA. La SORGENTE torna a brillare!');
+  await say('Una goccia di LINFA si condensa sul bordo della pietra e cade in una fiala vuota abbandonata dal CONSORZIO.');
+  addItem('fiala', 1);
+  await say('{NAME} riceve la FIALA DI LINFA!');
+  healParty();
+  await say('La luce della SORGENTE avvolge i tuoi FAUNI. Sono in piena forma!');
+  // arriva il rivale
+  setF('rival_bosco');
+  const r = NPCS.find(n => n.id === 'rival');
+  faceEachOther(r);
+  await say('{RIVAL}: Ehi! Ma... l\'hai riaccesa tu?');
+  await say('{RIVAL}: Ho visto scappare uno vestito di grigio. Il CONSORZIO GRIGIO, eh? Mio padre dice che stanno comprando mezza valle.');
+  await say('{RIVAL}: Va bene, stavolta mi hai battuto sul tempo. Ma alla PALESTRA di PIETRAFONDA, qui a nord, vinco io!');
+  setF('rival_bosco_left');
+}
+
+// ============================================================
+//  PIETRAFONDA
+// ============================================================
+MAPS.pietrafonda = {
+  name: 'Pietrafonda',
+  rows: [
+    'TTTTTTTTTTTTTTTTTTTT',
+    'Tr......rrr......rrT',
+    'T..GGGGGG....RRRR..T',
+    'T..GGGGGG....WwDW..T',
+    'T..WwwDwW..........T',
+    'T.......=..........T',
+    'T.S.....=.......S..T',
+    'T.......============',
+    'T..CCCC.=....MMMM..T',
+    'T..WwDW.=....WwDW..T',
+    'T.......=........r.T',
+    'T.rr....=......rr..T',
+    'T.......=..........T',
+    'TTTTTTTT..TTTTTTTTTT',
+  ],
+  doors: {'6,4': 'pf_palestra', '15,3': 'pf_casa', '5,9': 'pf_centro', '15,9': 'pf_bottega'},
+  links: {down: {to: 'bosco'}},
+  signs: [
+    {x: 2, y: 6, text: 'PIETRAFONDA|Scolpita nella roccia, fondata sulla pazienza.'},
+    {x: 16, y: 6, text: 'PASSO DEL GUFO →|Chiuso per frana.'},
+  ],
+  npcs: [
+    {id: 'worker', x: 18, y: 7, look: 'worker', dir: 'left', text: 'Alt! Il PASSO DEL GUFO è chiuso: c\'è stata una frana.|Strano, però... Non pioveva da settimane.|(Il viaggio continua nel CAPITOLO 2.)'},
+    {id: 'miner', x: 11, y: 11, look: 'miner', dir: 'left', text: 'Le cave di PIETRAFONDA sono le più antiche della valle. Ci vivono un sacco di SASSOLO.|Attento a dove metti i piedi: a volte ti guardano.'},
+    {id: 'gymguy', x: 9, y: 5, look: 'man', dir: 'down', text: 'La capopalestra BRUNA è un muro. Nessuno l\'ha mai vista arretrare di un passo.'},
+    {id: 'rival', x: 7, y: 6, look: 'rival', dir: 'up', show: () => F('badge1') && !F('ch1_end'), text: '...'},
+  ],
+  onEnter: async () => { if (F('badge1') && !F('ch1_end')) await chapterEnd(); },
+};
+center('pf_centro', {to: 'pietrafonda', x: 5, y: 10}, [
+  {id: 'girl', x: 8, y: 4, look: 'girl', dir: 'left', text: 'Ho sentito che i FAUNI di tipo ELETTRO non riescono proprio a scalfire quelli di ROCCIA. Poverini!'},
+]);
+bottega('pf_bottega', {to: 'pietrafonda', x: 15, y: 10}, ['sfera', 'tonico', 'supertonico', 'antidoto', 'scioglinervi', 'campanella', 'unguento']);
+house('pf_casa', {to: 'pietrafonda', x: 15, y: 4}, [
+  {id: 'old', x: 6, y: 3, look: 'old', dir: 'left', text: [
+    'Anche sotto le cave c\'è una SORGENTE. Da qualche giorno l\'acqua del pozzo sa di metallo.',
+    'Il CONSORZIO GRIGIO è venuto a fare "sondaggi geologici". Sì, sì... sondaggi.',
+  ]},
+]);
+
+MAPS.pf_palestra = {
+  name: 'Palestra di Pietrafonda', indoor: true,
+  rows: [
+    '############',
+    '#r___oo___r#',
+    '#__________#',
+    '#rr______rr#',
+    '#__________#',
+    '#____rr____#',
+    '#__________#',
+    '#rr______rr#',
+    '#__________#',
+    '#o________o#',
+    '#__________#',
+    '#####mm#####',
+  ],
+  exit: {to: 'pietrafonda', x: 6, y: 5},
+  npcs: [
+    {id: 'guide', x: 3, y: 10, look: 'man', dir: 'right', talk: async () => {
+      if (!F('badge1')) {
+        await say('Ciao, sfidante! Un consiglio gratis: la ROCCIA teme ACQUA e PIANTE.');
+        await say('I colpi di tipo ELETTRO, invece, lasciali a casa: qui non servono a niente.');
+      } else await say('Ce l\'hai fatta! La prima MEDAGLIA non si scorda mai.');
+    }},
+    {id: 'gino', x: 8, y: 6, look: 'miner', dir: 'left', trainer: {cls: 'MINATORE', name: 'GINO', sight: 4, team: [['sassolo', 8], ['topino', 9]], money: 130,
+      intro: 'Prima di arrivare da BRUNA devi scavare attraverso di me!',
+      lose: 'Sono rimasto senza piccone!',
+      after: 'BRUNA usa INDURIMENTO. Non lasciarle il tempo di rafforzarsi!'}},
+    {id: 'bruna', x: 5, y: 2, look: 'leader', dir: 'down', talk: async (n) => {
+      if (F('badge1')) {
+        await say('BRUNA: Anche qui sotto la cava la SORGENTE si sta spegnendo. Il CONSORZIO è venuto a "sondare" il terreno.');
+        await say('BRUNA: Se vai verso il PASSO DEL GUFO, tieni gli occhi aperti. Quella frana non mi convince.');
+        return;
+      }
+      await say('BRUNA: Sono BRUNA, capopalestra di PIETRAFONDA.');
+      await say('BRUNA: La roccia non si muove, non si piega e non si arrende. I miei FAUNI sono uguali.');
+      await say('BRUNA: Vediamo se hai la pazienza di scalfirli!');
+      const res = await battle({trainer: {cls: 'CAPOPALESTRA', name: 'BRUNA', team: [['sassolo', 10], ['macigno', 12]], money: 600,
+        lose: 'BRUNA: Una crepa... poi una frana. Hai vinto tu.'}});
+      if (res !== 'win') return;
+      G.badges.push(1); setF('badge1');
+      await say('BRUNA: Ecco la MEDAGLIA CIOTTOLO. Dimostra che hai superato la palestra di PIETRAFONDA.');
+      await say('{NAME} riceve la MEDAGLIA CIOTTOLO!');
+      await say('BRUNA: Con questa i FAUNI fino al livello 20 ti obbediranno anche se li ricevi da altri.');
+      await say('BRUNA: E prendi questi. Sulla strada ti serviranno più di quanto pensi.');
+      await give('supertonico', 2);
+    }},
+  ],
+};
+
+async function chapterEnd() {
+  const r = NPCS.find(n => n.id === 'rival');
+  faceEachOther(r);
+  await say('{RIVAL}: {NAME}! Già fatto anche tu? Guarda qua!');
+  await say('{RIVAL} ti mostra con orgoglio una MEDAGLIA CIOTTOLO tutta lucida.');
+  await say('{RIVAL}: L\'ho vinta un\'ora fa. Quindi tecnicamente sono arrivato primo. Tecnicamente.');
+  await say('{RIVAL}: Ho parlato con BRUNA. Pensa che la frana al PASSO DEL GUFO non sia un incidente. C\'entra il CONSORZIO GRIGIO.');
+  await say('{RIVAL}: Appena riaprono il passo vado a vedere. E stavolta arrivo prima io, sul serio!');
+  setF('ch1_end');
+  await say('— FINE DEL CAPITOLO 1 —|Il viaggio continua nel prossimo aggiornamento: il PASSO DEL GUFO, LAGOPIANO e la seconda SORGENTE.');
+  await say('Ricordati di salvare dal menu START!');
+}
+
+// ============================================================
+//  INTRODUZIONE
+// ============================================================
+async function introScene() {
+  mode = 'intro';
+  introPic = 'prof';
+  await say('Ciao! Benvenuto nella valle di VALCORONA!');
+  await say('Mi chiamo ILARIA VENTURA, ma qui tutti mi chiamano semplicemente la PROF.');
+  introPic = 'lucciolo';
+  await say('Questa terra è abitata da creature chiamate FAUNI.');
+  await say('Nascono dalla LINFA, l\'energia che scorre sotto le colline e affiora nelle SORGENTI.');
+  await say('C\'è chi li alleva, chi lotta insieme a loro, chi li dipinge... Io studio il legame tra i FAUNI e le SORGENTI.');
+  introPic = 'player';
+  await say('Ma parliamo di te. Come ti chiami?', {keep: true});
+  const names = ['ALE', 'SAM', 'NICO', 'VALE'];
+  const i = await choose(names, {x: 104, y: 40, w: 56, cancel: false});
+  G.name = names[i]; hideTextBox();
+  await say('{NAME}! Che bel nome.');
+  introPic = 'rival';
+  await say('E lui è il figlio del guardiano del faro. Come si chiamava...?', {keep: true});
+  const rn = ['TEO', 'IVO', 'LEO', 'MAX'];
+  const j = await choose(rn, {x: 104, y: 40, w: 56, cancel: false});
+  G.rival = rn[j]; hideTextBox();
+  await say('Giusto, {RIVAL}! Siete cresciuti insieme, e da sempre fate a gara su tutto.');
+  introPic = 'player';
+  await say('{NAME}, la tua storia con i FAUNI sta per cominciare. Ti aspetto al LABORATORIO!');
+  introPic = null;
+  await fadeOut();
+  mode = 'world';
+  loadMap('casa_p', 3, 4, 'down');
+  await fadeIn();
+}
+
+start();
+</script>
+</body>
+</html>
