@@ -1,0 +1,831 @@
+<title>Lavagna Baseball5</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: tabellone in alto, campo quadrato a sinistra, strumenti a destra (sotto, su telefono) */
+:root {
+  --court: #1f5c74;      /* territorio buono, cemento blu */
+  --court-2: #17485c;    /* territorio foul */
+  --line: #f4f1e6;       /* righe del campo */
+  --bg: #0f1a20;         /* sfondo pagina */
+  --panel: #16252d;
+  --panel-2: #1d313b;
+  --fg: #e8eef0;
+  --muted: #8fa6b0;
+  --orange: #ff7a2f;     /* attacco / accento */
+  --cyan: #4fd6e0;       /* difesa */
+  --ok: #4ad37a; --bad: #ff5a5a; --warn: #ffc542;
+  --display: "Saira Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.45 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 14px 24px; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, select, input, textarea { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.app { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* tabellone */
+.board { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; background: #0a1216; border: 1px solid #22343d; border-radius: 10px; padding: 10px 16px; }
+.brand { font: 800 26px/1 var(--display); letter-spacing: .04em; text-transform: uppercase; }
+.brand span { color: var(--orange); }
+.score { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.sc { display: grid; gap: 2px; justify-items: center; }
+.sc small { font: 600 11px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.sc b { font: 800 26px/1 var(--display); font-variant-numeric: tabular-nums; }
+.dots { display: flex; gap: 5px; padding-top: 6px; }
+.dots i { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--bad); }
+.dots i.on { background: var(--bad); }
+.mini { width: 40px; height: 40px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 14px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.fieldwrap { position: relative; background: #0a1216; border: 1px solid #22343d; border-radius: 10px; padding: 8px; }
+canvas#f { display: block; width: 100%; max-width: 100%; aspect-ratio: 1 / 1; touch-action: none; border-radius: 6px; cursor: crosshair; }
+.hint { position: absolute; left: 18px; top: 16px; right: 18px; pointer-events: none; font: 600 13px var(--body); color: var(--fg); text-shadow: 0 1px 2px #000; }
+.hint b { color: var(--orange); }
+
+.panel { background: var(--panel); border: 1px solid #22343d; border-radius: 10px; overflow: hidden; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid #22343d; }
+.tabs button { background: none; border: 0; padding: 11px 4px; font: 700 15px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); cursor: pointer; border-bottom: 3px solid transparent; }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--orange); }
+.pane { padding: 14px; display: grid; gap: 12px; }
+.pane h3 { margin: 0; font: 700 13px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { background: var(--panel-2); border: 1px solid #2c4652; border-radius: 7px; padding: 8px 12px; cursor: pointer; font-weight: 600; }
+.btn:hover { border-color: #4a6e7d; }
+.btn.pri { background: var(--orange); border-color: var(--orange); color: #1a0d04; }
+.btn.on { background: #2c4652; border-color: var(--cyan); color: var(--cyan); }
+.btn:disabled { opacity: .45; cursor: default; }
+.seg { display: inline-flex; border: 1px solid #2c4652; border-radius: 7px; overflow: hidden; }
+.seg button { background: var(--panel-2); border: 0; padding: 7px 10px; cursor: pointer; font-weight: 600; }
+.seg button + button { border-left: 1px solid #2c4652; }
+.seg button.on { background: var(--cyan); color: #06222a; }
+label.sl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: 13px; color: var(--muted); }
+label.sl input { grid-column: 1 / -1; accent-color: var(--orange); }
+label.sl output { font: 500 12px var(--mono); color: var(--fg); }
+label.ck { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+label.ck input { margin-top: 3px; accent-color: var(--orange); }
+select { background: var(--panel-2); border: 1px solid #2c4652; border-radius: 7px; padding: 7px 8px; }
+.log { background: #0a1216; border-radius: 8px; padding: 10px 12px; font-size: 13.5px; min-height: 64px; max-height: 210px; overflow: auto; display: grid; gap: 6px; }
+.log p { margin: 0; }
+.log .t { font: 500 11.5px var(--mono); color: var(--muted); margin-right: 6px; }
+.out { color: var(--bad); font-weight: 700; } .safe { color: var(--ok); font-weight: 700; } .run { color: var(--warn); font-weight: 700; }
+.frames { display: flex; flex-wrap: wrap; gap: 6px; }
+.frames button { min-width: 34px; }
+textarea { width: 100%; min-height: 70px; background: #0a1216; border: 1px solid #2c4652; border-radius: 7px; padding: 8px; font: 12px var(--mono); resize: vertical; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+.note { font-size: 12.5px; color: var(--muted); margin: 0; }
+.swatch { width: 26px; height: 26px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+.swatch.on { border-color: var(--fg); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="app">
+  <header class="board" aria-label="Tabellone">
+    <div class="brand">Baseball<span>5</span> · Lavagna</div>
+    <div class="score">
+      <div class="sc"><small>Inning</small><b id="sInn">1▲</b></div>
+      <div class="sc"><small>Ospiti</small><b id="sA">0</b></div>
+      <div class="sc"><small>Casa</small><b id="sH">0</b></div>
+      <div class="sc"><small>Eliminati</small><div class="dots" id="sOut"><i></i><i></i><i></i></div></div>
+      <canvas class="mini" id="sBases" width="80" height="80" aria-label="Basi occupate"></canvas>
+      <button class="btn" id="resetGame" title="Azzera punteggio, eliminati e basi">Nuova partita</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="fieldwrap">
+      <canvas id="f" width="900" height="900" aria-label="Campo di Baseball5"></canvas>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <aside class="panel">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="t-pos" aria-selected="true">Posiziona</button>
+        <button role="tab" id="t-hit" aria-selected="false">Battuta</button>
+        <button role="tab" id="t-play" aria-selected="false">Schemi</button>
+        <button role="tab" id="t-draw" aria-selected="false">Disegna</button>
+      </div>
+
+      <section class="pane" id="p-pos">
+        <h3>Difesa</h3>
+        <div class="row">
+          <select id="defPreset" aria-label="Schieramento difensivo">
+            <option value="std">Schieramento standard</option>
+            <option value="in">Difesa avanzata (gioco a casa)</option>
+            <option value="deep">Difesa profonda</option>
+            <option value="left">Spostata a sinistra</option>
+            <option value="right">Spostata a destra</option>
+            <option value="dp">Doppio gioco (basi strette)</option>
+          </select>
+          <button class="btn" id="applyDef">Applica</button>
+        </div>
+        <h3>Attacco</h3>
+        <div class="row">
+          <select id="sitPreset" aria-label="Situazione corridori">
+            <option value="0">Basi vuote</option>
+            <option value="1">Corridore in 1ª</option>
+            <option value="2">Corridore in 2ª</option>
+            <option value="12">1ª e 2ª</option>
+            <option value="13">1ª e 3ª</option>
+            <option value="23">2ª e 3ª</option>
+            <option value="123">Basi piene</option>
+          </select>
+          <button class="btn" id="applySit">Applica</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="advAll">Avanza tutti di una base</button>
+          <button class="btn" id="clearBases">Svuota basi</button>
+        </div>
+        <p class="note">Trascina i gettoni sul campo. Tocca una base vuota per aggiungere un corridore, tocca un corridore per farlo avanzare di una base. Tieni premuto su un corridore per toglierlo.</p>
+        <div class="legend"><span><i style="background:var(--cyan)"></i>Difesa</span><span><i style="background:var(--orange)"></i>Battitore e corridori</span><span><i style="background:#fff"></i>Pallina</span></div>
+      </section>
+
+      <section class="pane" id="p-hit" hidden>
+        <h3>Tipo di battuta</h3>
+        <div class="seg" id="hitType">
+          <button data-v="ground" class="on">Rasoterra</button><button data-v="line">Linea</button><button data-v="fly">Volata</button>
+        </div>
+        <div class="row">
+          <button class="btn on" id="pickTarget">Scegli il punto sul campo</button>
+          <button class="btn" id="randHit">Battuta casuale</button>
+        </div>
+        <div class="row">
+          <button class="btn pri" id="simulate" disabled>▶ Simula</button>
+          <div class="seg" id="speed"><button data-v="0.35">0,35×</button><button data-v="0.6" class="on">0,6×</button><button data-v="1">1×</button></div>
+          <button class="btn" id="replay" disabled>Rivedi</button>
+        </div>
+        <div class="log" id="log" aria-live="polite"><p class="note">Scegli dove va la pallina (per la rasoterra: dove si fermerebbe se nessuno la prende; per linea e volata: dove tocca terra), poi premi Simula.</p></div>
+        <label class="ck"><input type="checkbox" id="autoApply" checked> Aggiorna basi e punteggio dopo ogni simulazione</label>
+        <h3>Velocità (m/s)</h3>
+        <label class="sl">Corridori <output id="oRun">7,0</output><input type="range" id="vRun" min="5" max="9" step="0.1" value="7"></label>
+        <label class="sl">Difensori <output id="oDef">6,0</output><input type="range" id="vDef" min="4.5" max="8.5" step="0.1" value="6"></label>
+        <label class="sl">Tiro (con la mano) <output id="oThr">18</output><input type="range" id="vThr" min="10" max="28" step="0.5" value="18"></label>
+        <label class="sl">Abilità della difesa <output id="oSkill">50%</output><input type="range" id="vSkill" min="0" max="100" step="5" value="50"></label>
+        <label class="sl">Forza della battuta <output id="oPow">100%</output><input type="range" id="vPow" min="60" max="140" step="5" value="100"></label>
+        <h3>Regole</h3>
+        <label class="ck"><input type="checkbox" id="rNoise" checked> Variabilità realistica (reazioni, prese sporche): ogni simulazione è un po' diversa</label>
+        <label class="ck"><input type="checkbox" id="rFoul" checked> Battuta foul = battitore eliminato</label>
+        <label class="ck"><input type="checkbox" id="rInfield" checked> Rasoterra e linea devono toccare terra prima nel diamante interno, altrimenti eliminato</label>
+        <label class="ck"><input type="checkbox" id="rHR" checked> Pallina che esce dal campo dopo un rimbalzo in territorio buono = fuoricampo</label>
+        <p class="note">Misure di default: campo 21×21 m, territorio buono 18×18 m, basi a 13 m. Regole e misure cambiano tra le edizioni del regolamento WBSC: verifica sempre quello in vigore e adatta le opzioni.</p>
+      </section>
+
+      <section class="pane" id="p-play" hidden>
+        <h3>Schema animato</h3>
+        <p class="note">Disponi i gettoni, premi «Aggiungi passo», spostali e aggiungi il passo successivo. «Riproduci» anima i movimenti da un passo all'altro.</p>
+        <div class="row">
+          <button class="btn" id="addFrame">+ Aggiungi passo</button>
+          <button class="btn pri" id="playFrames">▶ Riproduci</button>
+          <button class="btn" id="clearFrames">Cancella passi</button>
+        </div>
+        <div class="frames" id="frames"></div>
+        <h3>Schemi salvati</h3>
+        <div class="row">
+          <input id="schemaName" placeholder="Nome dello schema" style="flex:1;min-width:0;background:#0a1216;border:1px solid #2c4652;border-radius:7px;padding:7px 8px">
+          <button class="btn" id="saveSchema">Salva</button>
+        </div>
+        <div class="row">
+          <select id="schemaList" style="flex:1;min-width:0" aria-label="Schemi salvati"></select>
+          <button class="btn" id="loadSchema">Apri</button>
+          <button class="btn" id="delSchema">Elimina</button>
+        </div>
+        <p class="note">Gli schemi salvati restano solo su questo dispositivo. Per passarli a un altro allenatore copia il codice qui sotto, e incolla il suo per aprirlo.</p>
+        <textarea id="code" aria-label="Codice dello schema"></textarea>
+        <div class="row">
+          <button class="btn" id="copyCode">Copia codice</button>
+          <button class="btn" id="loadCode">Apri da codice</button>
+        </div>
+        <p class="note" id="codeMsg"></p>
+      </section>
+
+      <section class="pane" id="p-draw" hidden>
+        <h3>Penna</h3>
+        <div class="seg" id="penMode"><button data-v="free" class="on">Mano libera</button><button data-v="arrow">Freccia</button><button data-v="erase">Gomma</button></div>
+        <div class="row" id="penColors"></div>
+        <div class="row">
+          <button class="btn" id="undoDraw">Annulla ultimo tratto</button>
+          <button class="btn" id="clearDraw">Cancella disegni</button>
+        </div>
+        <p class="note">In questa scheda il dito disegna sul campo invece di spostare i gettoni. I disegni vengono salvati insieme allo schema.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+// ================= geometria del campo (metri) =================
+// u = lungo la linea di 1ª base, v = lungo la linea di 3ª base. Casa = (0,0).
+const FAIR = 18, FOUL = 3, BASE = 13;
+const BASES = [[0, 0], [BASE, 0], [BASE, BASE], [0, BASE]]; // casa, 1ª, 2ª, 3ª
+const cv = document.getElementById('f'), g = cv.getContext('2d');
+const W = cv.width;
+const SPAN = (FAIR + FOUL) * Math.SQRT2;          // larghezza del campo ruotato
+const S = W / (SPAN + 2.2);                        // pixel per metro
+function toScreen(u, v) { return [W / 2 + (u - v) * S * Math.SQRT1_2, W - S * 1.1 - (u + v + 2 * FOUL) * S * Math.SQRT1_2 + 0]; }
+function toField(x, y) {
+  const a = (x - W / 2) / (S * Math.SQRT1_2);            // u - v
+  const b = (W - S * 1.1 - y) / (S * Math.SQRT1_2) - 2 * FOUL; // u + v
+  return [(a + b) / 2, (b - a) / 2];
+}
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+const lerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+const inFair = p => p[0] >= 0 && p[1] >= 0 && p[0] <= FAIR && p[1] <= FAIR;
+const inField = p => p[0] >= -FOUL && p[1] >= -FOUL && p[0] <= FAIR && p[1] <= FAIR;
+const inInfield = p => p[0] >= 0 && p[1] >= 0 && p[0] <= BASE && p[1] <= BASE;
+
+// ================= stato =================
+const DEF_LABELS = ['1B', '2B', 'SS', '3B', 'C'];
+const DEF_PRESETS = {
+  std:   [[11.5, 2.2], [14.5, 9], [9, 14.5], [2.2, 11.5], [7.5, 7.5]],
+  in:    [[10.5, 1.5], [11, 6.5], [6.5, 11], [1.5, 10.5], [5, 5]],
+  deep:  [[12.5, 3], [16, 11], [11, 16], [3, 12.5], [11.5, 11.5]],
+  left:  [[10.5, 2], [11.5, 11.5], [6, 15.5], [2, 12], [5.5, 9.5]],
+  right: [[12, 2], [15.5, 6], [11.5, 11.5], [2, 10.5], [9.5, 5.5]],
+  dp:    [[11.5, 1.6], [12.4, 10.4], [10.4, 12.4], [1.6, 11.5], [7, 7]],
+};
+let st = {
+  def: DEF_PRESETS.std.map(p => p.slice()),
+  runners: [null, null, null],      // corridori su 1ª, 2ª, 3ª: posizione o null
+  batter: [-0.6, -0.6],
+  ball: null,
+  draw: [],
+};
+let game = {inning: 1, top: true, outs: 0, score: [0, 0]};
+let frames = [];
+let tab = 'pos';
+let target = null, hitType = 'ground', lastSim = null;
+let anim = null; // {sim, t0, speed} oppure {frames}
+let pen = {mode: 'free', color: '#ffd23f'};
+
+// ================= disegno =================
+function poly(pts, fill, stroke, lw) {
+  g.beginPath(); pts.forEach((p, i) => { const [x, y] = toScreen(...p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.closePath();
+  if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 2; g.stroke(); }
+}
+function lineM(a, b, color, lw, dash) {
+  const [x0, y0] = toScreen(...a), [x1, y1] = toScreen(...b);
+  g.save(); g.strokeStyle = color; g.lineWidth = lw; if (dash) g.setLineDash(dash);
+  g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.restore();
+}
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function drawField() {
+  g.clearRect(0, 0, W, W);
+  // territorio foul (tutto il campo 21×21) e territorio buono 18×18
+  poly([[-FOUL, -FOUL], [FAIR, -FOUL], [FAIR, FAIR], [-FOUL, FAIR]], css('--court-2'));
+  poly([[0, 0], [FAIR, 0], [FAIR, FAIR], [0, FAIR]], css('--court'));
+  // diamante interno
+  poly(BASES, 'rgba(255,255,255,.06)');
+  lineM(BASES[1], BASES[2], 'rgba(244,241,230,.55)', 2, [10, 8]);
+  lineM(BASES[2], BASES[3], 'rgba(244,241,230,.55)', 2, [10, 8]);
+  // linee del foul e bordo
+  const L = css('--line');
+  lineM([0, 0], [FAIR, 0], L, 3); lineM([0, 0], [0, FAIR], L, 3);
+  poly([[-FOUL, -FOUL], [FAIR, -FOUL], [FAIR, FAIR], [-FOUL, FAIR]], null, L, 3);
+  // quote
+  g.fillStyle = 'rgba(244,241,230,.55)'; g.font = `600 ${Math.round(S * .55)}px Barlow, sans-serif`; g.textAlign = 'center';
+  const lab = (p, t) => { const [x, y] = toScreen(...p); g.fillText(t, x, y); };
+  lab([FAIR / 2 + 1.3, -1.3], '18 m'); lab([-1.3, FAIR / 2 + 1.3], '18 m');
+  lab([BASE / 2 + .8, BASE / 2 - 4.2], '13 m');
+  lab([FAIR - 2, FAIR - 2], 'TERRITORIO BUONO');
+  lab([FAIR - 1, -2.2], 'FOUL'); lab([-2.2, FAIR - 1], 'FOUL');
+  // area di battuta
+  poly([[-1.2, -1.2], [0.4, -1.2], [0.4, 0.4], [-1.2, 0.4]], null, 'rgba(244,241,230,.4)', 2);
+  // basi
+  BASES.forEach((b, i) => {
+    const s = i === 0 ? .55 : .45;
+    poly([[b[0] - s, b[1] - s], [b[0] + s, b[1] - s], [b[0] + s, b[1] + s], [b[0] - s, b[1] + s]], '#ffffff', '#0b1418', 2);
+  });
+  // casa doppia
+  poly([[0.25, -.75], [0.9, -.75], [0.9, -.1], [.25, -.1]], '#ff9a5a', '#0b1418', 2);
+}
+function token(p, color, label, opts = {}) {
+  const [x, y] = toScreen(...p);
+  const r = S * (opts.r || .78);
+  g.save();
+  g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, y + r * .55, r * .95, r * .45, 0, 0, 7); g.fill();
+  g.fillStyle = color; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  g.lineWidth = 3; g.strokeStyle = opts.ring || '#0b1418'; g.stroke();
+  if (label) { g.fillStyle = '#0b1418'; g.font = `800 ${Math.round(r * .95)}px "Saira Condensed", sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, x, y + 1); }
+  if (opts.mark) { g.fillStyle = opts.mark === 'OUT' ? css('--bad') : css('--ok'); g.font = `800 ${Math.round(S * .9)}px "Saira Condensed", sans-serif`; g.fillText(opts.mark, x, y - r - S * .55); }
+  g.restore();
+}
+function drawStrokes() {
+  for (const s of st.draw) {
+    if (s.pts.length < 2) continue;
+    g.save(); g.strokeStyle = s.color; g.lineWidth = 5; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath(); s.pts.forEach((p, i) => { const [x, y] = toScreen(...p); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke();
+    if (s.arrow) {
+      const a = toScreen(...s.pts[s.pts.length - 2]), b = toScreen(...s.pts[s.pts.length - 1]);
+      const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), h = 22;
+      g.fillStyle = s.color; g.beginPath(); g.moveTo(b[0], b[1]);
+      g.lineTo(b[0] - h * Math.cos(ang - .45), b[1] - h * Math.sin(ang - .45));
+      g.lineTo(b[0] - h * Math.cos(ang + .45), b[1] - h * Math.sin(ang + .45)); g.fill();
+    }
+    g.restore();
+  }
+}
+function render() {
+  drawField();
+  drawStrokes();
+  const O = css('--orange'), C = css('--cyan');
+  if (anim && anim.sim) return renderSim();
+  if (target) {
+    const [x, y] = toScreen(...target);
+    lineM([0, 0], target, 'rgba(255,255,255,.55)', 2, [6, 7]);
+    g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.arc(x, y, S * .6, 0, 7); g.stroke();
+    g.beginPath(); g.moveTo(x - S, y); g.lineTo(x + S, y); g.moveTo(x, y - S); g.lineTo(x, y + S); g.stroke();
+  }
+  st.def.forEach((p, i) => token(p, C, DEF_LABELS[i]));
+  st.runners.forEach((p, i) => p && token(p, O, ['R1', 'R2', 'R3'][i]));
+  token(st.batter, O, 'B');
+  if (st.ball) token(st.ball, '#ffffff', '', {r: .32});
+  drawMiniBases();
+}
+function drawMiniBases() {
+  const c = document.getElementById('sBases').getContext('2d');
+  c.clearRect(0, 0, 80, 80);
+  const pos = [[40, 66], [64, 40], [40, 14], [16, 40]];
+  [1, 2, 3].forEach(i => {
+    const [x, y] = pos[i]; c.save(); c.translate(x, y); c.rotate(Math.PI / 4);
+    c.fillStyle = st.runners[i - 1] ? css('--orange') : 'transparent'; c.strokeStyle = css('--muted'); c.lineWidth = 2;
+    c.fillRect(-8, -8, 16, 16); c.strokeRect(-8, -8, 16, 16); c.restore();
+  });
+}
+
+// ================= interazione sul campo =================
+let drag = null, press = null;
+function evPt(e) { const r = cv.getBoundingClientRect(); return toField((e.clientX - r.left) * W / r.width, (e.clientY - r.top) * W / r.height); }
+function hitToken(p) {
+  const R = 1.1; let best = null, bd = R;
+  const test = (q, kind, i) => { if (!q) return; const d = dist(p, q); if (d < bd) { bd = d; best = {kind, i}; } };
+  st.def.forEach((q, i) => test(q, 'def', i));
+  st.runners.forEach((q, i) => test(q, 'run', i));
+  test(st.batter, 'bat', 0);
+  return best;
+}
+cv.addEventListener('pointerdown', e => {
+  if (anim) return;
+  const p = evPt(e); cv.setPointerCapture(e.pointerId);
+  if (tab === 'draw') {
+    if (pen.mode === 'erase') { eraseAt(p); drag = {erase: true}; return; }
+    st.draw.push({color: pen.color, arrow: pen.mode === 'arrow', pts: [p]}); drag = {draw: true}; render(); return;
+  }
+  if (tab === 'hit' && pickMode) { setTarget(p); return; }
+  const t = hitToken(p);
+  if (t) {
+    drag = {t, moved: false, start: p};
+    if (t.kind === 'run') press = setTimeout(() => { st.runners[t.i] = null; drag = null; render(); }, 650);
+  } else if (tab === 'pos') {
+    // base vuota toccata: aggiunge un corridore
+    for (let i = 1; i <= 3; i++) if (dist(p, BASES[i]) < 1.3 && !st.runners[i - 1]) { st.runners[i - 1] = baseSpot(i); render(); return; }
+  }
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const p = evPt(e);
+  if (drag.erase) { eraseAt(p); return; }
+  if (drag.draw) {
+    const s = st.draw[st.draw.length - 1];
+    if (s.arrow) s.pts = [s.pts[0], p]; else s.pts.push(p);
+    render(); return;
+  }
+  if (dist(p, drag.start) > .3) { drag.moved = true; clearTimeout(press); }
+  const q = [Math.max(-FOUL + .5, Math.min(FAIR - .5, p[0])), Math.max(-FOUL + .5, Math.min(FAIR - .5, p[1]))];
+  if (drag.t.kind === 'def') st.def[drag.t.i] = q; else if (drag.t.kind === 'run') st.runners[drag.t.i] = q; else st.batter = q;
+  render();
+});
+cv.addEventListener('pointerup', () => {
+  clearTimeout(press);
+  if (drag && drag.t && !drag.moved && drag.t.kind === 'run') advanceRunner(drag.t.i);
+  drag = null; render();
+});
+cv.addEventListener('pointercancel', () => { clearTimeout(press); drag = null; });
+function eraseAt(p) { const n = st.draw.length; st.draw = st.draw.filter(s => !s.pts.some(q => dist(q, p) < 1)); if (st.draw.length !== n) render(); }
+function baseSpot(i) { return [[0, 0], [BASE - .2, 1.1], [BASE - 1.1, BASE - 1.1], [1.1, BASE - .2]][i].slice(); }
+function advanceRunner(i) {
+  const runner = st.runners[i]; st.runners[i] = null;
+  if (i === 2) { scoreRun(1); log(`<span class="run">Punto!</span> Il corridore di 3ª arriva a casa.`); }
+  else if (st.runners[i + 1]) advanceRunner(i + 1), st.runners[i + 1] = baseSpot(i + 2);
+  else st.runners[i + 1] = baseSpot(i + 2);
+  void runner; updateBoard(); render();
+}
+
+// ================= tabellone =================
+function updateBoard() {
+  document.getElementById('sInn').textContent = game.inning + (game.top ? '▲' : '▼');
+  document.getElementById('sA').textContent = game.score[0];
+  document.getElementById('sH').textContent = game.score[1];
+  document.querySelectorAll('#sOut i').forEach((d, i) => d.classList.toggle('on', i < game.outs));
+  drawMiniBases();
+}
+function scoreRun(n) { game.score[game.top ? 0 : 1] += n; updateBoard(); }
+function addOuts(n) {
+  game.outs += n;
+  if (game.outs >= 3) {
+    game.outs = 0; st.runners = [null, null, null];
+    if (game.top) game.top = false; else { game.top = true; game.inning++; }
+    log(`<b>Tre eliminati: cambio campo.</b> Inizia ${game.inning}° inning, ${game.top ? 'parte alta' : 'parte bassa'}.`);
+  }
+  updateBoard();
+}
+
+// ================= schede =================
+const TABS = ['pos', 'hit', 'play', 'draw'];
+TABS.forEach(t => document.getElementById('t-' + t).addEventListener('click', () => setTab(t)));
+function setTab(t) {
+  tab = t;
+  TABS.forEach(x => { document.getElementById('t-' + x).setAttribute('aria-selected', x === t); document.getElementById('p-' + x).hidden = x !== t; });
+  setHint();
+}
+let pickMode = true;
+function setHint() {
+  const h = document.getElementById('hint');
+  if (anim) { h.innerHTML = ''; return; }
+  h.innerHTML = tab === 'hit' ? (pickMode ? 'Tocca il campo: <b>dove va la pallina</b>' : '')
+    : tab === 'draw' ? `Disegna sul campo (<b>${pen.mode === 'erase' ? 'gomma' : pen.mode === 'arrow' ? 'freccia' : 'mano libera'}</b>)`
+    : tab === 'pos' ? 'Trascina i gettoni · tocca una base per aggiungere un corridore' : '';
+}
+
+// ---------- Posiziona ----------
+document.getElementById('applyDef').onclick = () => { st.def = DEF_PRESETS[document.getElementById('defPreset').value].map(p => p.slice()); render(); };
+document.getElementById('applySit').onclick = () => {
+  const v = document.getElementById('sitPreset').value;
+  st.runners = [1, 2, 3].map(i => v.includes(String(i)) ? baseSpot(i) : null); render();
+};
+document.getElementById('advAll').onclick = () => { for (let i = 2; i >= 0; i--) if (st.runners[i]) advanceRunner(i); };
+document.getElementById('clearBases').onclick = () => { st.runners = [null, null, null]; render(); };
+document.getElementById('resetGame').onclick = () => { game = {inning: 1, top: true, outs: 0, score: [0, 0]}; st.runners = [null, null, null]; updateBoard(); render(); log('Nuova partita.'); };
+
+// ---------- Battuta ----------
+document.querySelectorAll('#hitType button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#hitType button').forEach(x => x.classList.toggle('on', x === b)); hitType = b.dataset.v;
+});
+document.querySelectorAll('#speed button').forEach(b => b.onclick = () => document.querySelectorAll('#speed button').forEach(x => x.classList.toggle('on', x === b)));
+const pickBtn = document.getElementById('pickTarget');
+pickBtn.onclick = () => { pickMode = !pickMode; pickBtn.classList.toggle('on', pickMode); setHint(); };
+function setTarget(p) {
+  target = p; document.getElementById('simulate').disabled = false; render();
+  const where = !inField(p) ? 'fuori dal campo' : !inFair(p) ? 'in territorio foul' : inInfield(p) ? 'nel diamante interno' : 'nella zona esterna';
+  log(`Bersaglio a ${Math.round(Math.hypot(...p))} m da casa, ${where}.`);
+}
+document.getElementById('randHit').onclick = () => {
+  const types = ['ground', 'ground', 'line', 'fly']; hitType = types[Math.floor(Math.random() * types.length)];
+  document.querySelectorAll('#hitType button').forEach(x => x.classList.toggle('on', x.dataset.v === hitType));
+  const ang = Math.random() * Math.PI / 2 * 1.08 - .04 * Math.PI / 2, d = hitType === 'ground' ? 14 + Math.random() * 12 : hitType === 'line' ? 5 + Math.random() * 9 : 7 + Math.random() * 12;
+  setTarget([Math.cos(ang) * d, Math.sin(ang) * d]);
+  simulate();
+};
+['Run', 'Def', 'Thr', 'Pow', 'Skill'].forEach(k => {
+  const i = document.getElementById('v' + k), o = document.getElementById('o' + k);
+  const f = () => { o.textContent = k === 'Pow' || k === 'Skill' ? i.value + '%' : Number(i.value).toLocaleString('it-IT', {minimumFractionDigits: k === 'Thr' ? 0 : 1}); };
+  i.oninput = f; f();
+});
+const num = id => Number(document.getElementById(id).value);
+const chk = id => document.getElementById(id).checked;
+const logEl = document.getElementById('log');
+function log(html, t) {
+  const p = document.createElement('p');
+  p.innerHTML = (t != null ? `<span class="t">${t.toFixed(2).replace('.', ',')} s</span>` : '') + html;
+  if (logEl.querySelector('.note')) logEl.innerHTML = '';
+  logEl.appendChild(p); logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ================= simulazione =================
+// Ritorna un piano completo: traiettoria della pallina, corse dei difensori e dei corridori, esito.
+function computeSim() {
+  const vR = num('vRun'), vF = num('vDef'), vT = num('vThr'), pow = num('vPow') / 100;
+  const P = target, dir = Math.atan2(P[1], P[0]), D = Math.hypot(...P) * pow;
+  const unit = [Math.cos(dir), Math.sin(dir)];
+  const at = s => [unit[0] * s, unit[1] * s];
+  const skill = num('vSkill') / 100;
+  const noise = chk('rNoise');
+  const jit = a => noise ? Math.random() * a * (1.3 - skill) : 0;
+  const REACT = 0.42 - 0.22 * skill, REACH = 0.55 + 0.5 * skill;
+  const TRANSFER = 0.6 - 0.25 * skill + jit(0.35);
+  const reactOf = st.def.map(() => REACT + jit(0.3));
+  const ev = [];
+  // --- traiettoria della pallina ---
+  let ballPos, ballH, catchable, tLand, landP;
+  const DEC = hitType === 'ground' ? 9 : 6;
+  if (hitType === 'ground') {
+    const v0 = Math.sqrt(2 * DEC * D); const tStop = v0 / DEC;
+    ballPos = t => at(t >= tStop ? D : v0 * t - DEC * t * t / 2);
+    ballH = t => Math.max(0, Math.abs(Math.sin(t * 9)) * .35 * Math.max(0, 1 - t / tStop));
+    catchable = () => true; tLand = 0.12; landP = at(Math.min(D, 1.5));
+  } else {
+    const peak = hitType === 'line' ? 3 : 7.5;
+    tLand = hitType === 'line' ? D / 22 : 0.8 + D / 15; const vAir = D / tLand; landP = at(D);
+    const roll = hitType === 'line' ? 6 : 2.5; const vr = Math.sqrt(2 * DEC * roll), tr = vr / DEC;
+    ballPos = t => t <= tLand ? at(vAir * t) : at(D + (t - tLand >= tr ? roll : vr * (t - tLand) - DEC * (t - tLand) ** 2 / 2));
+    ballH = t => t <= tLand ? 1 + 4 * peak * (t / tLand) * (1 - t / tLand) - (t / tLand) : 0;
+    catchable = t => t > tLand || ballH(t) < 2.3;
+  }
+  const result = {plays: [], outs: 0, runs: 0, newRunners: [null, null, null], text: ''};
+  const mkPlan = () => ({ballPos, ballH, tLand, landP, ev, def: st.def.map(p => ({path: [[0, p], [99, p]]})), run: [], throws: [], duration: 3});
+  const plan = mkPlan();
+  const foulDir = P[0] < 0 || P[1] < 0;
+  // tempi di presa di ciascun difensore
+  let best = null;
+  const tMax = 6;
+  st.def.forEach((F, i) => {
+    for (let t = .05; t < tMax; t += .02) {
+      if (!catchable(t)) continue;
+      const b = ballPos(t);
+      if (!inField(b)) break;
+      // a mani nude: una pallina troppo veloce si blocca solo se arriva addosso
+      const spd = dist(ballPos(t + .02), b) / .02, d = dist(F, b);
+      const handsOK = spd <= 9 + 9 * skill || d <= .45;
+      if (handsOK && d - REACH <= vF * Math.max(0, t - reactOf[i])) { if (!best || t < best.t) best = {i, t, p: b}; break; }
+    }
+  });
+  const airCatch = best && hitType !== 'ground' && best.t <= tLand + .01;
+  // corridori: chi è forzato
+  const occ = [true, !!st.runners[0], !!st.runners[1], !!st.runners[2]]; // 0 = battitore
+  const forced = [true, false, false, false];
+  for (let i = 1; i <= 3; i++) forced[i] = occ[i] && forced[i - 1];
+  if (best) {
+    const F = st.def[best.i];
+    plan.def[best.i].path = [[0, F], [reactOf[best.i], F], [best.t, best.p]];
+  }
+  if (airCatch) {
+    result.outs = 1; result.newRunners = st.runners.slice();
+    result.text = `<b>${DEF_LABELS[best.i]}</b> prende al volo: <span class="out">battitore eliminato</span>. I corridori restano sulle basi.`;
+    ev.push({t: best.t, txt: `${DEF_LABELS[best.i]} prende al volo. <span class="out">OUT</span>`});
+    plan.ballPos = t => t <= best.t ? ballPos(t) : best.p; plan.ballH = t => t <= best.t ? ballH(t) : 1.2;
+    plan.duration = best.t + 1.2; plan.result = result; return plan;
+  }
+  // uscita al volo dal campo
+  if (!airCatch && hitType !== 'ground' && !inField(landP)) {
+    result.text = 'La pallina esce dal campo al volo: <span class="out">battitore eliminato</span>.';
+    result.outs = 1; result.newRunners = st.runners.slice(); plan.duration = tLand + .6; plan.result = result; return plan;
+  }
+  // battuta foul
+  if (!airCatch && (hitType === 'ground' ? foulDir : !inFair(landP))) {
+    const out = chk('rFoul');
+    result.text = out ? 'Battuta foul: <span class="out">battitore eliminato</span>.' : 'Battuta foul: si ripete.';
+    if (out) result.outs = 1;
+    result.newRunners = st.runners.slice(); plan.def = st.def.map(p => ({path: [[0, p], [99, p]]}));
+    plan.duration = Math.min(2.4, (hitType === 'ground' ? 1.2 : tLand + 1)); plan.result = result; return plan;
+  }
+  // regola: primo rimbalzo fuori dal diamante interno
+  if (!airCatch && hitType !== 'ground' && chk('rInfield') && !inInfield(landP)) {
+    result.text = 'La pallina tocca terra la prima volta fuori dal diamante interno: <span class="out">battitore eliminato</span>.';
+    result.outs = 1; result.newRunners = st.runners.slice();
+    plan.duration = tLand + 1; plan.result = result; return plan;
+  }
+  // pallina non presa: fuoricampo o valida lunga
+  const runTime = (from, start) => start + BASE / vR;
+  const startT = [0.35, 0.1, 0.1, 0.1];
+  if (!best) {
+    const leaves = !inField(ballPos(tMax)) || (hitType === 'ground' && D > FAIR * Math.SQRT2);
+    if (leaves && chk('rHR')) {
+      let runs = 1 + occ.slice(1).filter(Boolean).length;
+      result.runs = runs; result.newRunners = [null, null, null];
+      result.text = `La pallina esce dal campo dopo il rimbalzo: <span class="run">fuoricampo, ${runs} ${runs > 1 ? 'punti' : 'punto'}</span>.`;
+      for (let i = 0; i <= 3; i++) if (occ[i]) plan.run.push(runnerPath(i, 4, startT[i], vR, null));
+      plan.duration = 1.2 + (4 - 0) * BASE / vR; plan.result = result; return plan;
+    }
+    result.text = 'Nessun difensore arriva sulla pallina: tutti avanzano di due basi.';
+    const nr = [null, null, null]; let runs = 0;
+    for (let i = 3; i >= 0; i--) if (occ[i]) { const to = i + 2; if (to >= 4) runs++; else nr[to - 1] = baseSpot(to); plan.run.push(runnerPath(i, Math.min(4, to), startT[i], vR, null)); }
+    result.runs = runs; result.newRunners = nr; plan.duration = 1 + 2 * BASE / vR + .6; plan.result = result; return plan;
+  }
+  // --- gioco su rasoterra o valida presa a terra ---
+  let tF = best.t; const Q = best.p;
+  ev.push({t: tF, txt: `${DEF_LABELS[best.i]} raccoglie la pallina a ${Math.round(Math.hypot(...Q))} m da casa.`});
+  if (noise && Math.random() < 0.18 * (1.1 - skill)) { tF += 0.7 + Math.random() * 0.5; ev.push({t: tF, txt: `Presa sporca di ${DEF_LABELS[best.i]}: perde tempo prezioso.`}); }
+  // destinazione dei corridori: forzati +1; non forzati avanzano solo se la pallina è raccolta fuori dal diamante interno
+  const deep = !inInfield(Q);
+  const dest = [1, 0, 0, 0];
+  for (let i = 1; i <= 3; i++) if (occ[i]) dest[i] = forced[i] || deep ? i + 1 : i;
+  // extra base se la pallina è lontana
+  const arrive = (i, to) => startT[i] + (to - i) * BASE / vR;
+  const throwTime = (from, base, tStart) => {
+    const d = dist(from, BASES[base % 4]);
+    return d < 1.8 ? tStart + d / vF : tStart + TRANSFER + d / vT;
+  };
+  if (deep) for (let i = 3; i >= 0; i--) {
+    if (!occ[i]) continue;
+    const ex = dest[i] + 1; if (ex > 4) continue;
+    if (i < 3 && occ[i + 1] && dest[i + 1] <= ex) continue;
+    if (arrive(i, ex) + .6 < throwTime(Q, ex, tF)) dest[i] = ex;
+  }
+  // scelta del tiro: il corridore più avanzato eliminabile
+  const cands = [];
+  for (let i = 3; i >= 0; i--) {
+    if (!occ[i] || dest[i] === i) continue;
+    const b = dest[i]; const tag = forced[i] && b === i + 1 ? 0 : .35;
+    const ta = throwTime(Q, b, tF) + tag; const tr = arrive(i, b);
+    cands.push({i, b, ta, tr, margin: tr - ta, force: !tag});
+  }
+  const outsLeft = 3 - game.outs;
+  let first = cands.find(c => c.margin > 0) || cands.find(c => c.i === 0) || cands[0];
+  const outs = [];
+  plan.throws.push({from: Q, to: BASES[first.b % 4], t0: tF + (dist(Q, BASES[first.b % 4]) < 1.8 ? 0 : TRANSFER), t1: first.ta - (first.force ? 0 : .35), carry: dist(Q, BASES[first.b % 4]) < 1.8 ? best.i : null});
+  const nameR = i => i === 0 ? 'il battitore' : `il corridore di ${i}ª`;
+  const baseN = b => b === 4 ? 'casa base' : `${b}ª base`;
+  if (first.margin > 0) {
+    outs.push(first.i);
+    ev.push({t: first.ta, txt: `Tiro in ${baseN(first.b)}: <span class="out">${nameR(first.i)} eliminato</span> (anticipo ${first.margin.toFixed(2).replace('.', ',')} s).`});
+    // doppio gioco verso la 1ª
+    const bat = cands.find(c => c.i === 0);
+    if (first.i !== 0 && bat && outsLeft > 1) {
+      const t2 = first.ta + .5 + dist(BASES[first.b % 4], BASES[1]) / vT;
+      plan.throws.push({from: BASES[first.b % 4], to: BASES[1], t0: first.ta + .5, t1: t2});
+      if (t2 < bat.tr) { outs.push(0); ev.push({t: t2, txt: `Rilancio in 1ª: <span class="out">doppio gioco!</span>`}); }
+      else ev.push({t: bat.tr, txt: `Rilancio in 1ª in ritardo: <span class="safe">battitore salvo</span> (${(t2 - bat.tr).toFixed(2).replace('.', ',')} s).`});
+    }
+  } else {
+    ev.push({t: first.tr, txt: `Tiro in ${baseN(first.b)} troppo tardi: <span class="safe">${nameR(first.i)} salvo</span> (ritardo ${(-first.margin).toFixed(2).replace('.', ',')} s).`});
+  }
+  // esito finale
+  const nr = [null, null, null]; let runs = 0;
+  const totalOuts = Math.min(outs.length, outsLeft);
+  const thirdOutIsForce = game.outs + totalOuts >= 3 && outs.some(i => forced[i]);
+  for (let i = 3; i >= 0; i--) {
+    if (!occ[i]) continue;
+    const isOut = outs.includes(i);
+    plan.run.push(runnerPath(i, dest[i], startT[i], vR, isOut ? (i === first.i ? first.ta : first.ta + 1) : null));
+    if (isOut) continue;
+    if (dest[i] >= 4) runs++;
+    else nr[dest[i] - 1] = baseSpot(dest[i]);
+  }
+  if (game.outs + totalOuts >= 3 && thirdOutIsForce) runs = 0;
+  result.outs = totalOuts; result.runs = runs; result.newRunners = nr;
+  result.text = (outs.length ? `<span class="out">${outs.length === 2 ? 'Doppio gioco' : '1 eliminato'}</span>` : '<span class="safe">Valida</span>') + (runs ? `, <span class="run">${runs} ${runs > 1 ? 'punti' : 'punto'}</span>` : '') + '.';
+  plan.duration = Math.max(...plan.run.map(r => r.tEnd), ...plan.throws.map(t => t.t1), tF) + .9;
+  plan.result = result;
+  return plan;
+}
+function runnerPath(i, to, t0, v, tOut) {
+  const pts = [];
+  const startP = i === 0 ? st.batter : st.runners[i - 1];
+  let t = t0; pts.push([0, startP]); pts.push([t0, startP]);
+  let cur = startP;
+  for (let b = i + 1; b <= to; b++) { const B = BASES[b % 4]; t += dist(cur, B) / v; pts.push([t, B]); cur = B; }
+  return {i, pts, tEnd: t, tOut, to};
+}
+const along = (path, t) => {
+  if (t <= path[0][0]) return path[0][1];
+  for (let k = 1; k < path.length; k++) if (t <= path[k][0]) return lerp(path[k - 1][1], path[k][1], (t - path[k - 1][0]) / (path[k][0] - path[k - 1][0] || 1));
+  return path[path.length - 1][1];
+};
+
+function simulate() {
+  if (!target || anim) return;
+  lastSim = computeSim();
+  logEl.innerHTML = '';
+  log(`<b>${{ground: 'Rasoterra', line: 'Linea', fly: 'Volata'}[hitType]}</b> verso ${Math.round(Math.hypot(...target))} m.`);
+  playSim(lastSim, true);
+}
+function playSim(sim, apply) {
+  const speed = Number(document.querySelector('#speed .on').dataset.v);
+  anim = {sim, t0: performance.now(), speed, shown: 0, apply};
+  document.getElementById('replay').disabled = true; setHint();
+  requestAnimationFrame(tick);
+}
+function tick() {
+  if (!anim) return;
+  if (anim.frames) return tickFrames();
+  const t = (performance.now() - anim.t0) / 1000 * anim.speed;
+  anim.t = t;
+  const ev = anim.sim.ev.slice().sort((a, b) => a.t - b.t);
+  while (anim.shown < ev.length && ev[anim.shown].t <= t) { log(ev[anim.shown].txt, ev[anim.shown].t); anim.shown++; }
+  render();
+  if (t < anim.sim.duration) requestAnimationFrame(tick);
+  else finishSim();
+}
+function finishSim() {
+  const {sim, apply} = anim; anim = null;
+  log(sim.result.text);
+  if (apply && chk('autoApply')) {
+    st.runners = sim.result.newRunners.map(p => p && p.slice());
+    if (sim.result.runs) scoreRun(sim.result.runs);
+    if (sim.result.outs) addOuts(sim.result.outs);
+  }
+  document.getElementById('replay').disabled = false;
+  updateBoard(); setHint(); render();
+}
+document.getElementById('simulate').onclick = simulate;
+document.getElementById('replay').onclick = () => {
+  if (!lastSim || anim) return; logEl.innerHTML = ''; log('Replay (punteggio invariato).'); playSim(lastSim, false);
+};
+function renderSim() {
+  const {sim, t} = anim, O = css('--orange'), C = css('--cyan');
+  // difensori
+  st.def.forEach((p, i) => token(along(sim.def[i].path, t), C, DEF_LABELS[i]));
+  // corridori
+  const moving = new Set(sim.run.map(r => r.i));
+  st.runners.forEach((p, i) => { if (p && !moving.has(i + 1)) token(p, O, ['R1', 'R2', 'R3'][i]); });
+  if (!moving.has(0) && !sim.run.length) token(st.batter, O, 'B');
+  for (const r of sim.run) {
+    let p = along(r.pts, t), mark;
+    if (r.tOut != null && t >= r.tOut) { p = along(r.pts, r.tOut); mark = 'OUT'; }
+    else if (t >= r.tEnd) mark = r.to >= 4 ? 'PUNTO' : 'SALVO';
+    token(p, O, r.i === 0 ? 'B' : 'R' + r.i, {mark, ring: mark === 'OUT' ? css('--bad') : undefined});
+  }
+  // pallina: in volo, a terra, poi nei tiri
+  let bp, h = 0;
+  const th = sim.throws.find(x => t >= x.t0 && t <= x.t1);
+  const lastThrow = sim.throws.filter(x => t > x.t1).pop();
+  const firstThrowT0 = sim.throws.length ? sim.throws[0].t0 : Infinity;
+  if (th) { const k = (t - th.t0) / (th.t1 - th.t0); bp = lerp(th.from, th.to, k); h = 1.2 + Math.sin(k * Math.PI) * (dist(th.from, th.to) / 8); }
+  else if (lastThrow) bp = lastThrow.to;
+  else if (t > firstThrowT0 - .45 && sim.throws.length) bp = sim.throws[0].from;
+  else { bp = sim.ballPos(t); h = sim.ballH(t); }
+  // ombra e pallina
+  const [sx, sy] = toScreen(...bp);
+  g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(sx, sy, S * .3, S * .14, 0, 0, 7); g.fill();
+  g.fillStyle = '#fff'; g.strokeStyle = '#0b1418'; g.lineWidth = 2;
+  g.beginPath(); g.arc(sx, sy - h * S * .6, S * (.26 + h * .02), 0, 7); g.fill(); g.stroke();
+  // punto di atterraggio
+  if (t < sim.tLand && sim.landP) { const [x, y] = toScreen(...sim.landP); g.strokeStyle = 'rgba(255,255,255,.7)'; g.setLineDash([4, 5]); g.beginPath(); g.arc(x, y, S * .7, 0, 7); g.stroke(); g.setLineDash([]); }
+  // cronometro
+  g.fillStyle = 'rgba(10,18,22,.75)'; g.fillRect(W - 170, 14, 156, 44);
+  g.fillStyle = '#fff'; g.font = '500 26px "JetBrains Mono", monospace'; g.textAlign = 'right'; g.textBaseline = 'middle';
+  g.fillText(t.toFixed(2).replace('.', ',') + ' s', W - 26, 37);
+  drawMiniBases();
+}
+
+// ================= schemi animati =================
+const snap = () => JSON.parse(JSON.stringify({def: st.def, runners: st.runners, batter: st.batter, draw: st.draw}));
+function renderFrames() {
+  const el = document.getElementById('frames');
+  el.innerHTML = frames.map((_, i) => `<button class="btn" data-i="${i}" title="Mostra il passo ${i + 1}">${i + 1}</button>`).join('') || '<span class="note">Nessun passo ancora.</span>';
+  el.querySelectorAll('button').forEach(b => b.onclick = () => { Object.assign(st, JSON.parse(JSON.stringify(frames[b.dataset.i]))); render(); });
+}
+document.getElementById('addFrame').onclick = () => { frames.push(snap()); renderFrames(); };
+document.getElementById('clearFrames').onclick = () => { frames = []; renderFrames(); };
+document.getElementById('playFrames').onclick = () => {
+  if (frames.length < 2 || anim) { if (frames.length < 2) document.getElementById('frames').insertAdjacentHTML('beforeend', '<span class="note">Servono almeno 2 passi.</span>'); return; }
+  anim = {frames: true, t0: performance.now(), seg: 1.2}; setHint(); requestAnimationFrame(tick);
+};
+function tickFrames() {
+  const t = (performance.now() - anim.t0) / 1000 / anim.seg;
+  const k = Math.min(frames.length - 1, Math.floor(t)), f = t - k;
+  const A = frames[k], B = frames[Math.min(frames.length - 1, k + 1)];
+  const e = f < .5 ? 2 * f * f : 1 - (-2 * f + 2) ** 2 / 2;
+  st.def = A.def.map((p, i) => lerp(p, B.def[i], e));
+  st.runners = A.runners.map((p, i) => p && B.runners[i] ? lerp(p, B.runners[i], e) : (e < .5 ? p : B.runners[i]));
+  st.batter = lerp(A.batter, B.batter, e); st.draw = e < .5 ? A.draw : B.draw;
+  render();
+  if (t < frames.length - 1) requestAnimationFrame(tick);
+  else { anim = null; Object.assign(st, JSON.parse(JSON.stringify(frames[frames.length - 1]))); setHint(); render(); }
+}
+// salvataggio locale e codice
+const KEY = 'b5-lavagna-schemi';
+const loadAll = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+const saveAll = o => { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {} };
+function refreshList() {
+  const all = loadAll(), sel = document.getElementById('schemaList');
+  const names = Object.keys(all);
+  sel.innerHTML = names.length ? names.map(n => `<option>${n.replace(/</g, '&lt;')}</option>`).join('') : '<option value="">Nessuno schema salvato</option>';
+}
+const packed = () => ({v: 1, frames: frames.length ? frames : [snap()]});
+function codeMsg(t) { document.getElementById('codeMsg').textContent = t; }
+function updateCode() { document.getElementById('code').value = btoa(unescape(encodeURIComponent(JSON.stringify(packed())))); }
+function openPacked(o) { frames = o.frames || []; if (frames.length) Object.assign(st, JSON.parse(JSON.stringify(frames[0]))); renderFrames(); render(); updateCode(); }
+document.getElementById('saveSchema').onclick = () => {
+  const n = document.getElementById('schemaName').value.trim() || `Schema ${new Date().toLocaleString('it-IT')}`;
+  const all = loadAll(); all[n] = packed(); saveAll(all); refreshList(); document.getElementById('schemaList').value = n; updateCode(); codeMsg(`Salvato «${n}».`);
+};
+document.getElementById('loadSchema').onclick = () => { const n = document.getElementById('schemaList').value; const o = loadAll()[n]; if (o) { openPacked(o); codeMsg(`Aperto «${n}».`); } };
+document.getElementById('delSchema').onclick = () => { const n = document.getElementById('schemaList').value; const all = loadAll(); if (all[n]) { delete all[n]; saveAll(all); refreshList(); codeMsg(`Eliminato «${n}».`); } };
+document.getElementById('copyCode').onclick = () => {
+  updateCode(); const ta = document.getElementById('code');
+  navigator.clipboard.writeText(ta.value).then(() => codeMsg('Codice copiato.')).catch(() => { ta.select(); codeMsg('Codice selezionato: copialo con Copia.'); });
+};
+document.getElementById('loadCode').onclick = () => {
+  try { openPacked(JSON.parse(decodeURIComponent(escape(atob(document.getElementById('code').value.trim()))))); codeMsg('Schema aperto dal codice.'); }
+  catch (e) { codeMsg('Il codice non è valido: assicurati di averlo copiato tutto.'); }
+};
+
+// ================= disegno =================
+const COLORS = ['#ffd23f', '#ff5a5a', '#4ad37a', '#ffffff', '#b98cff'];
+document.getElementById('penColors').innerHTML = COLORS.map((c, i) => `<button class="swatch${i ? '' : ' on'}" style="background:${c}" data-c="${c}" aria-label="Colore ${c}"></button>`).join('');
+document.querySelectorAll('#penColors .swatch').forEach(b => b.onclick = () => { pen.color = b.dataset.c; document.querySelectorAll('#penColors .swatch').forEach(x => x.classList.toggle('on', x === b)); if (pen.mode === 'erase') setPen('free'); });
+function setPen(m) { pen.mode = m; document.querySelectorAll('#penMode button').forEach(x => x.classList.toggle('on', x.dataset.v === m)); setHint(); }
+document.querySelectorAll('#penMode button').forEach(b => b.onclick = () => setPen(b.dataset.v));
+document.getElementById('undoDraw').onclick = () => { st.draw.pop(); render(); };
+document.getElementById('clearDraw').onclick = () => { st.draw = []; render(); };
+
+// ================= avvio con un esempio =================
+st.runners = [baseSpot(1), null, null];
+target = [6.5, 9.5];
+document.getElementById('simulate').disabled = false;
+refreshList(); renderFrames(); updateBoard(); setTab('pos');
+logEl.innerHTML = '<p class="note">Esempio pronto: corridore in 1ª, rasoterra verso l\'interbase. Apri «Battuta» e premi Simula per vedere il tentativo di doppio gioco.</p>';
+document.fonts && document.fonts.ready.then(render);
+render();
+})();
+</script>
