@@ -280,8 +280,8 @@ function artGrid(id) {
   return rows;
 }
 const monCache = {};
-function monSprite(spId, back) {
-  const key = spId + (back ? 'b' : 'f');
+function monSprite(spId, back, blink) {
+  const key = spId + (back ? 'b' : 'f') + (blink ? 'c' : '');
   if (monCache[key]) return monCache[key];
   const A = ART[spId];
   const N = 24;
@@ -301,13 +301,20 @@ function monSprite(spId, back) {
       const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => at(x + dx, y + dy)).find(v => v !== '.' && v !== 'e');
       if (!nb) continue;
       color = nb === 'k' ? col.k : tint(col[nb] || col.a, -0.62);
+    } else if ((ch === 'e' || ch === 'k') && blink) {
+      // occhi chiusi: resta solo una riga scura in basso
+      const below = at(x, y + 1);
+      color = below === 'e' || below === 'k' ? tint(col.a, 0.05) : col.k;
     } else if (ch === 'e' || ch === 'k') color = col[ch];
     else {
       const base = col[ch] || col.a;
-      const top = !filled(x, y - 1) || !filled(x - 1, y);
+      const upE = !filled(x, y - 1), leftE = !filled(x - 1, y);
+      const top = upE || leftE;
       const bot = !filled(x, y + 1) || !filled(x + 1, y);
       const bot2 = !filled(x, y + 2);
-      color = top ? tint(base, 0.32) : bot ? tint(base, -0.28) : bot2 ? tint(base, -0.12) : base;
+      const top2 = !filled(x, y - 2) || !filled(x - 2, y);
+      // luce da in alto a sinistra: riflesso, luce, tono pieno, ombra propria, ombra di contatto
+      color = upE && leftE ? tint(base, 0.55) : top ? tint(base, 0.32) : bot ? tint(base, -0.3) : bot2 ? tint(base, -0.14) : top2 ? tint(base, 0.12) : base;
     }
     g.fillStyle = color; g.fillRect(x * 2, y * 2, 2, 2);
   }
@@ -336,11 +343,42 @@ function el(cls, x, y, w, h, parent = uiEl) {
   if (h != null) d.style.height = U(h);
   parent.appendChild(d); return d;
 }
+// Dimensiona lo schermo: in verticale occupa la larghezza, in orizzontale l'altezza
+// lasciando spazio ai comandi sui lati.
 function resize() {
-  const u = screenEl.getBoundingClientRect().width / VW;
-  screenEl.style.setProperty('--u', u + 'px');
+  const W = innerWidth, H = innerHeight, land = W > H;
+  const padX = 20, padY = 16;
+  let w;
+  if (land) w = Math.min((H - padY - 8) * VW / VH, W - 2 * 200 - padX);
+  else w = Math.min(W - padX, (H * 0.62) * VW / VH);
+  w = Math.max(160, Math.floor(w));
+  screenEl.style.width = w + 'px';
+  screenEl.style.height = Math.round(w * VH / VW) + 'px';
+  screenEl.style.setProperty('--u', (w / VW) + 'px');
 }
 addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+// Joystick analogico: la direzione prevalente diventa una freccia
+(function joystick() {
+  const st = document.getElementById('stick'), knob = document.getElementById('knob');
+  if (!st) return;
+  let cur = null, id = null;
+  const set = d => { if (d === cur) return; if (cur) release(cur); cur = d; if (d) press(d); };
+  const move = e => {
+    const r = st.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const max = r.width * 0.32, m = Math.hypot(dx, dy);
+    if (m > max) { dx *= max / m; dy *= max / m; }
+    knob.style.transform = `translate(${dx}px,${dy}px)`;
+    if (m < r.width * 0.12) set(null);
+    else set(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  };
+  st.addEventListener('pointerdown', e => { e.preventDefault(); id = e.pointerId; st.setPointerCapture(id); st.classList.add('on'); move(e); });
+  st.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  const end = e => { if (e.pointerId !== id) return; id = null; st.classList.remove('on'); knob.style.transform = ''; set(null); };
+  st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+})();
 
 const LINE = 28; // caratteri per riga
 function wrap(text) {
@@ -1175,9 +1213,15 @@ function drawBattle() {
     const wave = B.wave && now - B.wave.t0 < B.wave.ms ? Math.sin(frame / 2) * 3 : 0;
     // avversario
     if (B.trainerPic) drawSprite(B.trainerPic.img, POS.e.x + B.trainerPic.x, POS.e.y, 1);
+    const breathe = side => (Math.floor((now / 520) + (side === 'p' ? 1 : 0)) % 2);
+    const shut = side => (now + (side === 'p' ? 1700 : 0)) % 3400 < 130;
+    const shadow = (cx, cy, w) => { ctx.fillStyle = 'rgba(40,70,30,.35)'; ctx.beginPath(); ctx.ellipse(cx, cy, w, 3.5, 0, 0, 7); ctx.fill(); };
+    if (B.e && !B.eHidden && !B.eDrop) shadow(124 + (B.eSlide || 0), 54, 20 * (B.eScale ?? 1));
+    if (B.pm != null && !B.pHidden && !B.pDrop) shadow(38 + (B.pSlide || 0), 100, 22 * (B.pScale ?? 1));
     if (B.e && !B.eHidden && !blink('e')) {
       const o = B.eOff || {x: 0, y: 0};
-      const img = B.eWhite ? monSilhouette(B.e.sp) : monSprite(B.e.sp);
+      o.y = (o.y || 0) + (B.eOff ? 0 : breathe('e'));
+      const img = B.eWhite ? monSilhouette(B.e.sp) : monSprite(B.e.sp, false, shut('e'));
       drawSprite(img, POS.e.x + (B.eSlide || 0) + o.x + wave, POS.e.y + (B.eDrop || 0) + o.y, B.eScale ?? 1, 1, B.eDrop ? POS.e.base : null);
     }
     // giocatore
@@ -1185,8 +1229,9 @@ function drawBattle() {
     const pm = B.pm != null ? G.party[B.pm] : null;
     if (pm && !B.pHidden && !blink('p')) {
       const o = B.pOff || {x: 0, y: 0};
+      const o2 = B.pOff ? o : {x: o.x, y: o.y + breathe('p')};
       const img = B.pWhite ? monSilhouette(pm.sp) : monSprite(pm.sp, true);
-      drawSprite(img, POS.p.x + (B.pSlide || 0) + o.x - wave, POS.p.y + (B.pDrop || 0) + o.y, B.pScale ?? 1, 1, B.pDrop ? POS.p.base + 2 : null);
+      drawSprite(img, POS.p.x + (B.pSlide || 0) + o2.x - wave, POS.p.y + (B.pDrop || 0) + o2.y, B.pScale ?? 1, 1, B.pDrop ? POS.p.base + 2 : null);
     }
     // evoluzione
     if (B.evo) {

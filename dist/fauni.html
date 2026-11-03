@@ -8,11 +8,37 @@
 :root{--c0:#fbfbf4;--c1:#b8cce8;--c2:#4a6aa8;--c3:#22283a;--acc:#e2584a;--shell:#c8323a;--shell2:#9a222a;--ink:#2e2e38;--btn:#3a3a48}
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;background:#1e1e26;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-body{display:flex;justify-content:center;font-family:"Courier New",Courier,monospace}
-#console{display:flex;flex-direction:column;align-items:center;width:100%;max-width:520px;height:100%;
-  background:var(--shell);padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 10px);border-radius:0 0 28px 28px}
-#bezel{background:#2a2a34;border-radius:12px 12px 36px 12px;padding:14px 20px 10px;width:100%;box-shadow:inset 0 2px 0 #44444f,0 4px 0 #8a1a22}
-#screen{position:relative;width:100%;aspect-ratio:10/9;background:var(--c0);overflow:hidden;--u:2px}
+body{font-family:"Courier New",Courier,monospace}
+/* Layout: schermo grande al centro; in verticale i comandi stanno sotto, in orizzontale ai lati */
+#wrap{position:fixed;inset:0;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr;justify-items:center;align-items:center;
+  padding:calc(env(safe-area-inset-top) + 8px) max(10px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 8px) max(10px,env(safe-area-inset-left));
+  background:radial-gradient(ellipse at 50% 30%,#2a2a3a 0%,#121218 70%)}
+#controls{width:100%;height:100%;display:flex;justify-content:space-between;align-items:center;padding:4px 6px 10px}
+.side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+@media (orientation:landscape){
+  #wrap{grid-template-columns:1fr auto 1fr;grid-template-rows:1fr}
+  #controls{display:contents}
+  #left{grid-column:1;grid-row:1}#screen{grid-column:2;grid-row:1}#right{grid-column:3;grid-row:1}
+}
+/* joystick analogico */
+#stick{position:relative;width:150px;height:150px;border-radius:50%;touch-action:none;
+  background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.10),rgba(255,255,255,.03) 62%,rgba(255,255,255,.06) 63%,rgba(255,255,255,.02) 70%);
+  border:2px solid rgba(255,255,255,.14);box-shadow:inset 0 4px 18px rgba(0,0,0,.5)}
+#stick::before{content:"";position:absolute;inset:14px;border-radius:50%;border:1px dashed rgba(255,255,255,.10)}
+#knob{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(circle at 38% 32%,#6a6a80,#34343f 60%,#24242c);box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 2px 0 rgba(255,255,255,.18);transition:transform .08s}
+#stick.on #knob{transition:none}
+.arrows{position:absolute;inset:0;pointer-events:none;color:rgba(255,255,255,.22);font:12px sans-serif}
+.arrows i{position:absolute;font-style:normal}.arrows .u{left:50%;top:6px;transform:translateX(-50%)}.arrows .d{left:50%;bottom:6px;transform:translateX(-50%)}
+.arrows .l{left:8px;top:50%;transform:translateY(-50%)}.arrows .r{right:8px;top:50%;transform:translateY(-50%)}
+#abtn{position:relative;width:170px;height:130px}
+.round{position:absolute;width:74px;height:74px;border-radius:50%;border:none;color:#fff;font:800 24px -apple-system,Helvetica,sans-serif;
+  box-shadow:0 5px 0 rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.3);text-shadow:0 1px 2px rgba(0,0,0,.4)}
+.round.a{right:0;top:0;background:radial-gradient(circle at 38% 30%,#ff8a7a,#e0443a 62%,#a82a24)}
+.round.b{left:0;bottom:0;background:radial-gradient(circle at 38% 30%,#8ab8ff,#3a6ad8 62%,#2a4aa0)}
+.pills{display:flex;gap:12px}
+.pill{min-width:74px;height:30px;border-radius:15px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:#d8d8e8;font:700 11px -apple-system,Helvetica,sans-serif;letter-spacing:.12em}
+#screen{position:relative;flex:none;width:320px;height:288px;background:#000;overflow:hidden;--u:2px;border-radius:6px;box-shadow:0 0 0 1px #2a2a36,0 10px 40px rgba(0,0,0,.6)}
 #cv{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
 #ui canvas{image-rendering:pixelated}
 #screen.fade::after,#screen.flash::after,#screen.battleflash::after{content:"";position:absolute;inset:0;z-index:50}
@@ -20,7 +46,6 @@ body{display:flex;justify-content:center;font-family:"Courier New",Courier,monos
 #screen.flash::after{background:#ffffff;animation:blink .3s steps(2) infinite}
 #screen.battleflash::after{background:var(--c3);animation:blink .18s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
-.brand{color:#e8e6f2;font:bold 11px/1 sans-serif;letter-spacing:.12em;margin-top:6px;text-align:center}
 #ui{position:absolute;inset:0;z-index:10;color:var(--c3);font-weight:bold;font-size:calc(var(--u)*7);line-height:1.45}
 #ui>div{position:absolute}
 .box{background:var(--c0);border:calc(var(--u)*1.2) solid var(--c3);box-shadow:inset 0 0 0 calc(var(--u)*1) var(--c1),inset 0 calc(var(--u)*-2) 0 calc(var(--u)*1) #e8eef8;padding:calc(var(--u)*3) calc(var(--u)*4);border-radius:calc(var(--u)*3)}
@@ -70,34 +95,22 @@ body{display:flex;justify-content:center;font-family:"Courier New",Courier,monos
 .title .t1{font-size:calc(var(--u)*24);letter-spacing:.12em;color:#f8d838;-webkit-text-stroke:calc(var(--u)*.8) #8a2a1a;text-shadow:calc(var(--u)*1.5) calc(var(--u)*1.5) 0 #c8323a,calc(var(--u)*2.5) calc(var(--u)*2.5) 0 #3a1a1a;animation:float 2.4s ease-in-out infinite}
 @keyframes float{50%{transform:translateY(calc(var(--u)*-1.5))}}
 .title .t2{font-size:calc(var(--u)*6.5);letter-spacing:.06em;color:#fff;text-shadow:calc(var(--u)*.7) calc(var(--u)*.7) 0 #22283a}
-#pad{flex:1;width:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr auto;align-items:center;padding:6px 4px 0;min-height:190px}
-#dpad{position:relative;width:150px;height:150px;justify-self:start}
-#dpad button{position:absolute;width:50px;height:50px;background:var(--ink);border:none;color:#8a8a9a;font-size:16px}
-#dpad .u{left:50px;top:0;border-radius:6px 6px 0 0}#dpad .d{left:50px;top:100px;border-radius:0 0 6px 6px}
-#dpad .l{left:0;top:50px;border-radius:6px 0 0 6px}#dpad .r{left:100px;top:50px;border-radius:0 6px 6px 0}
-#dpad .c{position:absolute;left:50px;top:50px;width:50px;height:50px;background:var(--ink)}
-#ab{position:relative;width:160px;height:120px;justify-self:end;transform:rotate(-22deg)}
-#ab button{position:absolute;width:62px;height:62px;border-radius:50%;background:var(--btn);border:none;color:#d8d8e8;font:bold 18px sans-serif;box-shadow:0 4px 0 #15151c}
-#ab .b{left:0;top:40px}#ab .a{right:0;top:10px}
-#ss{grid-column:1/3;display:flex;justify-content:center;gap:28px;padding:10px 0 4px}
-#ss button{width:64px;height:16px;border-radius:8px;background:var(--shell2);border:none;transform:rotate(-22deg);color:#f2c8ca;font:bold 9px sans-serif;padding-top:22px;overflow:visible}
-button.on{filter:brightness(.75)}
+button.on{filter:brightness(.75);transform:translateY(2px)}
 button{-webkit-tap-highlight-color:transparent;touch-action:none}
 </style>
 </head>
 <body>
-<div id="console">
-  <div id="bezel">
-    <div id="screen"><canvas id="cv"></canvas><div id="ui"></div></div>
-    <div class="brand">FAUNI · VALCORONA</div>
-  </div>
-  <div id="pad">
-    <div id="dpad">
-      <button class="u" data-k="up">▲</button><button class="d" data-k="down">▼</button>
-      <button class="l" data-k="left">◀</button><button class="r" data-k="right">▶</button><div class="c"></div>
+<div id="wrap">
+  <div id="screen"><canvas id="cv"></canvas><div id="ui"></div></div>
+  <div id="controls">
+    <div class="side" id="left">
+      <div id="stick" aria-label="Joystick"><div class="arrows"><i class="u">▲</i><i class="d">▼</i><i class="l">◀</i><i class="r">▶</i></div><div id="knob"></div></div>
+      <div class="pills"><button class="pill" data-k="SELECT">SELECT</button></div>
     </div>
-    <div id="ab"><button class="b" data-k="B">B</button><button class="a" data-k="A">A</button></div>
-    <div id="ss"><button data-k="SELECT">SELECT</button><button data-k="START">START</button></div>
+    <div class="side" id="right">
+      <div id="abtn"><button class="round b" data-k="B">B</button><button class="round a" data-k="A">A</button></div>
+      <div class="pills"><button class="pill" data-k="START">START</button></div>
+    </div>
   </div>
 </div>
 <script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
@@ -743,8 +756,8 @@ function artGrid(id) {
   return rows;
 }
 const monCache = {};
-function monSprite(spId, back) {
-  const key = spId + (back ? 'b' : 'f');
+function monSprite(spId, back, blink) {
+  const key = spId + (back ? 'b' : 'f') + (blink ? 'c' : '');
   if (monCache[key]) return monCache[key];
   const A = ART[spId];
   const N = 24;
@@ -764,13 +777,20 @@ function monSprite(spId, back) {
       const nb = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([dx, dy]) => at(x + dx, y + dy)).find(v => v !== '.' && v !== 'e');
       if (!nb) continue;
       color = nb === 'k' ? col.k : tint(col[nb] || col.a, -0.62);
+    } else if ((ch === 'e' || ch === 'k') && blink) {
+      // occhi chiusi: resta solo una riga scura in basso
+      const below = at(x, y + 1);
+      color = below === 'e' || below === 'k' ? tint(col.a, 0.05) : col.k;
     } else if (ch === 'e' || ch === 'k') color = col[ch];
     else {
       const base = col[ch] || col.a;
-      const top = !filled(x, y - 1) || !filled(x - 1, y);
+      const upE = !filled(x, y - 1), leftE = !filled(x - 1, y);
+      const top = upE || leftE;
       const bot = !filled(x, y + 1) || !filled(x + 1, y);
       const bot2 = !filled(x, y + 2);
-      color = top ? tint(base, 0.32) : bot ? tint(base, -0.28) : bot2 ? tint(base, -0.12) : base;
+      const top2 = !filled(x, y - 2) || !filled(x - 2, y);
+      // luce da in alto a sinistra: riflesso, luce, tono pieno, ombra propria, ombra di contatto
+      color = upE && leftE ? tint(base, 0.55) : top ? tint(base, 0.32) : bot ? tint(base, -0.3) : bot2 ? tint(base, -0.14) : top2 ? tint(base, 0.12) : base;
     }
     g.fillStyle = color; g.fillRect(x * 2, y * 2, 2, 2);
   }
@@ -799,11 +819,42 @@ function el(cls, x, y, w, h, parent = uiEl) {
   if (h != null) d.style.height = U(h);
   parent.appendChild(d); return d;
 }
+// Dimensiona lo schermo: in verticale occupa la larghezza, in orizzontale l'altezza
+// lasciando spazio ai comandi sui lati.
 function resize() {
-  const u = screenEl.getBoundingClientRect().width / VW;
-  screenEl.style.setProperty('--u', u + 'px');
+  const W = innerWidth, H = innerHeight, land = W > H;
+  const padX = 20, padY = 16;
+  let w;
+  if (land) w = Math.min((H - padY - 8) * VW / VH, W - 2 * 200 - padX);
+  else w = Math.min(W - padX, (H * 0.62) * VW / VH);
+  w = Math.max(160, Math.floor(w));
+  screenEl.style.width = w + 'px';
+  screenEl.style.height = Math.round(w * VH / VW) + 'px';
+  screenEl.style.setProperty('--u', (w / VW) + 'px');
 }
 addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 200));
+
+// Joystick analogico: la direzione prevalente diventa una freccia
+(function joystick() {
+  const st = document.getElementById('stick'), knob = document.getElementById('knob');
+  if (!st) return;
+  let cur = null, id = null;
+  const set = d => { if (d === cur) return; if (cur) release(cur); cur = d; if (d) press(d); };
+  const move = e => {
+    const r = st.getBoundingClientRect();
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const max = r.width * 0.32, m = Math.hypot(dx, dy);
+    if (m > max) { dx *= max / m; dy *= max / m; }
+    knob.style.transform = `translate(${dx}px,${dy}px)`;
+    if (m < r.width * 0.12) set(null);
+    else set(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  };
+  st.addEventListener('pointerdown', e => { e.preventDefault(); id = e.pointerId; st.setPointerCapture(id); st.classList.add('on'); move(e); });
+  st.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  const end = e => { if (e.pointerId !== id) return; id = null; st.classList.remove('on'); knob.style.transform = ''; set(null); };
+  st.addEventListener('pointerup', end); st.addEventListener('pointercancel', end);
+})();
 
 const LINE = 28; // caratteri per riga
 function wrap(text) {
@@ -1638,9 +1689,15 @@ function drawBattle() {
     const wave = B.wave && now - B.wave.t0 < B.wave.ms ? Math.sin(frame / 2) * 3 : 0;
     // avversario
     if (B.trainerPic) drawSprite(B.trainerPic.img, POS.e.x + B.trainerPic.x, POS.e.y, 1);
+    const breathe = side => (Math.floor((now / 520) + (side === 'p' ? 1 : 0)) % 2);
+    const shut = side => (now + (side === 'p' ? 1700 : 0)) % 3400 < 130;
+    const shadow = (cx, cy, w) => { ctx.fillStyle = 'rgba(40,70,30,.35)'; ctx.beginPath(); ctx.ellipse(cx, cy, w, 3.5, 0, 0, 7); ctx.fill(); };
+    if (B.e && !B.eHidden && !B.eDrop) shadow(124 + (B.eSlide || 0), 54, 20 * (B.eScale ?? 1));
+    if (B.pm != null && !B.pHidden && !B.pDrop) shadow(38 + (B.pSlide || 0), 100, 22 * (B.pScale ?? 1));
     if (B.e && !B.eHidden && !blink('e')) {
       const o = B.eOff || {x: 0, y: 0};
-      const img = B.eWhite ? monSilhouette(B.e.sp) : monSprite(B.e.sp);
+      o.y = (o.y || 0) + (B.eOff ? 0 : breathe('e'));
+      const img = B.eWhite ? monSilhouette(B.e.sp) : monSprite(B.e.sp, false, shut('e'));
       drawSprite(img, POS.e.x + (B.eSlide || 0) + o.x + wave, POS.e.y + (B.eDrop || 0) + o.y, B.eScale ?? 1, 1, B.eDrop ? POS.e.base : null);
     }
     // giocatore
@@ -1648,8 +1705,9 @@ function drawBattle() {
     const pm = B.pm != null ? G.party[B.pm] : null;
     if (pm && !B.pHidden && !blink('p')) {
       const o = B.pOff || {x: 0, y: 0};
+      const o2 = B.pOff ? o : {x: o.x, y: o.y + breathe('p')};
       const img = B.pWhite ? monSilhouette(pm.sp) : monSprite(pm.sp, true);
-      drawSprite(img, POS.p.x + (B.pSlide || 0) + o.x - wave, POS.p.y + (B.pDrop || 0) + o.y, B.pScale ?? 1, 1, B.pDrop ? POS.p.base + 2 : null);
+      drawSprite(img, POS.p.x + (B.pSlide || 0) + o2.x - wave, POS.p.y + (B.pDrop || 0) + o2.y, B.pScale ?? 1, 1, B.pDrop ? POS.p.base + 2 : null);
     }
     // evoluzione
     if (B.evo) {
