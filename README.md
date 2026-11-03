@@ -4,8 +4,11 @@ Gioco di ruolo originale in stile portatile anni '90 (4 tonalità di verde, movi
 
 ## Come giocare su iPhone
 1. Installa [Scriptable](https://scriptable.app) dall'App Store.
-2. Apri `dist/FauniValcorona.js`, copia tutto il contenuto, crea un nuovo script in Scriptable e incollalo.
-3. Avvia lo script. Il salvataggio (menu START → SALVA) finisce in `Scriptable/FauniValcorona/salvataggio.json` su iCloud.
+2. In Scriptable tocca **+**, incolla il contenuto di [`dist/Fauni.js`](dist/Fauni.js) (circa 60 righe) e avvia.
+   Alla prima apertura scarica il gioco da GitHub (serve internet). Dopo funziona anche offline.
+3. Alternativa senza internet: incolla [`dist/FauniValcorona.js`](dist/FauniValcorona.js), la versione completa (circa 1000 righe).
+4. Il salvataggio (menu START → SALVA) finisce in `Scriptable/FauniValcorona/salvataggio.json`.
+   Se qualcosa va storto, lo script mostra un avviso con l'errore.
 
 ## Come giocare sul computer
 Apri `dist/fauni.html` nel browser. Comandi: frecce, **Z** = A, **X** = B, **Invio** = START.
