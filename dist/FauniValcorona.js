@@ -4,13 +4,13 @@
 // FAUNI - Le Sorgenti di Valcorona (versione completa, funziona offline)
 // File generato da build.py: modifica i sorgenti in src/.
 
-// ---- avvio del gioco in una WebView, con salvataggio su file ----
-async function avviaGioco(html) {
+// ---- avvio di una pagina in una WebView, con salvataggio su file ----
+async function avviaGioco(html, cartella, nomeFile) {
   let fm;
   try { fm = FileManager.iCloud(); fm.documentsDirectory(); } catch (e) { fm = FileManager.local(); }
-  const dir = fm.joinPath(fm.documentsDirectory(), "FauniValcorona");
+  const dir = fm.joinPath(fm.documentsDirectory(), cartella || "FauniValcorona");
   if (!fm.fileExists(dir)) fm.createDirectory(dir, true);
-  const savePath = fm.joinPath(dir, "salvataggio.json");
+  const savePath = fm.joinPath(dir, nomeFile || "salvataggio.json");
   let save = null;
   if (fm.fileExists(savePath)) {
     try { if (!fm.isFileDownloaded(savePath)) await fm.downloadFileFromiCloud(savePath); } catch (e) {}

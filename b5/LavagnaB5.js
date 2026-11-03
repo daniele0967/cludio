@@ -1,6 +1,6 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
-// icon-color: orange; icon-glyph: baseball-ball;
+// icon-color: orange; icon-glyph: chalkboard;
 // LAVAGNA BASEBALL5 — scarica la lavagna da GitHub (serve internet la prima volta,
 // poi funziona anche offline con l'ultima versione scaricata).
 const URL_APP = "https://raw.githubusercontent.com/daniele0967/cludio/claude/scriptable-pokemon-title-e3p0ow/b5/app.html";
@@ -17,7 +17,7 @@ async function avvia(html) {
     try { save = fm.readString(savePath); } catch (e) {}
   }
   const wv = new WebView();
-  await wv.loadHTML(html.replace("/*__SAVE__*/null", () => JSON.stringify(save)), "https://raw.githubusercontent.com/");
+  await wv.loadHTML(html.replace("/*__SAVE__*/null", () => JSON.stringify(save)));
   let aperto = true;
   const chiuso = wv.present(true).then(() => { aperto = false; });
   while (aperto) {

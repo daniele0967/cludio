@@ -200,7 +200,15 @@ label.ck input { margin-top: 3px; accent-color: var(--accent); }
   </aside>
 </div>
 
-<script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
+<script>
+window.__INITIAL_SAVE__ = /*__SAVE__*/null;
+window.addEventListener('error', e => {
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:999;background:#5a1010;color:#fff;padding:10px;border-radius:8px;font:13px monospace;white-space:pre-wrap';
+  d.textContent = 'Errore: ' + e.message + (e.lineno ? ' (riga ' + e.lineno + ')' : '');
+  document.body.appendChild(d);
+});
+</script>
 <script>
 (() => {
 'use strict';
