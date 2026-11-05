@@ -126,12 +126,36 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #jumpBtn.down > div { background: rgba(255, 90, 54, .55); }
 #jumpLbl { font: 800 20px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; }
 #jumpSub { font: 700 9px/1.2 var(--round); letter-spacing: .04em; color: var(--frost); max-width: 86px; }
+#swipeLbl { position: fixed; right: calc(max(16px, env(safe-area-inset-right, 0px)) + 4px); bottom: calc(env(safe-area-inset-bottom, 0px) + 152px);
+  pointer-events: none; padding: 6px 11px; border-radius: 10px; background: rgba(11, 22, 48, .7); border: 1px solid rgba(255, 207, 63, .5);
+  font: 800 14px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
+#swipeLbl.on { opacity: 1; transform: none; }
+#tutCard { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 64px); width: min(92vw, 460px);
+  pointer-events: none; padding: 10px 14px 12px; border-radius: 16px; background: rgba(11, 22, 48, .78); border: 1px solid var(--edge); display: grid; gap: 4px; }
+#tutCard.done { border-color: var(--mint); background: rgba(14, 60, 52, .82); }
+#tutStep { font: 800 10.5px var(--round); letter-spacing: .14em; text-transform: uppercase; color: var(--frost); }
+#tutTitle { font: 800 22px/1 var(--display); text-transform: uppercase; letter-spacing: .04em; color: var(--gold); }
+#tutText { font: 600 14px/1.35 var(--round); }
+#tutText b { color: var(--gold); }
+#tutTip { font: 600 12px/1.3 var(--round); color: #ffb3bd; }
+#tutTip:empty { display: none; }
+#tutDots { display: flex; gap: 4px; }
+#tutDots i { flex: 1; height: 4px; border-radius: 4px; background: rgba(234, 244, 255, .2); }
+#tutDots i.ok { background: var(--mint); }
+#tutDots i.now { background: var(--gold); }
+.glow { box-shadow: 0 0 0 2px var(--gold); }
+.menubtns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tlist { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; max-height: 56vh; overflow-y: auto; }
+.tlist li { display: grid; grid-template-columns: 58px 1fr; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 12px; background: rgba(234, 244, 255, .06); font: 600 13px/1.3 var(--body); }
+.tlist li span { font: 800 22px/1 var(--round); color: var(--gold); text-align: center; letter-spacing: -.05em; }
+.tlist li b { color: var(--ice); }
+.tlist li em { font-style: normal; color: var(--frost); font-size: 12px; }
 @media (max-aspect-ratio: 1/1) {
   #aval { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 66px); }
   #pops { top: 30%; }
   #combo { top: calc(30% - 46px); }
 }
-@media (max-height: 460px) { #hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); width: min(50vw, 440px); font-size: 13px; padding: 7px 10px; } }
+@media (max-height: 460px) { #tutCard { top: calc(env(safe-area-inset-top, 0px) + 8px); width: min(56vw, 460px); padding: 7px 12px 9px; } #tutTitle { font-size: 17px; } #tutText { font-size: 12.5px; } #swipeLbl { bottom: calc(env(safe-area-inset-bottom, 0px) + 146px); } .tlist { max-height: 46vh; } #hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); width: min(50vw, 440px); font-size: 13px; padding: 7px 10px; } }
 @media (prefers-reduced-motion: reduce) { .pop { animation-duration: 1.2s; } #hint { transition: none; } }
 </style>
 </head>
@@ -160,6 +184,8 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   <div id="joy"><div id="joyKnob"></div></div>
   <div id="jumpBtn"><div><span id="jumpLbl">Salta</span><span id="jumpSub">tieni = più alto</span></div></div>
 </div>
+<div id="swipeLbl"></div>
+<div id="tutCard" class="hidden"><div id="tutStep"></div><div id="tutTitle"></div><div id="tutText"></div><div id="tutTip"></div><div id="tutDots"></div></div>
 <div id="combo" class="hidden"><span id="comboTxt"></span><i id="comboBar"></i></div>
 <div id="pops"></div>
 <div id="hint"></div>
@@ -171,10 +197,11 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     <ul class="howto">
       <li><b>Joystick</b>A sinistra: curvi, avanti accelera, indietro frena.</li>
       <li><b>Salta</b>Tocca a destra. Tieni premuto per saltare più in alto.</li>
-      <li><b>In aria</b>Trascina il dito: il rider gira come lo muovi. Anche col joystick.</li>
-      <li><b>Grab</b>In aria tieni fermo il dito. Atterra dritto, si va sempre più veloci.</li>
+      <li><b>Swipe</b>In aria ogni swipe è un trick: direzione e velocità decidono quale.</li>
+      <li><b>Grab</b>In aria tieni fermo il dito. Entra dritto sui rail per il grind.</li>
     </ul>
     <button class="primary" id="btnPlay">Gioca</button>
+    <div class="menubtns"><button class="ghost" id="btnTut">Tutorial</button><button class="ghost" id="btnTricks">Lista trick</button></div>
     <div class="best">Record <b id="bestMenu">0</b></div>
   </div>
 </div>
@@ -202,6 +229,31 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     </div>
     <button class="primary" id="btnAgain">Riprova</button>
     <div class="best">Record <b id="bestOver">0</b></div>
+  </div>
+</div>
+<div id="tricks" class="overlay hidden">
+  <div class="card">
+    <div class="over-title">Trick</div>
+    <ul class="tlist">
+      <li><span>← →</span><div><b>Spin</b> (Backside / Frontside)<br><em>lento 180 · medio 360 · veloce 540 · velocissimo 720</em></div></li>
+      <li><span>↑</span><div><b>Backflip</b><br><em>swipe veloce = Double Backflip</em></div></li>
+      <li><span>↓</span><div><b>Frontflip</b><br><em>swipe veloce = Double Frontflip</em></div></li>
+      <li><span>↖ ↗</span><div><b>Rodeo</b> (flip all'indietro storto)<br><em>lento 540 · medio 720 · veloce 900</em></div></li>
+      <li><span>↙ ↘</span><div><b>Misty</b> (flip in avanti storto)<br><em>lento 540 · medio 720 · veloce 900</em></div></li>
+      <li><span>●</span><div><b>Grab</b>: dito fermo in aria<br><em>in alto: Method, Nose · in basso: Tail, Indy</em></div></li>
+      <li><span>↗ ●</span><div><b>Trick + grab</b>: swipe e poi tieni fermo<br><em>es. Frontside 360 Indy</em></div></li>
+      <li><span>⟿</span><div><b>Più trick nello stesso salto</b><br><em>uno swipe dopo l'altro: i punti si sommano e salgono</em></div></li>
+      <li><span>═</span><div><b>Rail e box</b>: entra dritto o saltaci sopra<br><em>sul rail swipe ← → = Boardslide · tocca = salta via</em></div></li>
+    </ul>
+    <button class="primary" id="btnTricksClose">Chiudi</button>
+  </div>
+</div>
+<div id="tutEnd" class="overlay hidden">
+  <div class="card">
+    <div class="over-title">Tutorial finito</div>
+    <p class="tag">Ora sai fare spin, flip, rodeo, misty, grab e grind. Nella partita vera c'è la valanga e ogni 450 m si va più veloci.</p>
+    <button class="primary" id="btnTutPlay">Gioca</button>
+    <button class="ghost" id="btnTutMenu">Menu</button>
   </div>
 </div>
 <div id="err"></div>
@@ -249,7 +301,7 @@ function now() { return performance.now(); }
 
 // ============================================================ salvataggio (ponte con Scriptable)
 var SAVE_KEY = 'powderrun3d_v1';
-var save = { best: 0, runs: 0, tut: 0, mute: false, bestDist: 0 };
+var save = { best: 0, runs: 0, tut: 0, mute: false, bestDist: 0, tutDone: false };
 (function () {
   var raw = window.__INITIAL_SAVE__;
   if (!raw) { try { raw = localStorage.getItem(SAVE_KEY); } catch (e) {} }
@@ -268,7 +320,7 @@ window.__waitSave = function (cb) {
 
 // ============================================================ costanti
 var G = 24, MAXS = 33, FIX = 1 / 120, CH_L = 60, SL = 0.27;
-var GRAB_NAMES = { method: 'Method', indy: 'Indy' };
+var GRAB_NAMES = { method: 'Method', indy: 'Indy', nose: 'Nose Grab', tail: 'Tail Grab', melon: 'Melon', stale: 'Stalefish' };
 
 // ============================================================ renderer e scena
 var canvas = $('game'), renderer;
@@ -279,6 +331,8 @@ try {
   throw e;
 }
 renderer.shadowMap.enabled = true;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 900);
@@ -302,7 +356,7 @@ var hemi = new THREE.HemisphereLight(0xdceeff, 0x8aa4c4, 1.2);
 scene.add(hemi);
 var sun = new THREE.DirectionalLight(0xfff3d6, 2.6);
 sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.mapSize.set(2048, 2048);
 var sc = sun.shadow.camera; sc.left = -16; sc.right = 16; sc.top = 16; sc.bottom = -16; sc.near = 1; sc.far = 90;
 sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03;
 scene.add(sun); scene.add(sun.target);
@@ -384,8 +438,7 @@ var goggleTex = canvasTex(64, 32, function (c) {
 
 // ---- materiali
 var M = {
-  snow: new THREE.MeshLambertMaterial({ map: snowTex, vertexColors: true }),
-  kicker: new THREE.MeshLambertMaterial({ map: snowTex, vertexColors: true }),
+  snow: null, kicker: null,
   tree: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
   rock: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
   metal: new THREE.MeshPhongMaterial({ color: 0xc8d2e0, shininess: 90, specular: 0xffffff }),
@@ -397,6 +450,55 @@ var M = {
   flagB: new THREE.MeshLambertMaterial({ color: 0x2c62c9, side: THREE.DoubleSide }),
   mount: new THREE.MeshBasicMaterial({ vertexColors: true, fog: false })
 };
+// ---- neve: rilievo a mappa di normali (grana + solchi del gatto), materiale fisico e brillii che cambiano con il punto di vista
+var snowNormal = (function () {
+  var N = 256, c = document.createElement('canvas'); c.width = c.height = N;
+  var g = c.getContext('2d'), img = g.createImageData(N, N), h = new Float32Array(N * N);
+  function pn(x, y, P, sd) {
+    var i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);
+    function q(a, b) { return hash2(((a % P) + P) % P, ((b % P) + P) % P, sd); }
+    return lerp(lerp(q(i, j), q(i + 1, j), u), lerp(q(i, j + 1), q(i + 1, j + 1), u), v);
+  }
+  for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+    var X = x / N, Y = y / N;
+    h[y * N + x] = pn(X * 8, Y * 8, 8, 1) * 0.5 + pn(X * 24, Y * 24, 24, 2) * 0.3 + pn(X * 64, Y * 64, 64, 3) * 0.2 + Math.sin(X * TAU * 32) * 0.18;
+  }
+  for (var y2 = 0; y2 < N; y2++) for (var x2 = 0; x2 < N; x2++) {
+    var dx = h[y2 * N + (x2 + 1) % N] - h[y2 * N + (x2 + N - 1) % N], dy = h[((y2 + 1) % N) * N + x2] - h[((y2 + N - 1) % N) * N + x2];
+    var nx = -dx * 3.2, ny = -dy * 3.2, nz = 1, l = Math.sqrt(nx * nx + ny * ny + nz * nz), o = (y2 * N + x2) * 4;
+    img.data[o] = (nx / l * 0.5 + 0.5) * 255; img.data[o + 1] = (ny / l * 0.5 + 0.5) * 255; img.data[o + 2] = (nz / l * 0.5 + 0.5) * 255; img.data[o + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  return t;
+})();
+var sparkU = { uSunDir: { value: new THREE.Vector3(0.3, 0.6, 0.7) }, uSpark: { value: 1 } };
+function snowMaterial() {
+  var m = new THREE.MeshStandardMaterial({ map: snowTex, vertexColors: true, roughness: 0.78, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.55 });
+  m.onBeforeCompile = function (sh) {
+    sh.uniforms.uSunDir = sparkU.uSunDir; sh.uniforms.uSpark = sparkU.uSpark;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP;').replace('#include <fog_vertex>', '#include <fog_vertex>\nvWP = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vWP; uniform vec3 uSunDir; uniform float uSpark;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\n{ vec3 Vd = normalize(cameraPosition - vWP); vec3 cl = floor(vWP * 20.0);\n' +
+        ' float h1 = fract(sin(dot(cl, vec3(12.9898, 78.233, 37.719))) * 43758.5453); float h2 = fract(h1 * 91.7); float h3 = fract(h1 * 37.3);\n' +
+        ' vec3 nn = normalize(vec3(h2 - 0.5, 1.0, h3 - 0.5)); vec3 Hh = normalize(Vd + normalize(uSunDir));\n' +
+        ' float gl = pow(max(dot(nn, Hh), 0.0), 260.0) * step(0.9, h1) * clamp(1.0 - length(cameraPosition - vWP) / 38.0, 0.0, 1.0);\n' +
+        ' gl_FragColor.rgb += vec3(1.0, 0.97, 0.9) * gl * uSpark * 3.0; }');
+  };
+  return m;
+}
+M.snow = snowMaterial(); M.kicker = snowMaterial();
+M.metal = new THREE.MeshStandardMaterial({ color: 0xc8d2e0, roughness: 0.22, metalness: 0.9 });
+M.boxBlue = new THREE.MeshStandardMaterial({ color: 0x2c62c9, roughness: 0.5 });
+M.boxTop = new THREE.MeshStandardMaterial({ color: 0xffcf3f, roughness: 0.35, metalness: 0.3 });
+// riflessi: il cielo diventa la mappa d'ambiente dei materiali
+var pmrem = new THREE.PMREMGenerator(renderer), envScene = new THREE.Scene(), envRT = null, envAt = -1e9;
+envScene.add(new THREE.Mesh(new THREE.SphereGeometry(10, 32, 16), skyMat));
+function updateEnv(m) {
+  if (Math.abs(m - envAt) < 120) return; envAt = m;
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(envScene, 0, 0.1, 100); scene.environment = envRT.texture;
+}
 var coinMat = new THREE.SpriteMaterial({ map: coinTex, transparent: true, depthWrite: false });
 
 // ---- geometrie riusabili
@@ -465,8 +567,10 @@ function updatePalette(m) {
   skyMat.uniforms.top.value.copy(pal.skyT); skyMat.uniforms.bot.value.copy(pal.skyB); skyMat.uniforms.sunC.value.copy(pal.sun);
   skyMat.uniforms.sunD.value.set(pal.sd[0], pal.sd[1], pal.sd[2]);
   scene.fog.color.copy(pal.fog);
-  sun.color.copy(pal.sun); sun.intensity = pal.sunI;
-  hemi.color.copy(pal.hemiS); hemi.groundColor.copy(pal.hemiG); hemi.intensity = pal.hemiI;
+  sun.color.copy(pal.sun); sun.intensity = pal.sunI * 1.05;
+  hemi.color.copy(pal.hemiS); hemi.groundColor.copy(pal.hemiG); hemi.intensity = pal.hemiI * 0.75;
+  sparkU.uSunDir.value.set(pal.sd[0], Math.max(0.3, pal.sd[1]), pal.sd[2]); sparkU.uSpark.value = 1 - pal.star * 0.4;
+  updateEnv(m);
   starMat.opacity = pal.star;
   mountMatUpdate();
 }
@@ -588,7 +692,7 @@ function kickerMesh(k) {
 function secKickers(z) {
   var d = diff(z), n = 1 + Math.floor(R() * 2.4), zz = z;
   for (var i = 0; i < n; i++) {
-    var cx = cxAt(zz), x = cx + (R() - 0.5) * (i === 0 ? 7 : 16), Hk = 1.35 + R() * 0.6 + d * 0.35, L = 5.2 + R() * 1.4, w = 2.1 + R() * 0.8;
+    var cx = cxAt(zz), x = cx + (S.tut ? 0 : (R() - 0.5) * (i === 0 ? 7 : 16)), Hk = 1.35 + R() * 0.6 + d * 0.35, L = 5.2 + R() * 1.4, w = 2.1 + R() * 0.8;
     var k = { x: x, z0: zz, L: L, z1: zz + L, Hk: Hk, w: w, big: false };
     S.kickers.push(k);
     addObj(kickerMesh(k), k.z1 + 2);
@@ -658,10 +762,10 @@ function railMesh(r) {
 function secRails(z) {
   var n = 1 + (R() < 0.35 ? 1 : 0), zz = z;
   for (var i = 0; i < n; i++) {
-    var cx = cxAt(zz), x = cx + (R() - 0.5) * 12, L = 11 + R() * 8, kind = R() < 0.5 ? 'rail' : 'box', h = kind === 'box' ? 0.55 : 0.8;
-    var x2 = x + (R() - 0.5) * 2.5;
+    var cx = cxAt(zz), x = cx + (R() - 0.5) * (S.tut ? 2 : 12), L = 12 + R() * 8, kind = R() < 0.5 ? 'rail' : 'box', h = kind === 'box' ? 0.75 : 1.05;
+    var x2 = x + (S.tut ? 0 : (R() - 0.5) * 2.5);
     var r = { x1: x, z1: zz, x2: x2, z2: zz + L, kind: kind, h: h };
-    r.y1 = terrainH(x, zz) + h; r.y2 = terrainH(x2, zz + L) + h;
+    r.y1 = terrainH(x, zz) + 0.14; r.y2 = terrainH(x2, zz + L) + h;
     r.yaw = Math.atan2(r.x2 - r.x1, r.z2 - r.z1);
     S.rails.push(r);
     addObj(railMesh(r), r.z2 + 2);
@@ -759,8 +863,10 @@ function secLine(z) {
   return zz;
 }
 var SECTIONS = { line: secLine, cruise: secCruise, kicker: secKickers, big: secBig, drop: secDrop, rail: secRails, rocks: secRocks, trees: secTrees, rollers: secRollers };
+var TUT_SEQ = ['kicker', 'cruise', 'big', 'rail', 'kicker', 'big', 'rail', 'line'];
 function genSection() {
   var z = S.genZ;
+  if (S.tut && z >= S.flatUntil) { var kt = TUT_SEQ[(S.tutI = (S.tutI || 0) + 1) % TUT_SEQ.length]; S.genZ = SECTIONS[kt](z) + 14 + R() * 8; return; }
   if (z < S.flatUntil) { S.genZ = z + 40; return; }
   var d = diff(z);
   var w = { cruise: 1.1, kicker: 3.2, line: 1.6 + d, big: 1.4 + 1.6 * d, drop: 0.9 + 1.2 * d, rail: 2, rocks: 1.2 + 2.2 * d, trees: 0.8 + 1.8 * d, rollers: 1.5 };
@@ -930,53 +1036,87 @@ function updFlakes(dt) {
 // ============================================================ il rider (modello e pose)
 var rider = (function () {
   var root = new THREE.Group();
+  function std(c, r, m, extra) { var o = { color: c, roughness: r, metalness: m || 0 }; if (extra) for (var k in extra) o[k] = extra[k]; return new THREE.MeshStandardMaterial(o); }
   var M2 = {
-    jacket: new THREE.MeshLambertMaterial({ color: 0xff5a36 }), jacketD: new THREE.MeshLambertMaterial({ color: 0xd84424 }),
-    pants: new THREE.MeshLambertMaterial({ color: 0x22325a }), pantsD: new THREE.MeshLambertMaterial({ color: 0x1a2747 }),
-    glove: new THREE.MeshLambertMaterial({ color: 0x1b2433 }), boot: new THREE.MeshLambertMaterial({ color: 0x2b2f38 }),
-    helmet: new THREE.MeshPhongMaterial({ color: 0xf5f7fb, shininess: 60 }), stripe: new THREE.MeshLambertMaterial({ color: 0xffcf3f }),
-    skin: new THREE.MeshLambertMaterial({ color: 0xf2c29b }), goggle: new THREE.MeshPhongMaterial({ map: goggleTex, shininess: 120, specular: 0xffffff }),
-    board: new THREE.MeshPhongMaterial({ map: boardTex, shininess: 40 }), boardBase: new THREE.MeshLambertMaterial({ color: 0x0b2a4a }), bind: new THREE.MeshLambertMaterial({ color: 0x111827 }),
-    pack: new THREE.MeshLambertMaterial({ color: 0x2c62c9 }), packD: new THREE.MeshLambertMaterial({ color: 0x1b3f86 }), scarf: new THREE.MeshLambertMaterial({ color: 0xffcf3f })
+    jacket: std(0xff5a36, 0.72), jacketD: std(0xd84424, 0.75), reflect: std(0xf0f4f8, 0.3, 0.2),
+    pants: std(0x223560, 0.85), pantsD: std(0x1a2849, 0.85), patch: std(0x141c33, 0.9),
+    glove: std(0x1b2433, 0.6), cuff: std(0xffcf3f, 0.7), boot: std(0x2b2f38, 0.55), sole: std(0x111318, 0.8),
+    helmet: std(0xf5f7fb, 0.32), helmetD: std(0x2a3140, 0.5), stripe: std(0xffcf3f, 0.5),
+    skin: std(0xf2c29b, 0.7), goggle: std(0xffffff, 0.08, 0.6, { map: goggleTex, envMapIntensity: 1.6 }), strap: std(0x111827, 0.6),
+    boardTop: std(0xffffff, 0.45, 0, { map: boardTex }), boardBase: std(0x0b2a4a, 0.35, 0.1), edge: std(0xc0c8d2, 0.25, 0.9), bind: std(0x111827, 0.5),
+    pack: std(0x2c62c9, 0.7), packD: std(0x1b3f86, 0.75), scarf: std(0xffcf3f, 0.85)
   };
-  // tavola con attacchi e highback
+  // ---- tavola: sagoma vera con punte rialzate
   var board = new THREE.Group();
-  var deck = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.03, 1.2), [M2.boardBase, M2.boardBase, M2.board, M2.boardBase, M2.boardBase, M2.boardBase]);
-  deck.position.y = 0.035; board.add(deck);
+  var shp = new THREE.Shape(), L = 0.78, Wd = 0.15, Tw = 0.135;
+  shp.moveTo(-Tw, -L + 0.16); shp.quadraticCurveTo(-Wd, -L + 0.04, -0.05, -L); shp.lineTo(0.05, -L); shp.quadraticCurveTo(Wd, -L + 0.04, Tw, -L + 0.16);
+  shp.quadraticCurveTo(0.12, 0, Tw, L - 0.16); shp.quadraticCurveTo(Wd, L - 0.04, 0.05, L); shp.lineTo(-0.05, L); shp.quadraticCurveTo(-Wd, L - 0.04, -Tw, L - 0.16);
+  shp.quadraticCurveTo(-0.12, 0, -Tw, -L + 0.16);
+  function rocker(g) {
+    var p = g.attributes.position;
+    for (var i = 0; i < p.count; i++) { var z = p.getZ(i), a = Math.abs(z), lift = a > 0.52 ? Math.pow((a - 0.52) / 0.26, 2) * 0.09 : 0; p.setY(i, p.getY(i) + lift); }
+    g.computeVertexNormals(); return g;
+  }
+  var baseG = new THREE.ExtrudeGeometry(shp, { depth: 0.022, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 1, curveSegments: 10 });
+  baseG.rotateX(PI / 2); baseG.translate(0, 0.045, 0); rocker(baseG);
+  var topG = new THREE.ShapeGeometry(shp, 10); topG.rotateX(-PI / 2);
+  (function () { var uv = topG.attributes.uv; for (var i = 0; i < uv.count; i++) uv.setXY(i, uv.getY(i) / (2 * L) + 0.5, uv.getX(i) / 0.3 + 0.5); })();
+  topG.translate(0, 0.0475, 0); rocker(topG);
+  var baseM = new THREE.Mesh(baseG, [M2.boardBase, M2.edge]); baseM.castShadow = true; board.add(baseM);
+  var topM = new THREE.Mesh(topG, M2.boardTop); topM.position.y = 0.001; board.add(topM);
   [-1, 1].forEach(function (s) {
-    var tip = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.145, 0.03, 16, 1, false, s > 0 ? -PI / 2 : PI / 2, PI), M2.board);
-    tip.position.set(0, 0.05, s * 0.6); tip.rotation.x = s * 0.18; board.add(tip);
-    var bnd = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.15), M2.bind); bnd.position.set(0, 0.07, s * 0.25); board.add(bnd);
-    var hb = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.2, 0.15), M2.bind); hb.position.set(-0.12, 0.16, s * 0.25); hb.rotation.z = 0.12; board.add(hb);
-    var strap = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.03, 0.06), M2.stripe); strap.position.set(0.02, 0.17, s * 0.25 + 0.03); board.add(strap);
+    var disc = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.02, 16), M2.bind); disc.position.set(0, 0.06, s * 0.25); board.add(disc);
+    var base = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.035, 0.16), M2.bind); base.position.set(0, 0.075, s * 0.25); board.add(base);
+    var hb = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.2, 12, 1, true, PI * 0.5, PI), M2.bind); hb.position.set(-0.02, 0.17, s * 0.25); hb.rotation.z = 0.18; board.add(hb);
+    var st1 = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.035, 0.07), M2.stripe); st1.position.set(0.03, 0.2, s * 0.25 + 0.035); board.add(st1);
+    var st2 = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 0.05), M2.strap); st2.position.set(0.06, 0.12, s * 0.25 - 0.05); board.add(st2);
   });
   board.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
   root.add(board);
+  // ---- corpo: capsule a lunghezza fissa sulle ossa
   var body = new THREE.Group(); root.add(body);
   function add(m) { m.castShadow = true; body.add(m); return m; }
-  function cyl(mat, r) { return add(new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.92, 1, 8), mat)); }
-  function sph(mat, r) { return add(new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mat)); }
+  function cap(mat, r, len) { var m = add(new THREE.Mesh(new THREE.CapsuleGeometry(r, Math.max(0.01, len - 2 * r), 5, 12), mat)); m.userData.len = len; return m; }
+  function sph(mat, r) { return add(new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), mat)); }
   var pp = {
-    thighB: cyl(M2.pantsD, 0.085), shinB: cyl(M2.pantsD, 0.075), thighF: cyl(M2.pants, 0.085), shinF: cyl(M2.pants, 0.075),
-    kneeB: sph(M2.pantsD, 0.085), kneeF: sph(M2.pants, 0.085), hip: sph(M2.pants, 0.15),
-    bootB: add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.15), M2.boot)), bootF: add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.15), M2.boot)),
-    torso: cyl(M2.jacket, 0.17), chest: sph(M2.jacket, 0.175), belly: sph(M2.jacket, 0.155),
-    uArmB: cyl(M2.jacketD, 0.06), lArmB: cyl(M2.jacketD, 0.055), uArmF: cyl(M2.jacket, 0.06), lArmF: cyl(M2.jacket, 0.055),
-    elbB: sph(M2.jacketD, 0.06), elbF: sph(M2.jacket, 0.06), handB: sph(M2.glove, 0.07), handF: sph(M2.glove, 0.07),
-    neck: sph(M2.skin, 0.07),
-    pack: new THREE.Group(), scarf: []
+    thighB: cap(M2.pantsD, 0.105, 0.5), shinB: cap(M2.pantsD, 0.09, 0.47), thighF: cap(M2.pants, 0.105, 0.5), shinF: cap(M2.pants, 0.09, 0.47),
+    kneeB: sph(M2.patch, 0.098), kneeF: sph(M2.patch, 0.098), hip: add(new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), M2.pants)),
+    bootB: new THREE.Group(), bootF: new THREE.Group(),
+    torso: cap(M2.jacket, 0.19, 0.56), belly: sph(M2.jacketD, 0.16), hem: add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.215, 0.08, 16), M2.jacketD)),
+    hood: add(new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10, 0, TAU, 0, PI * 0.6), M2.jacketD)),
+    zip: add(new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.4, 0.02), M2.reflect)),
+    uArmB: cap(M2.jacketD, 0.072, 0.31), lArmB: cap(M2.jacketD, 0.064, 0.3), uArmF: cap(M2.jacket, 0.072, 0.31), lArmF: cap(M2.jacket, 0.064, 0.3),
+    handB: new THREE.Group(), handF: new THREE.Group(),
+    neck: sph(M2.skin, 0.065), pack: new THREE.Group(), scarf: []
   };
-  var packBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.36, 0.28), M2.pack); packBox.castShadow = true; pp.pack.add(packBox);
-  var packTop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.29), M2.packD); packTop.position.y = 0.16; pp.pack.add(packTop);
-  var packStr = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.03, 0.3), M2.stripe); packStr.position.y = -0.05; pp.pack.add(packStr);
+  pp.hip.scale.set(1, 0.85, 1.25);
+  [pp.bootB, pp.bootF].forEach(function (b) {
+    var up = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.08, 4, 10), M2.boot); up.position.set(0, 0.06, 0); up.castShadow = true; b.add(up);
+    var toe = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.14, 4, 10).rotateZ(PI / 2), M2.boot); toe.position.set(0.05, -0.02, 0); toe.castShadow = true; b.add(toe);
+    var sole = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.025, 0.15), M2.sole); sole.position.set(0.04, -0.085, 0); b.add(sole);
+    body.add(b);
+  });
+  [pp.handB, pp.handF].forEach(function (h) {
+    var palm = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 10), M2.glove); palm.scale.set(1, 1.15, 0.85); palm.castShadow = true; h.add(palm);
+    var cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.075, 0.05, 12), M2.cuff); cuff.position.y = 0.08; h.add(cuff);
+    var th = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 0.04, 3, 6), M2.glove); th.position.set(0.05, 0.02, 0.04); th.rotation.z = -0.6; h.add(th);
+    body.add(h);
+  });
+  var packBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.38, 0.3), M2.pack); packBox.castShadow = true; pp.pack.add(packBox);
+  var packTop = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.16, 4, 8).rotateX(PI / 2), M2.packD); packTop.position.y = 0.19; pp.pack.add(packTop);
+  var packStr = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.025, 0.31), M2.reflect); packStr.position.y = -0.05; pp.pack.add(packStr);
   body.add(pp.pack);
-  for (var k = 0; k < 4; k++) pp.scarf.push(add(new THREE.Mesh(new THREE.CylinderGeometry(0.04 - k * 0.006, 0.035 - k * 0.006, 1, 6), M2.scarf)));
+  for (var k = 0; k < 4; k++) pp.scarf.push(add(new THREE.Mesh(new THREE.CylinderGeometry(0.042 - k * 0.006, 0.036 - k * 0.006, 1, 6), M2.scarf)));
+  // testa: casco, maschera curva, cinghia
   var head = new THREE.Group(); body.add(head);
-  var face = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), M2.skin); face.castShadow = true; head.add(face);
-  var helm = new THREE.Mesh(new THREE.SphereGeometry(0.135, 16, 10, 0, TAU, 0, PI * 0.58), M2.helmet); helm.position.y = 0.025; helm.castShadow = true; head.add(helm);
-  var strp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.27), M2.stripe); strp.position.set(0, 0.155, 0); head.add(strp);
-  var gog = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.075, 0.2), [M2.goggle, M2.glove, M2.glove, M2.glove, M2.glove, M2.glove]); gog.position.set(0.1, 0.02, 0); head.add(gog);
-  var gstrap = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.04, 16, 1, true), M2.glove); gstrap.position.y = 0.02; head.add(gstrap);
+  var face = new THREE.Mesh(new THREE.SphereGeometry(0.11, 18, 14), M2.skin); face.castShadow = true; head.add(face);
+  var helm = new THREE.Mesh(new THREE.SphereGeometry(0.135, 20, 14, 0, TAU, 0, PI * 0.56), M2.helmet); helm.position.y = 0.02; helm.castShadow = true; head.add(helm);
+  var rim = new THREE.Mesh(new THREE.TorusGeometry(0.128, 0.012, 6, 28), M2.helmetD); rim.rotation.x = PI / 2; rim.position.y = 0.0; head.add(rim);
+  for (var v = -1; v <= 1; v++) { var vent = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.012, 0.018), M2.helmetD); vent.position.set(-0.01, 0.15, v * 0.045); head.add(vent); }
+  var strp = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.018, 0.035), M2.stripe); strp.position.set(0.0, 0.153, 0); strp.rotation.z = 0.05; head.add(strp);
+  var gog = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.125, 0.075, 20, 1, true, -PI * 0.33, PI * 0.66), M2.goggle); gog.rotation.y = PI / 2; gog.position.set(0.0, 0.02, 0); head.add(gog);
+  var gogF = new THREE.Mesh(new THREE.CylinderGeometry(0.132, 0.132, 0.09, 20, 1, true, -PI * 0.36, PI * 0.72), M2.strap); gogF.rotation.y = PI / 2; gogF.position.set(-0.004, 0.02, 0); gogF.scale.set(1, 1, 1); head.add(gogF);
+  var band = new THREE.Mesh(new THREE.CylinderGeometry(0.137, 0.137, 0.035, 22, 1, true), M2.strap); band.position.y = 0.02; head.add(band);
   pp.head = head;
   return { root: root, board: board, body: body, parts: pp };
 })();
@@ -989,6 +1129,23 @@ function seg(mesh, a, b) {
   if (len > 1e-4) mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV.multiplyScalar(1 / len));
   mesh.scale.set(1, Math.max(len, 0.001), 1);
 }
+var mQ = new THREE.Matrix4(), qA = new THREE.Vector3(), qB = new THREE.Vector3();
+function basisQ(f, u, out) {
+  qB.copy(u).normalize();
+  qA.copy(f).addScaledVector(qB, -f.dot(qB));
+  if (qA.lengthSq() < 1e-6) qA.set(1, 0, 0).addScaledVector(qB, -qB.x);
+  qA.normalize();
+  mQ.makeBasis(qA, qB, tmpV3.crossVectors(qA, qB));
+  return out.setFromRotationMatrix(mQ);
+}
+var bU = new THREE.Vector3();
+// capsula sull'osso a-b, orientata con il davanti del rider (non deformata)
+function bone(mesh, a, b, facing) {
+  bU.subVectors(b, a); var len = bU.length();
+  mesh.position.addVectors(a, b).multiplyScalar(0.5);
+  basisQ(facing, bU, mesh.quaternion);
+  var s = len / (mesh.userData.len || len); mesh.scale.set(1, clamp(s, 0.7, 1.3), 1);
+}
 function ik3(a, b, l1, l2, bend, out, end) {
   var d = tmpV2.subVectors(b, a), dist = d.length(), mx = l1 + l2 - 0.001;
   if (dist > mx) { d.multiplyScalar(mx / dist); dist = mx; }
@@ -999,62 +1156,64 @@ function ik3(a, b, l1, l2, bend, out, end) {
   tmpV3.copy(bend).addScaledVector(d, -bend.dot(d)).normalize();
   out.copy(a).addScaledVector(d, x).addScaledVector(tmpV3, h);
 }
-var mQ = new THREE.Matrix4(), qA = new THREE.Vector3(), qB = new THREE.Vector3();
-function basisQ(f, u, out) {
-  qB.copy(u).normalize();
-  qA.copy(f).addScaledVector(qB, -f.dot(qB));
-  if (qA.lengthSq() < 1e-6) qA.set(1, 0, 0).addScaledVector(qB, -qB.x);
-  qA.normalize();
-  mQ.makeBasis(qA, qB, tmpV3.crossVectors(qA, qB));
-  return out.setFromRotationMatrix(mQ);
-}
 var JN = ['head', 'neck', 'pelvis', 'hipB', 'hipF', 'knB', 'knF', 'ftB', 'ftF', 'shB', 'shF', 'elB', 'elF', 'hB', 'hF'];
 function newJoints() { var o = {}; JN.forEach(function (n) { o[n] = new THREE.Vector3(); }); return o; }
 var J = newJoints(), JW = newJoints();
 var BEND_KNEE = V(1, 0.2, 0), BEND_ELB = V(-0.3, -1, 0), hT1 = new THREE.Vector3(), hT2 = new THREE.Vector3();
-// pose nel sistema locale del rider: x = verso dove guarda, y = su, z = lungo la tavola
+// posizioni delle mani sui grab, nel sistema della tavola (x = punta dei piedi, z = muso)
+var GRAB_POSE = {
+  indy: { hand: 'B', at: [0.17, 0.13, -0.02], tuck: 0.6 }, method: { hand: 'F', at: [-0.17, 0.13, 0.05], tuck: 0.55 },
+  nose: { hand: 'F', at: [0.0, 0.12, 0.66], tuck: 0.7 }, tail: { hand: 'B', at: [0.0, 0.12, -0.66], tuck: 0.7 },
+  melon: { hand: 'F', at: [-0.17, 0.13, -0.05], tuck: 0.6 }, stale: { hand: 'B', at: [-0.17, 0.13, -0.12], tuck: 0.6 }
+};
 function computePose(o, J) {
-  var c = o.c, g = o.ga, airA = o.air, t = o.t, cc = c + g * 0.6;
-  J.pelvis.set(-0.02 + cc * 0.06, 0.95 - cc * 0.34, 0);
-  J.hipB.copy(J.pelvis).z -= 0.1; J.hipF.copy(J.pelvis).z += 0.1;
-  hT1.set(0, 0.12 + g * 0.02, -0.25); hT2.set(0, 0.12 + g * 0.02, 0.25);
-  ik3(J.hipB, hT1, 0.45, 0.44, BEND_KNEE, J.knB, J.ftB);
-  ik3(J.hipF, hT2, 0.45, 0.44, BEND_KNEE, J.knF, J.ftF);
-  var lean = 0.1 + c * 0.22 + g * 0.25 + (o.tuck || 0) * 0.15;
-  J.neck.copy(J.pelvis).add(tmpV.set(lean, 0.52 - c * 0.06 - g * 0.14, 0));
-  J.head.copy(J.neck).add(tmpV.set(0.05 + g * 0.04, 0.2, 0));
-  J.shB.copy(J.neck).add(tmpV.set(0, -0.03, -0.18)); J.shF.copy(J.neck).add(tmpV.set(0, -0.03, 0.18));
+  var c = o.c, g = o.ga, airA = o.air, t = o.t, gp = GRAB_POSE[o.grab] || GRAB_POSE.indy, cc = c + g * gp.tuck;
+  J.pelvis.set(-0.02 + cc * 0.06, 0.97 - cc * 0.36 + (o.bob || 0), 0);
+  J.hipB.copy(J.pelvis).z -= 0.11; J.hipF.copy(J.pelvis).z += 0.11;
+  var tw = g > 0.01 && o.grab === 'nose' ? 0.05 * g : g > 0.01 && o.grab === 'tail' ? -0.05 * g : 0;
+  hT1.set(0, 0.13 + g * 0.03, -0.25 + tw); hT2.set(0, 0.13 + g * 0.03, 0.25 + tw);
+  ik3(J.hipB, hT1, 0.46, 0.45, BEND_KNEE, J.knB, J.ftB);
+  ik3(J.hipF, hT2, 0.46, 0.45, BEND_KNEE, J.knF, J.ftF);
+  var lean = 0.1 + c * 0.24 + g * 0.28 + (o.tuck || 0) * 0.18 + (o.edge || 0) * 0.12;
+  J.neck.copy(J.pelvis).add(tmpV.set(lean, 0.54 - c * 0.05 - g * 0.16, (o.twist || 0) * 0.06));
+  J.head.copy(J.neck).add(tmpV.set(0.05 + g * 0.05, 0.2, (o.look || 0) * 0.05));
+  J.shB.copy(J.neck).add(tmpV.set(0, -0.03, -0.19)); J.shF.copy(J.neck).add(tmpV.set(0, -0.03, 0.19));
   var sy = J.neck.y, wob = Math.sin(t * 5) * 0.03, tk = o.tuck || 0;
-  hT1.set(0.08, sy - 0.32 + wob, -0.55); hT2.set(0.14, sy - 0.28 - wob, 0.55);
-  if (tk > 0) { hT1.lerp(tmpV.set(0.3, sy - 0.25, -0.12), tk); hT2.lerp(tmpV.set(0.35, sy - 0.22, 0.14), tk); }
-  hT1.lerp(tmpV.set(0.05, sy + 0.18, -0.6), airA); hT2.lerp(tmpV.set(0.1, sy + 0.22, 0.6), airA);
+  hT1.set(0.08, sy - 0.33 + wob, -0.56); hT2.set(0.15, sy - 0.29 - wob, 0.56);
+  if (o.edge) { hT1.y += o.edge * 0.12; hT2.y -= o.edge * 0.1; }
+  if (tk > 0) { hT1.lerp(tmpV.set(0.32, sy - 0.25, -0.12), tk); hT2.lerp(tmpV.set(0.36, sy - 0.22, 0.14), tk); }
+  hT1.lerp(tmpV.set(0.05, sy + 0.16, -0.62), airA); hT2.lerp(tmpV.set(0.1, sy + 0.2, 0.62), airA);
   if (g > 0.01) {
-    if (o.grab === 'indy') { hT1.lerp(tmpV.set(0.17, 0.13, -0.02), g); hT2.lerp(tmpV.set(0.2, sy + 0.25, 0.55), g); }
-    else { hT2.lerp(tmpV.set(-0.17, 0.13, 0.05), g); hT1.lerp(tmpV.set(0.0, sy + 0.25, -0.6), g); }
+    var tgt = tmpV.set(gp.at[0], gp.at[1], gp.at[2]);
+    if (gp.hand === 'B') { hT1.lerp(tgt, g); hT2.lerp(tmpV2.set(0.2, sy + 0.25, 0.58), g); }
+    else { hT2.lerp(tgt, g); hT1.lerp(tmpV2.set(0.0, sy + 0.25, -0.62), g); }
   }
-  ik3(J.shB, hT1, 0.3, 0.3, BEND_ELB, J.elB, J.hB);
-  ik3(J.shF, hT2, 0.3, 0.3, BEND_ELB, J.elF, J.hF);
+  ik3(J.shB, hT1, 0.31, 0.31, BEND_ELB, J.elB, J.hB);
+  ik3(J.shF, hT2, 0.31, 0.31, BEND_ELB, J.elF, J.hF);
 }
-var aF = new THREE.Vector3(), aU = new THREE.Vector3(), aL = new THREE.Vector3(), aW = new THREE.Vector3(), aP = new THREE.Vector3(), aP2 = new THREE.Vector3();
-// sistema le parti del corpo sulle articolazioni (sia nella posa normale sia nel ragdoll)
+var aF = new THREE.Vector3(), aU = new THREE.Vector3(), aL = new THREE.Vector3(), aW = new THREE.Vector3(), aP = new THREE.Vector3(), aP2 = new THREE.Vector3(), aT = new THREE.Vector3();
 function applyPose(J, facing, wind, t) {
   var pp = rider.parts;
-  seg(pp.thighB, J.hipB, J.knB); seg(pp.shinB, J.knB, J.ftB); seg(pp.thighF, J.hipF, J.knF); seg(pp.shinF, J.knF, J.ftF);
-  pp.kneeB.position.copy(J.knB); pp.kneeF.position.copy(J.knF); pp.hip.position.copy(J.pelvis);
-  aU.subVectors(J.knB, J.ftB); basisQ(facing, aU, pp.bootB.quaternion); pp.bootB.position.copy(J.ftB).addScaledVector(aU.normalize(), 0.02);
-  aU.subVectors(J.knF, J.ftF); basisQ(facing, aU, pp.bootF.quaternion); pp.bootF.position.copy(J.ftF).addScaledVector(aU.normalize(), 0.02);
-  seg(pp.torso, J.pelvis, J.neck);
-  pp.belly.position.lerpVectors(J.pelvis, J.neck, 0.25); pp.chest.position.lerpVectors(J.pelvis, J.neck, 0.85);
-  aU.subVectors(J.neck, J.pelvis);
-  basisQ(facing, aU, pp.pack.quaternion);
-  aF.copy(facing).addScaledVector(aU.clone().normalize(), -facing.dot(aU.clone().normalize())).normalize();
-  pp.pack.position.lerpVectors(J.pelvis, J.neck, 0.62).addScaledVector(aF, -0.2);
-  pp.neck.position.lerpVectors(J.neck, J.head, 0.45);
-  aU.subVectors(J.head, J.neck); pp.head.position.copy(J.head); basisQ(facing, aU, pp.head.quaternion);
-  seg(pp.uArmB, J.shB, J.elB); seg(pp.lArmB, J.elB, J.hB); seg(pp.uArmF, J.shF, J.elF); seg(pp.lArmF, J.elF, J.hF);
-  pp.elbB.position.copy(J.elB); pp.elbF.position.copy(J.elF); pp.handB.position.copy(J.hB); pp.handF.position.copy(J.hF);
-  // sciarpa al vento
-  aP.copy(J.neck).lerp(J.head, 0.2);
+  bone(pp.thighB, J.hipB, J.knB, facing); bone(pp.shinB, J.knB, J.ftB, facing); bone(pp.thighF, J.hipF, J.knF, facing); bone(pp.shinF, J.knF, J.ftF, facing);
+  pp.kneeB.position.copy(J.knB).addScaledVector(facing, 0.02); pp.kneeF.position.copy(J.knF).addScaledVector(facing, 0.02);
+  aU.subVectors(J.neck, J.pelvis); basisQ(facing, aU, pp.hip.quaternion); pp.hip.position.copy(J.pelvis);
+  aU.subVectors(J.knB, J.ftB); basisQ(facing, aU, pp.bootB.quaternion); pp.bootB.position.copy(J.ftB);
+  aU.subVectors(J.knF, J.ftF); basisQ(facing, aU, pp.bootF.quaternion); pp.bootF.position.copy(J.ftF);
+  aT.subVectors(J.neck, J.pelvis);
+  pp.torso.position.lerpVectors(J.pelvis, J.neck, 0.5); basisQ(facing, aT, pp.torso.quaternion);
+  pp.torso.scale.set(0.9, clamp(aT.length() / 0.56, 0.8, 1.2), 1.15);
+  pp.belly.position.lerpVectors(J.pelvis, J.neck, 0.22).addScaledVector(facing, 0.04);
+  pp.hem.position.lerpVectors(J.pelvis, J.neck, 0.06); basisQ(facing, aT, pp.hem.quaternion);
+  aU.copy(aT).normalize(); aF.copy(facing).addScaledVector(aU, -facing.dot(aU)).normalize();
+  pp.zip.position.lerpVectors(J.pelvis, J.neck, 0.55).addScaledVector(aF, 0.19); basisQ(facing, aT, pp.zip.quaternion);
+  basisQ(facing, aT, pp.pack.quaternion); pp.pack.position.lerpVectors(J.pelvis, J.neck, 0.6).addScaledVector(aF, -0.22);
+  pp.hood.position.copy(J.neck).addScaledVector(aF, -0.09).addScaledVector(aU, 0.02); basisQ(aU.clone().negate(), aF.clone().negate(), pp.hood.quaternion);
+  pp.neck.position.lerpVectors(J.neck, J.head, 0.42);
+  aW.subVectors(J.head, J.neck); pp.head.position.copy(J.head); basisQ(facing, aW, pp.head.quaternion);
+  bone(pp.uArmB, J.shB, J.elB, facing); bone(pp.lArmB, J.elB, J.hB, facing); bone(pp.uArmF, J.shF, J.elF, facing); bone(pp.lArmF, J.elF, J.hF, facing);
+  aW.subVectors(J.hB, J.elB); basisQ(facing, aW.negate(), pp.handB.quaternion); pp.handB.position.copy(J.hB);
+  aW.subVectors(J.hF, J.elF); basisQ(facing, aW.negate(), pp.handF.quaternion); pp.handF.position.copy(J.hF);
+  aP.copy(J.neck).lerp(J.head, 0.2).addScaledVector(aF, -0.03);
   aL.subVectors(J.shF, J.shB).normalize();
   for (var k = 0; k < pp.scarf.length; k++) {
     aP2.copy(aP).addScaledVector(wind, 0.13).addScaledVector(aL, Math.sin(t * 15 + k * 1.4) * 0.025 * (k + 1)).y -= 0.012 * (k + 1);
@@ -1068,7 +1227,7 @@ function poseRider(o) { computePose(o, J); applyPose(J, POSE_FACE, POSE_WIND, o.
 var RLINKS = [['head', 'neck'], ['neck', 'pelvis'], ['shB', 'neck'], ['shF', 'neck'], ['shB', 'shF'], ['shB', 'pelvis'], ['shF', 'pelvis'], ['head', 'shB'], ['head', 'shF'],
   ['shB', 'elB'], ['elB', 'hB'], ['shF', 'elF'], ['elF', 'hF'], ['pelvis', 'hipB'], ['pelvis', 'hipF'], ['hipB', 'hipF'], ['hipB', 'shB'], ['hipF', 'shF'],
   ['hipB', 'knB'], ['knB', 'ftB'], ['hipF', 'knF'], ['knF', 'ftF']];
-var RMIN = [['knB', 'knF', 0.14], ['ftB', 'ftF', 0.18], ['hB', 'pelvis', 0.2], ['hF', 'pelvis', 0.2], ['ftB', 'neck', 0.5], ['ftF', 'neck', 0.5], ['knB', 'neck', 0.35], ['knF', 'neck', 0.35]];
+var RMIN = [['knB', 'knF', 0.14], ['ftB', 'ftF', 0.18], ['hB', 'pelvis', 0.2], ['hF', 'pelvis', 0.2], ['ftB', 'neck', 0.5], ['ftF', 'neck', 0.5], ['knB', 'neck', 0.35], ['knF', 'neck', 0.35], ['hB', 'head', 0.16], ['hF', 'head', 0.16]];
 function makeRagdoll(vel, fwd) {
   rider.root.updateMatrixWorld(true);
   var m = rider.root.matrixWorld, R = { p: {}, q: {}, rest: [], face: V(1, 0, 0).transformDirection(m), wind: fwd.clone().negate() };
@@ -1101,12 +1260,11 @@ function stepRagdoll(R, dt) {
       rD.subVectors(b2, a2); var l2 = rD.length(); if (l2 >= RMIN[i][2] || l2 < 1e-6) continue;
       var d2 = (l2 - RMIN[i][2]) / l2 * 0.5; a2.addScaledVector(rD, d2); b2.addScaledVector(rD, -d2);
     }
-    for (i = 0; i < JN.length; i++) { p = R.p[JN[i]]; var gy = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.08); if (p.y < gy) p.y = gy; }
+    for (i = 0; i < JN.length; i++) { p = R.p[JN[i]]; var gy = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.09); if (p.y < gy) p.y = gy; }
   }
-  // attrito e rimbalzo sul terreno
   for (i = 0; i < JN.length; i++) {
     p = R.p[JN[i]]; q = R.q[JN[i]];
-    var g2 = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.08);
+    var g2 = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.09);
     if (p.y <= g2 + 0.01) {
       var vyy = p.y - q.y;
       if (vyy < 0) q.y = p.y + vyy * 0.25;
@@ -1139,15 +1297,15 @@ for (var ai = 0; ai < 46; ai++) {
 
 // ============================================================ giocatore e stato
 function newPlayer() {
-  return { x: 0, y: 0, z: 0, yaw: 0, yawRate: 0, speed: 15, vx: 0, vy: 0, vz: 0, vyG: 0, air: false, airT: 0, coyote: 0, lipPop: false,
-    spin: 0, spinRate: 0, spin0: 0, flip: 0, flipRate: 0, flip0: 0, grab: null, grabAmt: 0, lastGrab: 'indy', airAmt: 0, crouch: 0.3, squash: 0, tuck: 0,
+  return { x: 0, y: 0, z: 0, yaw: 0, yawRate: 0, speed: 15, gvx: 0, gvz: 15, vx: 0, vy: 0, vz: 0, vyG: 0, air: false, airT: 0, coyote: 0, lipPop: false,
+    spin: 0, spin0: 0, flip: 0, flip0: 0, grab: null, grabAmt: 0, lastGrab: 'indy', airAmt: 0, crouch: 0.3, squash: 0, tuck: 0, brake: 0, skid: 0, edge: 0,
     charging: false, chargeT: 0, grind: null, grindT: 0, crashed: false, crashT: 0, inv: 0, trick: null, sprayT: 0, tti: 1, landX: 0, landZ: 0, landY: 0, predT: 0,
-    up: new THREE.Vector3(0, 1, 0), lean: 0, toSpeed: 15, trailD: 0 };
+    tr: null, tq: [], done: [], lean: 0, toSpeed: 15, trailD: 0, slideTo: 0 };
 }
-function newWorld() {
+function newWorld(tut) {
   clearWorld();
   var seed = (Math.random() * 1e9) | 0;
-  S = { seed: seed, rand: rng(seed), genZ: -60, flatUntil: 60, diffStart: 1e12, startZ: 0, lastSec: '', nextChalet: 120, tier: 0,
+  S = { seed: seed, rand: rng(seed), genZ: -60, flatUntil: 60, diffStart: 1e12, startZ: 0, lastSec: '', nextChalet: 120, tier: 0, tut: !!tut,
     drops: [], rollers: [], kickers: [], rails: [], rocks: [], coins: [], flags: [], objs: [], chalets: [],
     time: 0, bank: 0, coinN: 0, tricks: 0, bestTrick: { pts: 0, name: '' }, maxSpeed: 0, crashes: 0, rag: null, board: null };
   P = newPlayer();
@@ -1165,14 +1323,58 @@ function ragCenter() { return S.rag.p.pelvis; }
 function focusZ() { return P.crashed && S.rag ? ragCenter().z : P.z; }
 function speedMul() { return 1 + Math.min(0.9, S.tier * 0.07); }
 function maxSpeed() { return Math.min(48, MAXS * speedMul()); }
+function playing() { return state === 'play'; }
 
-// ============================================================ input: joystick a sinistra, salto / rotazioni a destra
+// ============================================================ trick: uno swipe = un trick preciso
+var SPIN_NAMES = ['', '180', '360', '540', '720', '900', '1080'];
+function trickFromSwipe(dx, dy, v) {
+  // v = velocità dello swipe normalizzata sullo schermo: lento < 1.7, medio < 3.2, veloce < 5, velocissimo oltre
+  var lvl = v < 1.7 ? 1 : v < 3.2 ? 2 : v < 5 ? 3 : 4;
+  var a = Math.atan2(-dy, dx) * 180 / PI; // 0 = destra, 90 = su
+  var sec = Math.round(a / 45); if (sec < 0) sec += 8; sec %= 8;
+  var R = sec === 0, U = sec === 2, Lf = sec === 4, D = sec === 6, UR = sec === 1, UL = sec === 3, DL = sec === 5, DR = sec === 7;
+  var sdir = (R || UR || DR) ? -1 : 1; // destra sullo schermo = verso negativo nel mondo
+  if (R || Lf) return { kind: 'spin', name: (R ? 'Frontside ' : 'Backside ') + SPIN_NAMES[lvl], spin: sdir * lvl * PI, flip: 0, units: lvl, lvl: lvl };
+  if (U || D) {
+    var n = lvl >= 3 ? 2 : 1, nm = U ? 'Backflip' : 'Frontflip';
+    return { kind: 'flip', name: (n === 2 ? 'Double ' : '') + nm, spin: 0, flip: (U ? -1 : 1) * n * TAU, flips: n, lvl: lvl };
+  }
+  var k = Math.min(3, lvl), up = UR || UL;
+  var base = up ? 'Rodeo ' : 'Misty ', deg = [0, 540, 720, 900][k];
+  return { kind: 'off', name: base + deg, spin: sdir * k * PI, flip: (up ? -1 : 1) * TAU, flips: 1, units: k, lvl: lvl };
+}
+function trickDur(t) { var r = Math.max(Math.abs(t.spin), Math.abs(t.flip)); if (t.kind === 'off') r = Math.sqrt(t.spin * t.spin + t.flip * t.flip) * 0.8; return Math.max(0.42, r / 10.5); }
+function startTrick(t) {
+  var p = P;
+  if (!p.air || p.grind || p.crashed) return;
+  if (p.tr) { if (p.tq.length < 1) { p.tq.push(t); swipeLabel(t.name, true); } return; }
+  p.tr = { t: t, u: 0, dur: trickDur(t), s0: p.spin, f0: p.flip };
+  swipeLabel(t.name, false);
+  sfx('whoosh');
+  tutEvent('swipe', t);
+}
+function easeTrick(u) { u = clamp(u, 0, 1); return u < 0.5 ? 2 * u * u * (1.5 - u) : 1 - 2 * (1 - u) * (1 - u) * (0.5 + (1 - u)); }
+function updTrick(dt) {
+  var p = P, tr = p.tr; if (!tr) return;
+  var before = Math.floor((Math.abs(p.flip - tr.f0) + Math.abs(p.spin - tr.s0)) / PI);
+  tr.u += dt / tr.dur;
+  var e = easeTrick(tr.u);
+  p.spin = tr.s0 + tr.t.spin * e; p.flip = tr.f0 + tr.t.flip * e;
+  if (Math.floor((Math.abs(p.flip - tr.f0) + Math.abs(p.spin - tr.s0)) / PI) > before) sfx('whoosh');
+  if (tr.u >= 1) { p.done.push(tr.t); p.tr = null; if (p.tq.length) startTrick(p.tq.shift()); }
+}
+function trickRemaining() { var tr = P.tr; if (!tr) return 0; var e = easeTrick(tr.u); return Math.max(Math.abs(tr.t.spin), Math.abs(tr.t.flip)) * (1 - e); }
+function trickTimeLeft() { var t = P.tr ? (1 - P.tr.u) * P.tr.dur : 0; for (var i = 0; i < P.tq.length; i++) t += trickDur(P.tq[i]); return t; }
+
+// ============================================================ input: joystick a sinistra, salto e swipe a destra
 var keySteer = 0, keyFlip = 0, keyGrab = null, keyJump = false;
-var joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 }, act = { id: null, st: 0, sy: 0, lx: 0, ly: 0, lt: 0, moved: 0, mode: '', grab: null };
-var padSpin = 0, padFlip = 0, padVS = 0, padVF = 0, JOY_R = 56;
-var joyEl = $('joy'), knobEl = $('joyKnob'), jumpEl = $('jumpBtn'), jumpLbl = $('jumpLbl'), jumpSub = $('jumpSub');
+var joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
+var act = { id: null, sx: 0, sy: 0, st: 0, lx: 0, ly: 0, lt: 0, still: 0, mode: '', swiped: false, grab: null };
+var JOY_R = 56;
+var joyEl = $('joy'), knobEl = $('joyKnob'), jumpEl = $('jumpBtn'), jumpLbl = $('jumpLbl'), jumpSub = $('jumpSub'), swipeEl = $('swipeLbl');
+function minDim() { return Math.max(300, Math.min(W, H_)); }
 function resetInput() {
-  joy.id = null; joy.x = joy.y = 0; act.id = null; act.mode = ''; padSpin = padFlip = padVS = padVF = 0;
+  joy.id = null; joy.x = joy.y = 0; act.id = null; act.mode = ''; act.swiped = false; act.grab = null;
   keySteer = keyFlip = 0; keyGrab = null; keyJump = false; if (P) P.charging = false;
   placeJoy(0, 0, 0, 0, false); jumpEl.classList.remove('down');
 }
@@ -1181,16 +1383,20 @@ function placeJoy(x, y, dx, dy, on) {
   else { joyEl.style.left = ''; joyEl.style.top = ''; joyEl.classList.remove('on'); }
   knobEl.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
 }
+var swipeT = 0;
+function swipeLabel(txt, queued) { swipeEl.textContent = (queued ? 'poi ' : '') + txt; swipeEl.className = 'on'; swipeT = 1.1; }
 function joyInput() { return { x: clamp(joy.x + keySteer, -1, 1), y: clamp(joy.y + keyFlip, -1, 1) }; }
 function grabInput() { return act.mode === 'grab' ? act.grab : keyGrab; }
 function canJump() { return !P.air || !!P.grind || P.coyote > 0; }
+function inAir() { return P.air && !P.grind; }
+function quadGrab(x, y) { var top = y < H_ * 0.5, right = x > W * 0.75; return top ? (right ? 'nose' : 'method') : (right ? 'indy' : 'tail'); }
 function pressStart(id, x, y) {
   ensureAudio();
   if (state !== 'play' || P.crashed) return;
   if (x < W * 0.45) { if (joy.id === null) { joy.id = id; joy.ox = x; joy.oy = y; joy.x = joy.y = 0; placeJoy(x, y, 0, 0, true); } return; }
   if (act.id !== null) return;
-  act.id = id; act.st = now(); act.sy = y; act.lx = x; act.ly = y; act.lt = now(); act.moved = 0; act.grab = null;
-  if (P.air && !P.grind && P.coyote <= 0) act.mode = 'pad';
+  act.id = id; act.sx = act.lx = x; act.sy = act.ly = y; act.st = act.lt = now(); act.still = now(); act.swiped = false; act.grab = null;
+  if (inAir() && P.coyote <= 0) act.mode = 'air';
   else { act.mode = 'charge'; P.charging = true; P.chargeT = 0; }
   jumpEl.classList.add('down');
 }
@@ -1201,25 +1407,37 @@ function pressMove(id, x, y) {
     joy.x = dx / JOY_R; joy.y = dy / JOY_R; placeJoy(joy.ox, joy.oy, dx, dy, true); return;
   }
   if (id !== act.id) return;
-  var mx = x - act.lx, my = y - act.ly, t = now(), dtm = Math.max(8, t - act.lt);
-  act.lx = x; act.ly = y; act.lt = t; act.moved += Math.abs(mx) + Math.abs(my);
-  if (!P.air || P.grind) return;
-  if (act.mode === 'charge' || act.mode === 'grab') { if (act.moved > 16) { act.mode = 'pad'; P.charging = false; } else return; }
-  if (act.mode === 'pad') {
-    // il rider ruota come muovi il dito: orizzontale = spin, verticale = flip
-    var k = 0.0135;
-    padSpin -= mx * k; padFlip += my * k;
-    padVS = lerp(padVS, -mx * k * 1000 / dtm, 0.45); padVF = lerp(padVF, my * k * 1000 / dtm, 0.45);
-    tutorialEvent('spin');
+  var t = now();
+  if (Math.abs(x - act.lx) + Math.abs(y - act.ly) > 3) act.still = t;
+  act.lx = x; act.ly = y; act.lt = t;
+  if (act.swiped) { if (act.mode === 'grab' && Math.hypot(x - act.gx, y - act.gy) > 30) act.mode = 'post'; return; }
+  var sx = x - act.sx, sy = y - act.sy, dist = Math.sqrt(sx * sx + sy * sy);
+  if (dist < minDim() * 0.085) return;
+  var el = Math.max(25, t - act.st), v = dist / el * 1000 / minDim();
+  act.swiped = true;
+  if (P.grind) {
+    if (Math.abs(sx) > Math.abs(sy)) toggleSlide(); else if (sy < 0) ollie();
+    act.mode = 'post'; return;
   }
+  if (inAir() && P.coyote <= 0) { startTrick(trickFromSwipe(sx, sy, v)); act.mode = 'post'; P.charging = false; return; }
+  // a terra: swipe in su = salto (e il trick parte appena sei in aria)
+  if (sy < -Math.abs(sx) * 0.5) { P.charging = false; ollie(); if (P.air) { act.mode = 'post'; } }
+  else act.mode = 'post';
 }
 function pressEnd(id) {
   if (id === joy.id) { joy.id = null; joy.x = joy.y = 0; placeJoy(0, 0, 0, 0, false); return; }
   if (id !== act.id) return;
   act.id = null; jumpEl.classList.remove('down');
-  if (act.mode === 'charge' && state === 'play' && !P.crashed && canJump()) ollie();
-  if (act.mode === 'pad' && now() - act.lt < 90) { P.spinRate = clamp(padVS, -13, 13); P.flipRate = clamp(padVF, -12, 12); P.flick = true; }
+  if (act.mode === 'charge' && !act.swiped && state === 'play' && !P.crashed && canJump()) ollie();
   act.mode = ''; P.charging = false;
+}
+function updHoldGrab() {
+  // dito fermo a destra mentre sei in aria = grab (quadrante: in alto Method/Nose, in basso Tail/Indy); funziona anche dopo uno swipe
+  if (act.id === null || !inAir() || P.coyote > 0) return;
+  if ((act.mode === 'air' || act.mode === 'post' || act.mode === 'charge') && now() - act.still > 160) {
+    act.mode = 'grab'; act.grab = quadGrab(act.lx, act.ly); act.gx = act.lx; act.gy = act.ly; P.charging = false; act.swiped = true;
+    tutEvent('grab');
+  }
 }
 canvas.addEventListener('touchstart', function (e) { e.preventDefault(); for (var i = 0; i < e.changedTouches.length; i++) { var t = e.changedTouches[i]; pressStart(t.identifier, t.clientX, t.clientY); } }, { passive: false });
 canvas.addEventListener('touchmove', function (e) { e.preventDefault(); for (var i = 0; i < e.changedTouches.length; i++) { var t = e.changedTouches[i]; pressMove(t.identifier, t.clientX, t.clientY); } }, { passive: false });
@@ -1231,39 +1449,48 @@ var mouseDown = false;
 canvas.addEventListener('mousedown', function (e) { mouseDown = true; pressStart('m', e.clientX, e.clientY); });
 window.addEventListener('mousemove', function (e) { if (mouseDown) pressMove('m', e.clientX, e.clientY); });
 window.addEventListener('mouseup', function () { if (mouseDown) { mouseDown = false; pressEnd('m'); } });
+// tastiera: frecce = joystick, Spazio = salto; in aria W/A/S/D + Q/E = trick, Shift = più rotazione
+var KEY_TRICK = { KeyD: [1, 0], KeyA: [-1, 0], KeyW: [0, -1], KeyS: [0, 1], KeyE: [1, -1], KeyQ: [-1, -1], KeyC: [1, 1], KeyZ: [-1, 1] };
+var shiftLvl = 0;
 window.addEventListener('keydown', function (e) {
+  if (e.key === 'Shift') shiftLvl = 1;
   if (e.repeat) return;
   if (e.code === 'Space') {
     e.preventDefault();
-    if (state === 'menu' || state === 'over') { startGame(); return; }
+    if (state === 'menu' || state === 'over') { startGame(false); return; }
     ensureAudio();
     if (state === 'play' && canJump()) { keyJump = true; P.charging = true; P.chargeT = 0; }
+    else if (state === 'play' && inAir()) keyGrab = 'indy';
   }
   if (e.code === 'ArrowLeft') keySteer = -1;
   if (e.code === 'ArrowRight') keySteer = 1;
   if (e.code === 'ArrowUp') keyFlip = -1;
   if (e.code === 'ArrowDown') keyFlip = 1;
-  if (e.code === 'KeyA') { keyGrab = 'method'; tutorialEvent('grab'); }
-  if (e.code === 'KeyD') { keyGrab = 'indy'; tutorialEvent('grab'); }
+  var kt = KEY_TRICK[e.code];
+  if (kt && state === 'play') {
+    if (P.grind && kt[1] === 0) toggleSlide();
+    else if (inAir()) startTrick(trickFromSwipe(kt[0] * 100, kt[1] * 100, shiftLvl ? 3.6 : 2.2));
+  }
   if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
 });
 window.addEventListener('keyup', function (e) {
-  if (e.code === 'Space' && keyJump) { keyJump = false; if (state === 'play' && canJump()) ollie(); P.charging = false; }
+  if (e.key === 'Shift') shiftLvl = 0;
+  if (e.code === 'Space') { if (keyJump) { keyJump = false; if (state === 'play' && canJump()) ollie(); P.charging = false; } keyGrab = null; }
   if ((e.code === 'ArrowLeft' && keySteer < 0) || (e.code === 'ArrowRight' && keySteer > 0)) keySteer = 0;
   if ((e.code === 'ArrowUp' && keyFlip < 0) || (e.code === 'ArrowDown' && keyFlip > 0)) keyFlip = 0;
-  if ((e.code === 'KeyA' && keyGrab === 'method') || (e.code === 'KeyD' && keyGrab === 'indy')) keyGrab = null;
 });
 var lastBtn = '';
-function updButtons() {
-  var p = P, playing = state === 'play' && !p.crashed;
-  var lbl = !playing ? '' : (p.air && !p.grind && p.coyote <= 0) ? (grabInput() ? 'grab' : 'air') : 'jump';
+function updButtons(dt) {
+  var p = P, pl = state === 'play' && !p.crashed;
+  var lbl = !pl ? '' : p.grind ? 'rail' : (inAir() && p.coyote <= 0) ? (grabInput() ? 'grab' : 'air') : 'jump';
   if (lbl !== lastBtn) {
     lastBtn = lbl;
-    jumpLbl.textContent = lbl === 'air' ? 'Ruota' : lbl === 'grab' ? 'Grab' : 'Salta';
-    jumpSub.textContent = lbl === 'air' ? 'trascina · tieni = grab' : lbl === 'grab' ? 'lascia prima di atterrare' : 'tieni = più alto';
+    jumpLbl.textContent = lbl === 'air' ? 'Swipe' : lbl === 'grab' ? 'Grab' : lbl === 'rail' ? 'Rail' : 'Salta';
+    jumpSub.textContent = lbl === 'air' ? 'per i trick · fermo = grab' : lbl === 'grab' ? 'lascia prima di atterrare' : lbl === 'rail' ? '← → slide · tocca = salta' : 'tieni = più alto';
   }
   var c = p.charging && canJump() ? clamp(p.chargeT / 0.35, 0, 1) : 0;
   jumpEl.style.setProperty('--c', c.toFixed(3));
+  if (swipeT > 0) { swipeT -= dt; if (swipeT <= 0) swipeEl.className = ''; }
 }
 
 // ============================================================ audio sintetizzato
@@ -1342,22 +1569,20 @@ function popup(title, sub, tag) {
 // ============================================================ fisica del rider
 function startAir() {
   var p = P;
-  p.air = true; p.airT = 0; p.toSpeed = p.speed; p.spin0 = p.spin; p.flip0 = p.flip; p.spinRate = 0; p.flipRate = 0; p.predT = 0; p.tti = 1;
+  p.air = true; p.airT = 0; p.toSpeed = p.speed; p.spin0 = p.spin; p.flip0 = p.flip; p.predT = 0; p.tti = 1;
+  p.tr = null; p.tq = []; p.done = [];
   p.trick = { grabs: {} };
   trailGap();
-  if (act.mode === 'charge' && act.id !== null && p.coyote <= 0) { act.mode = 'pad'; p.charging = false; }
 }
 function ollie() {
   var p = P; if (state !== 'play' || p.crashed) return;
-  var pop = 6.6 + 3.2 * clamp(p.chargeT / 0.35, 0, 1);
-  if (!p.charging) pop = 6.6;
+  var pop = 6.6 + 3.2 * (p.charging ? clamp(p.chargeT / 0.35, 0, 1) : 0);
   if (p.grind) {
     var r = p.grind, dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
-    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + pop; p.vz = dir.z * p.speed;
-    endGrind(); startAir();
+    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + pop * 0.9; p.vz = dir.z * p.speed;
+    endGrind(); startAir(); p.railCool = 0.35;
   } else if (!p.air) {
-    var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
-    p.vx = dx * p.speed; p.vz = dz * p.speed; p.vy = p.vyG + pop;
+    p.vx = p.gvx; p.vz = p.gvz; p.vy = p.vyG + pop;
     startAir();
   } else if (p.coyote > 0) {
     p.vy += pop * 0.8 + (p.lipPop ? 2.4 : 0); p.coyote = 0;
@@ -1366,11 +1591,12 @@ function ollie() {
   p.charging = false; p.chargeT = 0;
   sfx('jump');
   burst(p.x, p.y + 0.1, p.z, 12, 2.5, 1);
-  tutorialEvent('ollie');
+  tutEvent(pop > 8.5 ? 'charge' : 'jump');
 }
 function updatePlayer(dt) {
   var p = P;
   if (p.inv > 0) p.inv -= dt;
+  if (p.railCool > 0) p.railCool -= dt;
   if (p.crashed) { updateRag(dt); return; }
   if (p.charging) p.chargeT += dt;
   var dm = diff(p.z);
@@ -1378,67 +1604,85 @@ function updatePlayer(dt) {
   else if (!p.air) updGround(dt, dm);
   else updAir(dt);
   if (p.crashed) return;
-  var ct = 0.3 + Math.abs(p.yawRate) * 0.08 + p.tuck * 0.35;
+  var ct = 0.3 + Math.abs(p.yawRate) * 0.08 + p.tuck * 0.35 + p.brake * 0.2;
   if (p.charging && canJump()) ct = 0.45 + 0.5 * clamp(p.chargeT / 0.35, 0, 1);
-  if (p.air) ct = 0.18; if (p.grind) ct = 0.42;
+  if (p.air) ct = p.tr ? 0.32 : 0.18; if (p.grind) ct = 0.42;
   p.squash *= Math.exp(-dt * 7);
   p.crouch = lerp(p.crouch, ct + p.squash, damp(14, dt));
   p.grabAmt = lerp(p.grabAmt, p.grab ? 1 : 0, damp(14, dt));
   p.airAmt = lerp(p.airAmt, p.air ? 1 : 0, damp(7, dt));
+  p.edge = lerp(p.edge, p.air ? 0 : clamp(p.yawRate * 0.5, -1, 1), damp(8, dt));
   if (state === 'play') collide();
   if (!p.air && !p.grind) {
     p.sprayT -= dt;
-    var rate = clamp((p.speed - 8) / 22, 0, 1) * (0.5 + Math.abs(p.yawRate) * 0.5) + (p.brake || 0);
+    var rate = clamp((p.speed - 8) / 22, 0, 1) * (0.4 + Math.abs(p.yawRate) * 0.4) + p.brake * 0.8 + clamp(p.skid / 4, 0, 1);
     if (p.sprayT <= 0 && rate > 0.05) {
       p.sprayT = 0.012 / (0.2 + rate);
       var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw), side = p.yawRate > 0 ? -1 : 1;
-      part(p.x - dx * 0.6 + dz * 0.15 * side, p.y + 0.05, p.z - dz * 0.6 - dx * 0.15 * side, -dx * p.speed * 0.15 + dz * side * (1 + rate * 3), 1.2 + Math.random() * 2.5 * rate, -dz * p.speed * 0.15 - dx * side * (1 + rate * 3), 0.45 + Math.random() * 0.4, 0.18 + Math.random() * 0.35 * rate);
+      part(p.x - dx * 0.5 + dz * 0.15 * side, p.y + 0.05, p.z - dz * 0.5 - dx * 0.15 * side, -dx * p.speed * 0.12 + dz * side * (1 + rate * 3.5), 1.2 + Math.random() * 2.8 * rate, -dz * p.speed * 0.12 - dx * side * (1 + rate * 3.5), 0.45 + Math.random() * 0.45, 0.18 + Math.random() * 0.4 * rate);
     }
     p.trailD += p.speed * dt;
     if (p.trailD > 0.35) { p.trailD = 0; trailAdd(p.x, Hgt(p.x, p.z) + 0.035, p.z, p.yaw); }
   }
-  if (p.grind && Math.random() < 0.8) part(p.x + (Math.random() - 0.5) * 0.4, p.y, p.z, (Math.random() - 0.5) * 4, 1 + Math.random() * 3, -2 + (Math.random() - 0.5) * 3, 0.3, 0.12, 'spark');
+  if (p.grind && Math.random() < 0.85) part(p.x + (Math.random() - 0.5) * 0.4, p.y, p.z, (Math.random() - 0.5) * 4, 1 + Math.random() * 3, -2 + (Math.random() - 0.5) * 3, 0.3, 0.12, 'spark');
 }
+// a terra: velocità come vettore, la lamina tiene (carving) ma se curvi forte la tavola derapa
 function updGround(dt, dm) {
-  var p = P, j = joyInput(), mul = speedMul();
-  var steer = state === 'play' ? -j.x : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
-  if (Math.abs(steer) > 0.2 && state === 'play') tutorialEvent('steer');
-  var tuck = state === 'play' ? clamp(-j.y, 0, 1) : 0, brake = state === 'play' ? clamp(j.y, 0, 1) : 0;
-  p.tuck = lerp(p.tuck, tuck, damp(6, dt)); p.brake = brake;
+  var p = P, j = joyInput(), mul = speedMul(), pl = state === 'play';
+  var steer = pl ? -j.x : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
+  if (pl && steer > 0.4) tutEvent('steerL'); if (pl && steer < -0.4) tutEvent('steerR');
+  var tuck = pl ? clamp(-j.y, 0, 1) : 0, brake = pl ? clamp(j.y, 0, 1) : 0;
+  p.tuck = lerp(p.tuck, tuck, damp(6, dt)); p.brake = lerp(p.brake, brake, damp(8, dt));
   var e = 0.25, hx = (Hgt(p.x + e, p.z) - Hgt(p.x - e, p.z)) / (2 * e), hz = (Hgt(p.x, p.z + e) - Hgt(p.x, p.z - e)) / (2 * e);
-  p.yawRate = lerp(p.yawRate, steer * 1.9, damp(7, dt));
-  p.yaw += (p.yawRate - hx * 1.3 - (Math.abs(steer) < 0.05 ? p.yaw * 0.5 : 0)) * dt;
-  p.yaw = clamp(p.yaw, -1.3, 1.3);
-  var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
-  var sAlong = -(hx * dx + hz * dz), sinA = sAlong / Math.sqrt(1 + sAlong * sAlong), cosA = 1 / Math.sqrt(1 + sAlong * sAlong);
-  var acc = G * sinA * 0.7 * (1 + 0.3 * dm) * mul - 0.9 - 0.0085 / mul * (1 - 0.2 * dm) * (1 - 0.25 * p.tuck) * p.speed * p.speed - Math.abs(p.yawRate) * p.speed * 0.06 - brake * 9;
-  p.speed = clamp(p.speed + acc * dt, 4, maxSpeed());
-  var nx = p.x + dx * p.speed * cosA * dt, nz = p.z + dz * p.speed * cosA * dt, ny = Hgt(nx, nz);
+  var gl2 = 1 + hx * hx + hz * hz, gk = G * 0.72 * (1 + 0.3 * dm) * mul / gl2;
+  var vx = p.gvx - hx * gk * dt, vz = p.gvz - hz * gk * dt;
+  // sterzo: la tavola gira, la velocità la segue grazie alla lamina
+  p.yawRate = lerp(p.yawRate, steer * (2.2 - clamp(p.speed / 40, 0, 0.6)), damp(7, dt));
+  p.yaw += p.yawRate * dt;
+  var hxv = Math.sin(p.yaw), hzv = Math.cos(p.yaw);
+  var vf = vx * hxv + vz * hzv, vl = vx * hzv - vz * hxv;
+  var grip = 8.5 - p.brake * 5.5;
+  var vl2 = vl * Math.exp(-grip * dt);
+  vf += Math.abs(vl - vl2) * (0.55 - p.brake * 0.5);
+  vl = vl2;
+  var drag = 0.9 + 0.0085 / mul * (1 - 0.2 * dm) * (1 - 0.25 * p.tuck) * vf * vf + p.brake * 10 + Math.abs(p.yawRate) * vf * 0.05;
+  vf = clamp(vf - drag * dt, 3, maxSpeed());
+  p.skid = Math.abs(vl);
+  vx = hxv * vf + hzv * vl; vz = hzv * vf - hxv * vl;
+  // senza sterzo la tavola si allinea alla velocità (e quindi alla linea di massima pendenza)
+  if (Math.abs(steer) < 0.08) p.yaw += wrapA(Math.atan2(vx, vz) - p.yaw) * 1.6 * dt;
+  if (p.yaw > 1.4) { p.yaw = 1.4; p.yawRate = Math.min(p.yawRate, 0); } else if (p.yaw < -1.4) { p.yaw = -1.4; p.yawRate = Math.max(p.yawRate, 0); }
+  p.gvx = vx; p.gvz = Math.max(vz, 1.5); p.speed = Math.hypot(p.gvx, p.gvz);
+  var nx = p.x + p.gvx * dt, nz = p.z + p.gvz * dt, ny = Hgt(nx, nz);
   var pred = p.y + p.vyG * dt - 0.5 * G * dt * dt;
   if (ny < pred - 0.0006) {
-    p.vx = dx * p.speed * cosA; p.vz = dz * p.speed * cosA; p.vy = p.vyG;
+    p.vx = p.gvx; p.vz = p.gvz; p.vy = p.vyG;
     p.lipPop = isNearLip(p.x, p.z);
     p.x = nx; p.z = nz; p.y = pred; p.coyote = 0.16; startAir(); return;
   }
   p.vyG = (ny - p.y) / dt;
   p.x = nx; p.z = nz; p.y = ny;
-  p.lean = lerp(p.lean, -p.yawRate * 0.22, damp(8, dt));
+  p.lean = lerp(p.lean, -p.yawRate * 0.24, damp(8, dt));
+  // entrata dritta su un rail o un box
+  if (!(p.railCool > 0)) for (var i = 0; i < S.rails.length; i++) {
+    var r = S.rails[i]; if (p.z < r.z1 || p.z > r.z1 + 2.2) continue;
+    var t = (p.z - r.z1) / (r.z2 - r.z1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
+    if (Math.abs(p.x - rx) < 1.0 && Math.abs(ry - p.y) < 0.55) { p.vx = p.gvx; p.vy = p.vyG; p.vz = p.gvz; startAir(); mountRail(r, t); return; }
+  }
   var cx = cxAt(p.z), hw = hwAt(p.z);
-  if (Math.abs(p.x - cx) > hw + 4.5 && state === 'play' && p.inv <= 0) crash('Sei finito tra gli alberi');
+  if (Math.abs(p.x - cx) > hw + 4.5 && state === 'play' && p.inv <= 0 && !S.tut) crash('Sei finito tra gli alberi');
+  if (S.tut && Math.abs(p.x - cx) > hw + 2) { p.gvx -= Math.sign(p.x - cx) * 30 * dt; }
 }
 function isNearLip(x, z) {
   for (var i = 0; i < S.kickers.length; i++) { var k = S.kickers[i]; if (Math.abs(x - k.x) < k.w + 0.5 && z > k.z1 - 1.2 && z < k.z1 + 1.2) return true; }
   return false;
 }
 function updAir(dt) {
-  var p = P, playing = state === 'play';
+  var p = P, pl = state === 'play';
   p.airT += dt; if (p.coyote > 0) p.coyote -= dt;
-  var j = playing ? joyInput() : { x: 0, y: 0 };
-  // tenendo fermo il dito a destra: grab (in alto = Method, in basso = Indy)
-  if (playing && act.id !== null && act.mode === 'pad' && act.moved < 16 && now() - act.st > 170) { act.mode = 'grab'; act.grab = act.sy < H_ * 0.5 ? 'method' : 'indy'; tutorialEvent('grab'); }
-  var gb = playing ? grabInput() : null;
+  if (pl) updHoldGrab();
+  var gb = pl ? grabInput() : null;
   if (gb) { p.grab = gb; p.lastGrab = gb; p.trick.grabs[gb] = (p.trick.grabs[gb] || 0) + dt; } else p.grab = null;
-  // previsione dell'atterraggio
   p.predT -= dt;
   if (p.predT <= 0) {
     p.predT = 0.05;
@@ -1446,40 +1690,27 @@ function updAir(dt) {
     while (tt < 3) { qvy -= G * 0.025; qx += p.vx * 0.025; qy += qvy * 0.025; qz += p.vz * 0.025; tt += 0.025; if (qy <= Hgt(qx, qz)) break; }
     p.tti = tt; p.landX = qx; p.landZ = qz; p.landY = Hgt(qx, qz);
   }
-  // il joystick fa ruotare solo nei salti veri, non nei piccoli sbalzi mentre curvi
-  var joyOk = p.airT > 0.12 && p.airT + p.tti > 0.5;
-  if (!joyOk) j = { x: 0, y: 0 };
-  var joyOn = Math.abs(j.x) > 0.18 || Math.abs(j.y) > 0.18, padOn = act.mode === 'pad' && act.id !== null;
-  if (joyOn || padOn) p.flick = false;
-  var gm = gb ? 0.7 : 1;
-  if (Math.abs(j.x) > 0.18) p.spinRate = lerp(p.spinRate, -j.x * 10.5 * gm, damp(10, dt));
-  if (Math.abs(j.y) > 0.18) p.flipRate = lerp(p.flipRate, j.y * 9.5 * gm, damp(10, dt));
-  if (joyOn) tutorialEvent('spin');
-  if (padOn) { p.spinRate *= Math.exp(-dt * 25); p.flipRate *= Math.exp(-dt * 25); }
-  var ds = padSpin + p.spinRate * dt, dfl = padFlip + p.flipRate * dt;
-  padSpin = 0; padFlip = 0;
-  p.spin += ds; p.flip += dfl;
-  if (Math.floor(Math.abs(p.flip - p.flip0) / PI) !== Math.floor(Math.abs(p.flip - p.flip0 - dfl) / PI)) sfx('whoosh');
-  if (!joyOn && !padOn) {
-    // nessun comando: lo slancio si esaurisce e vicino a terra il rider si raddrizza da solo (ma solo se è quasi dritto)
-    var assist = 1 - clamp(p.tti / 0.5, 0, 1);
-    var dec = (p.flick ? 1.4 : 12) + assist * 7;
-    p.spinRate *= Math.exp(-dt * dec); p.flipRate *= Math.exp(-dt * dec);
-    var ts = Math.round(p.spin / PI) * PI, tf = Math.round(p.flip / TAU) * TAU;
-    p.spin += clamp((ts - p.spin) * (1.5 + 8 * assist), -3.5, 3.5) * dt;
-    p.flip += clamp((tf - p.flip) * (1.5 + 8 * assist), -3.2, 3.2) * dt;
+  updTrick(dt);
+  if (!p.tr) {
+    // piccole correzioni col joystick e raddrizzamento vicino a terra
+    var j = pl && p.airT > 0.12 ? joyInput() : { x: 0, y: 0 };
+    p.spin += -j.x * 2.6 * dt; p.flip += j.y * 2.4 * dt;
+    if (Math.abs(j.x) < 0.15 && Math.abs(j.y) < 0.15) {
+      var assist = 1 - clamp(p.tti / 0.5, 0, 1), ts = Math.round(p.spin / PI) * PI, tf = Math.round(p.flip / TAU) * TAU;
+      p.spin += clamp((ts - p.spin) * (1.5 + 8 * assist), -3.5, 3.5) * dt;
+      p.flip += clamp((tf - p.flip) * (1.5 + 8 * assist), -3.2, 3.2) * dt;
+    }
   }
   p.vy -= G * dt;
+  p.vx *= 1 - 0.015 * dt; p.vz *= 1 - 0.015 * dt;
   var py = p.y;
   p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
-  if (p.vy < 0 && !gb) {
+  // rail "magnetici": basta passarci sopra scendendo a meno di 1,3 m
+  if (p.vy < 1.5 && !(p.railCool > 0) && (!p.tr || trickRemaining() < 0.5)) {
     for (var i = 0; i < S.rails.length; i++) {
-      var r = S.rails[i]; if (p.z < r.z1 || p.z > r.z2) continue;
-      var t = (p.z - r.z1) / (r.z2 - r.z1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
-      if (Math.abs(p.x - rx) < 0.6 && py >= ry - 0.08 && p.y <= ry + 0.05) {
-        var se = Math.abs(wrapA(p.spin - Math.round(p.spin / (PI / 2)) * (PI / 2)));
-        if (se < 0.5 && Math.abs(wrapA(p.flip)) < 0.6) { mountRail(r, t); return; }
-      }
+      var r = S.rails[i]; if (p.z < r.z1 - 0.3 || p.z > r.z2 - 0.8) continue;
+      var t = clamp((p.z - r.z1) / (r.z2 - r.z1), 0, 1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
+      if (Math.abs(p.x - rx) < 1.3 && p.y <= ry + 0.5 && py >= ry - 0.35) { if (p.tr) { p.done.push(p.tr.t); p.tr = null; } mountRail(r, t); return; }
     }
   }
   var g = Hgt(p.x, p.z);
@@ -1487,57 +1718,71 @@ function updAir(dt) {
 }
 function spinErr(s) { var e = ((s % PI) + PI) % PI; return Math.min(e, PI - e); }
 function land() {
-  var p = P, playing = state === 'play';
+  var p = P, pl = state === 'play';
+  var rem = trickRemaining();
+  if (p.tr && rem < 0.55) { p.spin = p.tr.s0 + p.tr.t.spin; p.flip = p.tr.f0 + p.tr.t.flip; p.done.push(p.tr.t); p.tr = null; p.lateLand = true; }
   var sErr = spinErr(p.spin), fErr = Math.abs(wrapA(p.flip));
-  if (playing && p.inv <= 0 && (sErr > 0.55 || fErr > 0.6 || (p.grab && (sErr > 0.3 || fErr > 0.3)))) {
-    crash(p.grab ? 'Hai tenuto il grab troppo a lungo' : fErr > 0.6 ? 'Flip non chiuso' : 'Atterraggio storto'); return;
+  if (pl && p.inv <= 0 && (p.tr || sErr > 0.55 || fErr > 0.6 || (p.grab && (sErr > 0.3 || fErr > 0.3)))) {
+    crash(p.tr ? 'Trick non chiuso: salto troppo corto' : p.grab ? 'Hai tenuto il grab troppo a lungo' : fErr > 0.6 ? 'Flip non chiuso' : 'Atterraggio storto'); return;
   }
-  var perfectish = sErr < 0.1 && fErr < 0.12 && !p.grab;
-  var nSpin = Math.round((p.spin - p.spin0) / PI), fl = p.flip - p.flip0, nFlip = Math.round(Math.abs(fl) / TAU), flipDir = fl < 0 ? -1 : 1;
-  p.spin = Math.round(p.spin / PI) * PI; p.spinRate = 0; p.flip = 0; p.flipRate = 0;
+  var perfectish = sErr < 0.1 && fErr < 0.12 && !p.grab && !p.lateLand;
+  var sketchy = !perfectish && (sErr > 0.35 || fErr > 0.4 || !!p.grab || !!p.lateLand);
+  p.lateLand = false;
+  p.spin = Math.round(p.spin / PI) * PI; p.flip = 0;
   p.air = false;
-  var hs = Math.hypot(p.vx, p.vz);
-  p.yaw = clamp(Math.atan2(p.vx, p.vz), -1.3, 1.3);
   var n = normalAt(p.x, p.z, tmpV);
   var vIn = -(p.vx * n.x + p.vy * n.y + p.vz * n.z);
-  var sketchy = !perfectish && (sErr > 0.35 || fErr > 0.4 || !!p.grab);
-  p.speed = clamp(hs * (sketchy ? 0.82 : 0.97), 4, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.12, 18)));
-  var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
-  p.vyG = (Hgt(p.x + dx * 0.2, p.z + dz * 0.2) - p.y) / 0.2 * p.speed;
+  // l'impatto contro la neve toglie velocità: atterrare sul pendio è meglio che in piano
+  var keep = (sketchy ? 0.84 : 0.97) * (1 - clamp((vIn - 8) / 45, 0, 0.25));
+  p.gvx = p.vx * keep; p.gvz = Math.max(1.5, p.vz * keep);
+  var hs = Math.hypot(p.gvx, p.gvz), cap = Math.min(maxSpeed(), Math.max(p.toSpeed * 1.12, 18));
+  if (hs > cap) { p.gvx *= cap / hs; p.gvz *= cap / hs; }
+  p.speed = Math.hypot(p.gvx, p.gvz);
+  p.yaw = clamp(Math.atan2(p.gvx, p.gvz), -1.35, 1.35); p.yawRate = 0;
+  p.vyG = (Hgt(p.x + p.gvx * 0.01, p.z + p.gvz * 0.01) - p.y) / 0.01;
   var imp = clamp(vIn / 20, 0.08, 1);
   p.squash = imp * 0.8; shakeAmt = Math.max(shakeAmt, imp * 0.35);
   sfx('land', imp * 1.3);
   burst(p.x, p.y + 0.05, p.z, 8 + Math.round(imp * 30), 3 + imp * 6, 1);
-  if (playing) scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy);
+  if (pl) scoreTrick(perfectish, sketchy);
   p.grab = null;
-  if (act.mode === 'pad' || act.mode === 'grab') act.mode = 'used';
+  if (act.mode === 'grab') act.mode = 'post';
 }
 var SPIN_PTS = [0, 300, 900, 1800, 3000, 4500, 6300, 8400];
-function scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy) {
+function trickPts(t) {
+  if (t.kind === 'spin') return SPIN_PTS[Math.min(t.units, 7)];
+  if (t.kind === 'flip') return 1500 * t.flips * (t.flips + 1) / 2;
+  return Math.round((1500 + SPIN_PTS[Math.min(t.units, 7)]) * 1.4);
+}
+function scoreTrick(perfectish, sketchy) {
   var t = P.trick; if (!t) return;
   P.trick = null;
-  var parts = [], pts = 0, a = Math.abs(nSpin);
-  var sw = (Math.round(P.spin / PI) % 2 !== 0);
-  if (nFlip > 0) { var nm = flipDir < 0 ? 'Backflip' : 'Frontflip'; parts.push(nFlip === 1 ? nm : nFlip === 2 ? 'Double ' + nm : nFlip === 3 ? 'Triple ' + nm : nFlip + 'x ' + nm); pts += 1500 * nFlip * (nFlip + 1) / 2; }
-  if (a > 0) { parts.push((nSpin > 0 ? 'Frontside ' : 'Backside ') + (a * 180)); pts += SPIN_PTS[Math.min(a, 7)] + Math.max(0, a - 7) * 2400; }
-  if (nFlip > 0 && a > 0) pts *= 1.3;
-  for (var k in t.grabs) { var tm = t.grabs[k]; if (tm > 0.12) { parts.push(GRAB_NAMES[k]); pts += 250 + Math.round(tm * 800); } }
+  var parts = [], pts = 0, done = P.done;
+  var grabNames = [];
+  for (var k in t.grabs) { var tm = t.grabs[k]; if (tm > 0.12) { grabNames.push(GRAB_NAMES[k]); pts += 250 + Math.round(tm * 800); } }
+  for (var i = 0; i < done.length; i++) { parts.push(done[i].name); pts += trickPts(done[i]); }
+  if (done.length > 1) pts *= 1 + (done.length - 1) * 0.35;
+  if (grabNames.length) { if (parts.length) parts[parts.length - 1] += ' ' + grabNames.join(' '); else parts.push(grabNames.join(' ')); }
   if (P.airT > 1.0) { parts.push(P.airT > 1.8 ? 'Huge Air' : 'Big Air'); pts += Math.round(P.airT * 250); }
+  P.done = [];
   if (!parts.length) return;
-  if (sw && a > 0) { parts.push('Switch'); pts += 200; }
-  var perfect = perfectish && (a > 0 || nFlip > 0 || Object.keys(t.grabs).length > 0);
+  var sw = Math.round(P.spin / PI) % 2 !== 0;
+  if (sw && done.length) { parts.push('Switch'); pts += 200; }
+  var perfect = perfectish && (done.length > 0 || grabNames.length > 0);
   if (perfect) pts *= 1.2;
   if (sketchy) pts *= 0.5;
   pts = Math.round(pts * (1 + S.tier * 0.1) / 10) * 10;
   addCombo(pts, parts.join(' + '), perfect ? 'perfect' : sketchy ? 'sketchy' : '');
-  if (perfect) { sfx('perfect'); P.speed = Math.min(maxSpeed(), P.speed + 1.5); }
-  if (a > 0 || nFlip > 0) tutorialEvent('land');
+  if (perfect) { sfx('perfect'); var hs = P.speed, ns = Math.min(maxSpeed(), hs + 1.5); P.gvx *= ns / hs; P.gvz *= ns / hs; P.speed = ns; }
+  for (var q = 0; q < done.length; q++) tutEvent('land', done[q]);
+  if (grabNames.length) tutEvent('landgrab');
 }
 function addCombo(pts, label, tag) {
-  combo.pts += pts; combo.n++; combo.t = 2.4; S.tricks++;
+  combo.pts += pts; combo.n++; combo.t = 2.6; S.tricks++;
   if (pts > S.bestTrick.pts) S.bestTrick = { pts: pts, name: label };
   popup(label, (tag === 'perfect' ? 'Perfect  ' : tag === 'sketchy' ? 'Sketchy  ' : '') + '+' + fmt(pts), tag);
   sfx('trick', Math.min(combo.n, 6));
+  if (combo.n >= 2) tutEvent('combo');
 }
 function bankCombo() {
   var mult = Math.min(combo.n, 10), tot = combo.pts * mult;
@@ -1548,34 +1793,42 @@ function bankCombo() {
 function mountRail(r, t) {
   var p = P;
   var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
-  p.speed = clamp(p.vx * dir.x + p.vy * dir.y + p.vz * dir.z, 8, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.1, 16)));
-  var slide = spinErr(p.spin) > 0.8;
-  p.spin = Math.round(p.spin / (PI / 2)) * (PI / 2); p.spinRate = 0;
-  if (state === 'play') {
-    var nSpin = Math.round((p.spin - p.spin0) / PI), fl = p.flip - p.flip0;
-    scoreTrick(slide ? 0 : nSpin, Math.round(Math.abs(fl) / TAU), fl < 0 ? -1 : 1, false, false);
-  }
-  p.flip = 0; p.flipRate = 0;
-  p.grind = r; p.grindT = 0; p.grindPos = t; p.grindSlide = slide; p.air = false; p.grab = null; p.squash = 0.3;
+  p.speed = clamp(p.vx * dir.x + p.vy * dir.y + p.vz * dir.z, 9, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.1, 16)));
+  var slide = spinErr(p.spin) > 0.75;
+  p.spin = Math.round(p.spin / (PI / 2)) * (PI / 2); p.slideTo = p.spin;
+  if (state === 'play') scoreTrick(false, false);
+  p.flip = 0; p.tr = null; p.tq = [];
+  p.grind = r; p.grindT = 0; p.slideT = 0; p.grindPos = t; p.grindSlide = slide; p.air = false; p.grab = null; p.squash = 0.3;
   p.x = lerp(r.x1, r.x2, t); p.y = lerp(r.y1, r.y2, t); p.z = lerp(r.z1, r.z2, t); p.yaw = r.yaw;
-  if (act.mode === 'pad' || act.mode === 'grab') act.mode = 'used';
+  if (act.id !== null) act.mode = 'post';
+  sfx('rail');
+  tutEvent('grind');
+}
+function toggleSlide() {
+  var p = P; if (!p.grind) return;
+  p.grindSlide = !p.grindSlide; p.slideTo += p.grindSlide ? PI / 2 : -PI / 2;
+  if (p.grindT > 0.2) { var n = p.grindSlide ? '50-50' : 'Boardslide'; p.grindParts = (p.grindParts || 0) + 1; }
   sfx('rail');
 }
 function endGrind() {
   var p = P, r = p.grind, tm = p.grindT;
   p.grind = null;
-  if (p.grindSlide) p.spin += PI / 2;
-  p.spin = Math.round(p.spin / PI) * PI;
-  if (state === 'play' && tm > 0.2) addCombo(Math.round((200 + tm * 600) / 10) * 10, p.grindSlide ? 'Boardslide' : (r.kind === 'box' ? '50-50 Box' : '50-50 Grind'), '');
+  var base = Math.round(p.slideTo / PI) * PI;
+  p.spin = base; p.slideTo = base;
+  var nm = p.grindSlide ? 'Boardslide' : (r.kind === 'box' ? '50-50 Box' : '50-50 Grind');
+  if ((p.grindParts || 0) > 0) nm = 'Rail Combo';
+  if (state === 'play' && tm > 0.2) addCombo(Math.round((250 + tm * 650 + (p.grindParts || 0) * 400) / 10) * 10, nm, '');
+  p.grindParts = 0;
 }
 function updGrind(dt) {
   var p = P, r = p.grind, len = Math.hypot(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1), sl = (r.y1 - r.y2) / len;
-  p.speed = clamp(p.speed + (G * sl * 0.6 - 0.8) * dt, 6, maxSpeed());
+  p.speed = clamp(p.speed + (G * sl * 0.55 - 0.6) * dt, 7, maxSpeed());
   p.grindPos += p.speed * dt / len; p.grindT += dt;
+  p.spin = lerp(p.spin, p.slideTo, damp(14, dt));
   if (p.grindPos >= 1) {
     var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
-    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed; p.vz = dir.z * p.speed;
-    endGrind(); startAir(); p.coyote = 0.15; p.lipPop = false; return;
+    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + 1.2; p.vz = dir.z * p.speed;
+    endGrind(); startAir(); p.coyote = 0.15; p.lipPop = false; p.railCool = 0.4; return;
   }
   p.x = lerp(r.x1, r.x2, p.grindPos); p.y = lerp(r.y1, r.y2, p.grindPos); p.z = lerp(r.z1, r.z2, p.grindPos);
   p.lean = lerp(p.lean, Math.sin(S.time * 9) * 0.06, damp(6, dt));
@@ -1600,24 +1853,24 @@ function collide() {
 var shakeAmt = 0;
 function crash(reason) {
   var p = P; if (p.crashed) return;
-  var vx = p.air ? p.vx : Math.sin(p.yaw) * p.speed, vz = p.air ? p.vz : Math.cos(p.yaw) * p.speed, vy = p.air ? p.vy : p.vyG;
+  var vx = p.air ? p.vx : p.gvx, vz = p.air ? p.vz : p.gvz, vy = p.air ? p.vy : p.vyG;
   var vel = new THREE.Vector3(vx, Math.max(vy, -6), vz), fwd = new THREE.Vector3(vx, 0, vz).normalize();
-  // ragdoll dalla posa attuale
   updRiderVisual(0);
   S.rag = makeRagdoll(vel.clone().multiplyScalar(0.8), fwd);
   scene.attach(rider.board);
   scene.add(rider.body); rider.body.position.set(0, 0, 0); rider.body.quaternion.identity();
   S.board = { p: rider.board.position.clone(), v: new THREE.Vector3(vx * 0.9 + (Math.random() - 0.5) * 3, Math.max(vy, 0) * 0.4 + 5, vz * 0.9), q: rider.board.quaternion.clone(), w: new THREE.Vector3(9 + Math.random() * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 10) };
-  p.crashed = true; p.crashT = 0; p.air = false; p.grind = null; p.grab = null; p.trick = null; p.flip = 0; p.flipRate = 0; p.spinRate = 0; p.charging = false;
-  act.mode = act.id !== null ? 'used' : '';
+  p.crashed = true; p.crashT = 0; p.air = false; p.grind = null; p.grab = null; p.trick = null; p.flip = 0; p.tr = null; p.tq = []; p.done = []; p.charging = false;
+  if (act.id !== null) act.mode = 'post';
   if (combo.n > 0) popup('Combo persa', '', 'lost');
   combo.pts = 0; combo.n = 0; combo.t = 0;
   popup('Wipeout!', reason, 'lost');
-  shakeAmt = 0.9; S.crashes++; AV.z += 6 + Math.min(8, runMeters() * 0.004);
+  shakeAmt = 0.9; S.crashes++; if (!S.tut) AV.z += 6 + Math.min(8, runMeters() * 0.004);
   sfx('crash');
   burst(p.x, p.y + 0.3, p.z, 46, 7, 2);
   trailGap();
   (S.crashLog = S.crashLog || []).push(reason);
+  tutEvent('crash', reason);
 }
 var qTmp = new THREE.Quaternion();
 function stepRigid(o, dt, off) {
@@ -1648,9 +1901,10 @@ function respawn() {
     for (var i = 0; i < S.rocks.length; i++) { var o = S.rocks[i]; if (Math.abs(o.z - z) < 4 && Math.abs(o.x - x) < o.r + 1.2) bad = true; }
     for (var k = 0; k < S.kickers.length; k++) { var kk = S.kickers[k]; if (z > kk.z0 - 1 && z < kk.z1 + 2) bad = true; }
     for (var d = 0; d < S.drops.length; d++) { var dd = S.drops[d]; if (z > dd.z0 - 2 && z < dd.z0 + 4) bad = true; }
+    for (var q = 0; q < S.rails.length; q++) { var rr = S.rails[q]; if (z > rr.z1 - 2 && z < rr.z2 + 1 && Math.abs(x - rr.x1) < 2) bad = true; }
     if (!bad) break; z += 1.5;
   }
-  p.x = x; p.z = z; p.y = Hgt(x, z); p.yaw = 0; p.yawRate = 0; p.speed = 7; p.vyG = 0; p.spin = 0; p.flip = 0;
+  p.x = x; p.z = z; p.y = Hgt(x, z); p.yaw = 0; p.yawRate = 0; p.gvx = 0; p.gvz = 7; p.speed = 7; p.vyG = 0; p.spin = 0; p.flip = 0;
   p.crashed = false; p.inv = 1.5; p.air = false; p.squash = 0.5;
   S.rag = null; S.board = null;
   resetRiderParts();
@@ -1664,15 +1918,14 @@ function resetRiderParts() {
 
 // ============================================================ valanga
 function updAval(dt) {
-  if (state !== 'play') return;
+  if (state !== 'play' || S.tut) return;
   var m = runMeters(), mul = speedMul();
-  var cur = P.crashed ? 0 : (P.air ? Math.max(0, P.vz) : P.speed * Math.cos(P.yaw));
+  var cur = P.crashed ? 0 : (P.air ? Math.max(0, P.vz) : P.gvz);
   AV.ema += (cur - AV.ema) * dt / 5;
   AV.speed = clamp(AV.ema * 0.94 + 0.7, (9 + Math.min(9, m * 0.002)) * (1 + (mul - 1) * 0.8), (10 + Math.min(12, m * 0.0025)) * mul);
   AV.z += AV.speed * dt;
   var gap = focusZ() - AV.z;
   if (gap > 45) AV.z = focusZ() - 45;
-  // nei primi 200 metri la valanga resta lontana: serve a prendere confidenza coi comandi
   if (m < 200 && gap < 28) { AV.z = focusZ() - 28; gap = 28; }
   if (gap <= 0.5) caught();
 }
@@ -1681,47 +1934,80 @@ function caught() {
   popup('Travolto!', '', 'lost');
 }
 
-// ============================================================ tutorial
-var TUT = [
-  { ev: 'steer', text: 'Usa il <b>joystick</b> a sinistra per curvare. Spingi in avanti per andare più veloce, indietro per frenare.' },
-  { ev: 'ollie', text: 'Tocca il <b>lato destro</b> per saltare. Tieni premuto per caricare e salta sul bordo dei kicker.' },
-  { ev: 'spin', text: 'In aria <b>trascina il dito</b> a destra: il rider gira come muovi il dito. Orizzontale = spin, verticale = flip.' },
-  { ev: 'land', text: 'Torna dritto prima di toccare terra. Il <b>cerchio verde</b> dice che l\'atterraggio va bene.' },
-  { ev: 'grab', text: 'In aria <b>tieni fermo il dito</b> a destra per un grab (in alto Method, in basso Indy).' },
-  { ev: 'done', text: 'Anche il joystick in aria fa girare il rider. Ogni 450 m si va <b>più veloci</b>: occhio alla valanga!' }
+// ============================================================ tutorial a passi
+var TSTEPS = [
+  { title: 'Curva', text: 'Muovi il <b>joystick</b> a sinistra e poi a destra. Avanti accelera, indietro frena.', need: ['steerL', 'steerR'] },
+  { title: 'Salto', text: 'Tocca il tasto <b>SALTA</b> a destra dello schermo.', need: ['jump'] },
+  { title: 'Salto carico', text: '<b>Tieni premuto</b> SALTA finché l\'anello giallo è pieno, poi lascia.', need: ['charge'] },
+  { title: '180', text: 'Prendi un kicker e in aria fai uno <b>swipe lento</b> a sinistra o a destra.', check: function (e, t) { return e === 'land' && t.kind === 'spin' && t.units === 1; } },
+  { title: '360', text: 'Ora uno <b>swipe veloce</b> orizzontale. Più è veloce, più giri: 360, 540, 720.', check: function (e, t) { return e === 'land' && t.kind === 'spin' && t.units >= 2; } },
+  { title: 'Flip', text: 'In aria <b>swipe in su</b> = backflip, <b>in giù</b> = frontflip. Meglio sui kicker grandi.', check: function (e, t) { return e === 'land' && t.kind === 'flip'; } },
+  { title: 'Rodeo e Misty', text: '<b>Swipe in diagonale</b>: verso l\'alto = Rodeo, verso il basso = Misty.', check: function (e, t) { return e === 'land' && t.kind === 'off'; } },
+  { title: 'Grab', text: 'In aria <b>tieni il dito fermo</b> a destra. In alto: Method e Nose, in basso: Tail e Indy. Lascia prima di atterrare.', need: ['landgrab'] },
+  { title: 'Rail', text: 'Entra <b>dritto</b> su un rail o saltaci sopra. Sul rail: swipe ← → per lo slide, tocca per saltare via.', need: ['grind'] },
+  { title: 'Combo', text: 'Fai <b>due trick di fila</b> senza restare troppo a terra: i punti si moltiplicano.', need: ['combo'] }
 ];
-var tutStep = 0, tutTimer = 0, hintEl = $('hint'), hintNow = '';
-function tutorialEvent(ev) {
-  if (save.tut >= TUT.length || state !== 'play') return;
-  if (TUT[tutStep] && TUT[tutStep].ev === ev) { tutStep++; tutTimer = 0; showHint(''); }
+var tut = { i: 0, got: {}, doneT: 0 }, tutCard = $('tutCard'), tutTitle = $('tutTitle'), tutText = $('tutText'), tutStepEl = $('tutStep'), tutDots = $('tutDots'), tutTip = $('tutTip');
+function tutShow() {
+  var s = TSTEPS[tut.i]; if (!s) return;
+  tutStepEl.textContent = 'Passo ' + (tut.i + 1) + ' di ' + TSTEPS.length;
+  tutTitle.textContent = s.title; tutText.innerHTML = s.text; tutTip.textContent = '';
+  var h = ''; for (var i = 0; i < TSTEPS.length; i++) h += '<i class="' + (i < tut.i ? 'ok' : i === tut.i ? 'now' : '') + '"></i>';
+  tutDots.innerHTML = h; tutCard.classList.remove('done');
 }
-function updateTutorial(dt) {
-  if (state !== 'play' || save.tut >= TUT.length) { showHint(''); return; }
-  tutTimer += dt;
-  var step = TUT[tutStep];
-  if (!step) { save.tut = TUT.length; persist(); showHint(''); return; }
-  if (tutTimer > 0.8) showHint(step.text);
-  if (step.ev === 'done' && tutTimer > 6) tutStep++;
-  if (step.ev !== 'done' && step.ev !== 'steer' && step.ev !== 'ollie' && tutTimer > 14) { tutStep++; tutTimer = 0; }
-  if (step.ev === 'done' && tutTimer > 9) tutStep++;
+function tutEvent(ev, data) {
+  if (!S || !S.tut || state !== 'play' || tut.doneT > 0) return;
+  var s = TSTEPS[tut.i]; if (!s) return;
+  if (ev === 'crash' && typeof data === 'string') {
+    tutTip.textContent = data.indexOf('corto') >= 0 ? 'Consiglio: il salto era troppo corto. Prova uno swipe più lento o un kicker più grande.' : data.indexOf('storto') >= 0 || data.indexOf('Flip') >= 0 ? 'Consiglio: guarda il cerchio a terra, deve essere verde quando atterri.' : 'Riprova, nel tutorial la valanga non c\'è.';
+    return;
+  }
+  var ok = false;
+  if (s.need) { if (s.need.indexOf(ev) >= 0) { tut.got[ev] = true; ok = s.need.every(function (n) { return tut.got[n]; }); } }
+  else if (s.check) ok = !!data && s.check(ev, data);
+  if (ok) { tut.doneT = 1.1; tutCard.classList.add('done'); tutText.innerHTML = '<b>Fatto!</b> ' + s.title + ' completato.'; sfx('bank'); }
 }
+function updTut(dt) {
+  if (!S || !S.tut || state !== 'play') return;
+  if (tut.doneT > 0) {
+    tut.doneT -= dt;
+    if (tut.doneT <= 0) {
+      tut.doneT = 0; tut.i++; tut.got = {};
+      if (tut.i >= TSTEPS.length) { save.tutDone = true; persist(); tutFinish(); } else tutShow();
+    }
+  }
+}
+function tutFinish() {
+  state = 'over';
+  $('hud').classList.add('hidden'); $('controls').classList.add('hidden'); $('combo').classList.add('hidden'); tutCard.classList.add('hidden');
+  $('tutEnd').classList.remove('hidden');
+}
+// suggerimenti brevi nella prima partita vera (se il tutorial non è stato fatto)
+var hintEl = $('hint'), hintNow = '';
 function showHint(t) {
   if (t === hintNow) return; hintNow = t;
   if (t) { hintEl.innerHTML = t; hintEl.className = 'on'; } else hintEl.className = '';
 }
+function updateTutorial(dt) {
+  updTut(dt);
+  if (state !== 'play' || S.tut || save.tutDone || runMeters() > 260) { showHint(''); return; }
+  showHint('Joystick a sinistra per curvare, <b>SALTA</b> a destra. In aria: <b>swipe</b> per i trick. Il <b>Tutorial</b> nel menu spiega tutto.');
+}
 
 // ============================================================ stati di gioco
-function startGame() {
+function startGame(isTut) {
   ensureAudio();
-  newWorld();
+  newWorld(isTut === true);
   S.diffStart = P.z + 40; S.startZ = P.z; S.flatUntil = 40;
   AV.z = P.z - 42;
   state = 'play'; stateT = 0;
   resetInput();
-  tutStep = 0; tutTimer = 0;
   popsEl.innerHTML = '';
-  ['menu', 'over', 'pause'].forEach(function (id) { $(id).classList.add('hidden'); });
-  $('hud').classList.remove('hidden'); $('aval').classList.remove('hidden'); $('controls').classList.remove('hidden');
+  ['menu', 'over', 'pause', 'tricks', 'tutEnd'].forEach(function (id) { $(id).classList.add('hidden'); });
+  $('hud').classList.remove('hidden'); $('controls').classList.remove('hidden');
+  $('aval').classList.toggle('hidden', !!S.tut);
+  tutCard.classList.toggle('hidden', !S.tut);
+  if (S.tut) { tut.i = 0; tut.got = {}; tut.doneT = 0; tutShow(); }
 }
 function gameOver() {
   state = 'over';
@@ -1746,7 +2032,8 @@ function showMenu() {
   state = 'menu';
   newWorld();
   $('bestMenu').textContent = fmt(save.best);
-  $('menu').classList.remove('hidden'); $('over').classList.add('hidden'); $('pause').classList.add('hidden');
+  $('menu').classList.remove('hidden'); ['over', 'pause', 'tricks', 'tutEnd'].forEach(function (id) { $(id).classList.add('hidden'); });
+  tutCard.classList.add('hidden'); $('btnTut').classList.toggle('glow', !save.tutDone);
   $('hud').classList.add('hidden'); $('aval').classList.add('hidden'); $('combo').classList.add('hidden'); $('controls').classList.add('hidden');
   showHint('');
 }
@@ -1756,8 +2043,11 @@ function togglePause() {
 }
 function totalScore() { return Math.round(S.bank + runMeters() * 2); }
 function tap(el, fn) { el.addEventListener('click', function (e) { e.preventDefault(); fn(); }); }
-tap($('btnPlay'), startGame); tap($('btnAgain'), startGame); tap($('btnResume'), togglePause);
-tap($('btnRestart'), startGame); tap($('btnQuit'), showMenu); tap($('btnPause'), togglePause);
+tap($('btnPlay'), function () { startGame(false); }); tap($('btnAgain'), function () { startGame(false); }); tap($('btnResume'), togglePause);
+tap($('btnRestart'), function () { startGame(S && S.tut); }); tap($('btnQuit'), showMenu); tap($('btnPause'), togglePause);
+tap($('btnTut'), function () { startGame(true); }); tap($('btnTricks'), function () { $('tricks').classList.remove('hidden'); });
+tap($('btnTricksClose'), function () { $('tricks').classList.add('hidden'); });
+tap($('btnTutPlay'), function () { startGame(false); }); tap($('btnTutMenu'), showMenu);
 tap($('btnMute'), function () { save.mute = !save.mute; persist(); ensureAudio(); if (AU.master) AU.master.gain.value = save.mute ? 0 : 0.9; updMuteIcon(); });
 function updMuteIcon() { $('muteWave').style.display = save.mute ? 'none' : ''; $('muteX').style.display = save.mute ? '' : 'none'; }
 document.addEventListener('visibilitychange', function () { if (document.hidden && state === 'play') togglePause(); });
@@ -1773,7 +2063,7 @@ function update(dt) {
   updAval(dt);
   if (state === 'play' && combo.n > 0 && !P.air && !P.grind && !P.crashed) { combo.t -= dt; if (combo.t <= 0) bankCombo(); }
   if (state === 'play' && !P.air && !P.crashed && P.speed > S.maxSpeed) S.maxSpeed = P.speed;
-  if (state === 'play') {
+  if (state === 'play' && !S.tut) {
     var tier = Math.floor(runMeters() / 450);
     if (tier > S.tier) { S.tier = tier; popup('Più veloce!', 'Livello ' + (tier + 1), 'bank'); sfx('bank'); shakeAmt = Math.max(shakeAmt, 0.2); }
   }
@@ -1992,7 +2282,7 @@ function updRiderVisual(dt) {
     rider.root.position.add(off).sub(off2);
   }
   rider.root.visible = !(p.inv > 0 && Math.floor(p.inv * 12) % 2 === 0);
-  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt, tuck: p.air ? 0 : p.tuck });
+  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt * (p.tr ? 0.5 : 1), tuck: p.air ? 0 : p.tuck, edge: p.air ? 0 : p.edge, twist: p.air && p.tr ? 0.6 : 0, look: p.air ? 0 : -p.yawRate * 0.3 });
 }
 function updMarkers() {
   var p = P;
@@ -2000,7 +2290,7 @@ function updMarkers() {
     ring.visible = true;
     ring.position.set(p.landX, p.landY + 0.06, p.landZ);
     normalAt(p.landX, p.landZ, tmpV); ring.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
-    var la = Math.min(p.tti, 0.25), ok = spinErr(p.spin + p.spinRate * la) < 0.5 && Math.abs(wrapA(p.flip + p.flipRate * la)) < 0.55 && !p.grab;
+    var left = trickTimeLeft(), ok = !p.grab && (p.tr ? left < p.tti + 0.05 : spinErr(p.spin) < 0.5 && Math.abs(wrapA(p.flip)) < 0.55);
     ringMat.color.setHex(ok ? 0x4fe0b0 : 0xff3b4f);
     ringMat.opacity = 0.5 + 0.4 * (1 - clamp(p.tti / 1.6, 0, 1));
   } else ring.visible = false;
@@ -2101,7 +2391,7 @@ function frame(ts) {
   updWorldVisual(running ? dt : 0);
   updLights();
   updFlakes(running ? dt : 0);
-  updLift(); trailBuild(); updStreaks(running ? dt : 0); updSparkles(); updButtons();
+  updLift(); trailBuild(); updStreaks(running ? dt : 0); updSparkles(); updButtons(running ? dt : 0);
   renderer.render(scene, camera);
   updateHud();
   updateAudio();
@@ -2117,10 +2407,10 @@ function boot() {
   requestAnimationFrame(frame);
 }
 window.__debug = {
-  get S() { return S; }, get P() { return P; }, get state() { return state; }, get AV() { return AV; },
-  start: startGame, crash: function () { crash('test'); }, ollie: ollie, flip: function (v) { keyFlip = v; },
-  steer: function (v) { keySteer = v; }, grab: function (g) { keyGrab = g; }, pad: function (a, b) { act.mode = 'pad'; act.id = 'dbg'; act.moved = 100; padSpin += a; padFlip += b; }, flick: function (a, b) { P.spinRate = a; P.flipRate = b; P.flick = true; }, unpad: function () { act.mode = ''; act.id = null; }, H: function (x, z) { return Hgt(x, z); }, cx: function (z) { return cxAt(z); },
-  step: function (n, bot) { for (var i = 0; i < n; i++) { if (bot) bot(P, S); update(FIX); if (state !== 'play') break; if (i % 30 === 0) { genAhead(); pruneWorld(); genLift(); } } },
+  get S() { return S; }, get P() { return P; }, get state() { return state; }, get AV() { return AV; }, get tut() { return tut; },
+  start: startGame, crash: function () { crash('test'); }, ollie: ollie, swipe: function (dx, dy, v) { startTrick(trickFromSwipe(dx, dy, v)); }, trick: trickFromSwipe,
+  steer: function (v) { keySteer = v; }, joyY: function (v) { keyFlip = v; }, grab: function (g) { keyGrab = g; }, slide: toggleSlide, H: function (x, z) { return Hgt(x, z); }, cx: function (z) { return cxAt(z); },
+  step: function (n, bot) { for (var i = 0; i < n; i++) { if (bot) bot(P, S); update(FIX); updTut(FIX); if (state !== 'play') break; if (i % 30 === 0) { genAhead(); pruneWorld(); genLift(); } } },
   info: function () { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, objs: scene.children.length }; }
 };
 boot();
