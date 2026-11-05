@@ -63,7 +63,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   background: rgba(11, 22, 48, .55); font: 800 15px var(--round); color: var(--gold); letter-spacing: .04em; white-space: nowrap; font-variant-numeric: tabular-nums; }
 #combo i { display: block; height: 3px; margin-top: 4px; border-radius: 3px; background: var(--gold); width: 100%; transform-origin: left; }
 
-#hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 58px); width: min(92vw, 520px);
+#hint { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 168px); width: min(86vw, 500px);
   text-align: center; pointer-events: none; font: 700 15px/1.35 var(--round); padding: 10px 14px; border-radius: 14px;
   background: rgba(11, 22, 48, .62); border: 1px solid var(--edge); transition: opacity .35s; opacity: 0; }
 #hint.on { opacity: 1; }
@@ -111,6 +111,27 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   #pops { top: 20%; }
   #combo { top: calc(20% - 42px); }
 }
+/* comandi a schermo */
+#joy { position: fixed; left: calc(max(16px, env(safe-area-inset-left, 0px)) + 74px); top: calc(100% - env(safe-area-inset-bottom, 0px) - 92px);
+  width: 124px; height: 124px; margin: -62px 0 0 -62px; border-radius: 50%; pointer-events: none; opacity: .5;
+  border: 2px solid rgba(234, 244, 255, .4); background: radial-gradient(circle, rgba(11, 22, 48, .15), rgba(11, 22, 48, .45)); }
+#joy.on { opacity: 1; }
+#joy::after { content: ""; position: absolute; inset: 22px; border-radius: 50%; border: 1px dashed rgba(234, 244, 255, .25); }
+#joyKnob { position: absolute; left: 50%; top: 50%; width: 56px; height: 56px; margin: -28px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #c9dcf3 70%, #9db6d8); box-shadow: 0 4px 12px rgba(3, 8, 22, .35); }
+#jumpBtn { position: fixed; right: calc(max(16px, env(safe-area-inset-right, 0px)) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
+  width: 112px; height: 112px; border-radius: 50%; pointer-events: none; display: grid; place-items: center; text-align: center;
+  background: conic-gradient(var(--gold) calc(var(--c, 0) * 1turn), rgba(234, 244, 255, .25) 0); padding: 5px; }
+#jumpBtn > div { width: 100%; height: 100%; border-radius: 50%; display: grid; place-content: center; gap: 2px; background: rgba(11, 22, 48, .62); }
+#jumpBtn.down > div { background: rgba(255, 90, 54, .55); }
+#jumpLbl { font: 800 20px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; }
+#jumpSub { font: 700 9px/1.2 var(--round); letter-spacing: .04em; color: var(--frost); max-width: 86px; }
+@media (max-aspect-ratio: 1/1) {
+  #aval { bottom: auto; top: calc(env(safe-area-inset-top, 0px) + 66px); }
+  #pops { top: 30%; }
+  #combo { top: calc(30% - 46px); }
+}
+@media (max-height: 460px) { #hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); width: min(50vw, 440px); font-size: 13px; padding: 7px 10px; } }
 @media (prefers-reduced-motion: reduce) { .pop { animation-duration: 1.2s; } #hint { transition: none; } }
 </style>
 </head>
@@ -123,7 +144,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 <div id="hud" class="hidden">
   <div class="scorebox">
     <div id="score">0</div>
-    <div class="stats"><span id="dist">0 m</span><span id="spd">0 km/h</span><span class="c" id="coins">0 fiocchi</span></div>
+    <div class="stats"><span id="dist">0 m</span><span id="spd">0 km/h</span><span class="c" id="coins">0 fiocchi</span><span id="lvl">Liv. 1</span></div>
   </div>
   <div class="btns">
     <button class="icon" id="btnMute" aria-label="Audio">
@@ -135,6 +156,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   </div>
 </div>
 <div id="aval" class="hidden"><span>Valanga</span><div class="bar"><i id="avalBar"></i></div><b id="avalM">45 m</b></div>
+<div id="controls" class="hidden">
+  <div id="joy"><div id="joyKnob"></div></div>
+  <div id="jumpBtn"><div><span id="jumpLbl">Salta</span><span id="jumpSub">tieni = più alto</span></div></div>
+</div>
 <div id="combo" class="hidden"><span id="comboTxt"></span><i id="comboBar"></i></div>
 <div id="pops"></div>
 <div id="hint"></div>
@@ -144,10 +169,10 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
     <div class="logo"><span>Powder</span><span>Run</span></div>
     <p class="tag">Scendi a tutta velocità, salta, chiudi i trick e non farti prendere dalla valanga.</p>
     <ul class="howto">
-      <li><b>Tieni</b>Tieni premuto a sinistra o a destra per curvare.</li>
-      <li><b>Tocca</b>Un tocco veloce o uno swipe in su: salto.</li>
-      <li><b>In aria</b>Tieni a sinistra o destra per girare. Swipe su o giù per i flip.</li>
-      <li><b>Grab</b>In aria swipe a sinistra o destra. Atterra dritto.</li>
+      <li><b>Joystick</b>A sinistra: curvi, avanti accelera, indietro frena.</li>
+      <li><b>Salta</b>Tocca a destra. Tieni premuto per saltare più in alto.</li>
+      <li><b>In aria</b>Trascina il dito: il rider gira come lo muovi. Anche col joystick.</li>
+      <li><b>Grab</b>In aria tieni fermo il dito. Atterra dritto, si va sempre più veloci.</li>
     </ul>
     <button class="primary" id="btnPlay">Gioca</button>
     <div class="best">Record <b id="bestMenu">0</b></div>
@@ -265,9 +290,12 @@ function resize() {
   renderer.setSize(W, H_, false);
   camera.aspect = W / H_;
   var vf = 2 * Math.atan(Math.tan(33 * PI / 180) / camera.aspect) * 180 / PI;
-  camera.fov = clamp(vf, 56, 92);
+  camera.fov = baseFov = clamp(vf, 56, 92);
   camera.updateProjectionMatrix();
+  var sc = renderer.getPixelRatio() * H_ / (2 * Math.tan(camera.fov * PI / 360));
+  pMat.uniforms.scale.value = sc; spMat.uniforms.scale.value = sc;
 }
+var baseFov = 60;
 
 // ---- luci
 var hemi = new THREE.HemisphereLight(0xdceeff, 0x8aa4c4, 1.2);
@@ -576,6 +604,7 @@ function secBig(z) {
   addDrop(k.z1 + 3, 0.2, 3.5 + d * 1.5);
   addObj(kickerMesh(k), k.z1 + 2);
   addFlag(k.x - k.w - 0.6, k.z1 - 0.2, false); addFlag(k.x + k.w + 0.6, k.z1 - 0.2, false);
+  addFence(function () { return k.x - k.w - 5; }, k.z1 - 3, k.z1 + 26); addFence(function () { return k.x + k.w + 5; }, k.z1 - 3, k.z1 + 26);
   arcCoins(k, 22 + d * 4);
   return k.z1 + 40;
 }
@@ -597,6 +626,7 @@ function secDrop(z) {
   addDrop(z0, D, 3.5);
   var cx = cxAt(z0), hw = hwAt(z0);
   for (var i = -2; i <= 2; i++) addFlag(cx + i * hw * 0.45, z0 - 1.2, i % 2 === 0);
+  addFence(function (zz) { return cxAt(zz) - hwAt(zz) + 0.6; }, z0 - 12, z0 + 22); addFence(function (zz) { return cxAt(zz) + hwAt(zz) - 0.6; }, z0 - 12, z0 + 22);
   coinLine(z0 - 12, 3, function () { return cx; }, 0);
   for (var j = 1; j <= 5; j++) { var zz = z0 + j * 3.6; addCoin(cx, Hgt(cx, z0 - 0.5) + 1.4 - j * j * 0.25, zz); }
   return z0 + 34;
@@ -672,18 +702,75 @@ function secCruise(z) {
   if (R() < 0.75) coinLine(z + 8, 9, function (i, zz) { return cxAt(zz) + off + Math.sin(i * 0.6) * 3; }, 0);
   return z + len;
 }
-var SECTIONS = { cruise: secCruise, kicker: secKickers, big: secBig, drop: secDrop, rail: secRails, rocks: secRocks, trees: secTrees, rollers: secRollers };
+var netTex = canvasTex(64, 64, function (c) {
+  c.strokeStyle = 'rgba(255,106,40,0.95)'; c.lineWidth = 3;
+  for (var i = 0; i <= 64; i += 16) { c.beginPath(); c.moveTo(i, 0); c.lineTo(i, 64); c.stroke(); c.beginPath(); c.moveTo(0, i); c.lineTo(64, i); c.stroke(); }
+  c.fillStyle = '#ff6a28'; c.fillRect(0, 0, 64, 6);
+}, true);
+var netMat = new THREE.MeshLambertMaterial({ map: netTex, transparent: true, alphaTest: 0.35, side: THREE.DoubleSide });
+function addFence(xFn, z0, z1) {
+  var pos = [], uv = [], idx = [], n = Math.max(2, Math.round(z1 - z0)), u = 0;
+  for (var i = 0; i <= n; i++) {
+    var z = lerp(z0, z1, i / n), x = xFn(z), y = terrainH(x, z) - 0.05;
+    pos.push(x, y, z, x, y + 1.3, z); uv.push(u, 0, u, 1.6); u += (z1 - z0) / n / 0.8;
+    if (i < n) { var a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); }
+  }
+  var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  var m = new THREE.Mesh(g, netMat); m.userData.own = true;
+  addObj(m, z1);
+}
+var chaletGlow = new THREE.MeshBasicMaterial({ color: 0xffcf7a });
+var C_WOOD = new THREE.Color(0x7a4b2a), C_WOOD2 = new THREE.Color(0x5e3820), C_STONE = new THREE.Color(0x8a8f99), C_DOOR = new THREE.Color(0x3a2416);
+var GEO_CH = mergeColored([
+  { geo: new THREE.BoxGeometry(5.4, 0.5, 4.8).translate(0, 0.1, 0), color: function () { return C_STONE; } },
+  { geo: new THREE.BoxGeometry(5, 3, 4.4).translate(0, 1.7, 0), color: function (x, y) { return (Math.floor(y * 2.2) % 2) ? C_WOOD : C_WOOD2; } },
+  { geo: new THREE.ConeGeometry(4.2, 2.6, 4).rotateY(PI / 4).scale(1, 1, 0.92).translate(0, 4.5, 0), color: function (x, y, z, ny) { return ny > 0.15 ? C_SNOW : C_WOOD2; } },
+  { geo: new THREE.BoxGeometry(0.6, 1.8, 0.6).translate(1.2, 5, 0.9), color: function (x, y, z, ny) { return ny > 0.9 ? C_SNOW : C_STONE; } },
+  { geo: new THREE.BoxGeometry(0.08, 1.9, 1).translate(2.52, 1.2, 0), color: function () { return C_DOOR; } }
+]);
+var C_WIN = new THREE.Color(0xffe08a);
+var GEO_WIN = mergeColored([
+  { geo: new THREE.BoxGeometry(0.06, 0.8, 0.8).translate(2.53, 2, 1.4), color: function () { return C_WIN; } },
+  { geo: new THREE.BoxGeometry(0.06, 0.8, 0.8).translate(2.53, 2, -1.4), color: function () { return C_WIN; } },
+  { geo: new THREE.BoxGeometry(0.8, 0.8, 0.06).translate(0.8, 2, 2.23), color: function () { return C_WIN; } },
+  { geo: new THREE.BoxGeometry(0.8, 0.8, 0.06).translate(-1, 2, 2.23), color: function () { return C_WIN; } }
+]);
+function addChalet(z) {
+  var cx = cxAt(z), hw = hwAt(z), x = cx - hw - 10 - R() * 8, y = terrainH(x, z) - 0.3, rot = (R() - 0.5) * 0.4;
+  var g = new THREE.Group();
+  var m = new THREE.Mesh(GEO_CH, M.tree); m.castShadow = true; m.receiveShadow = true; g.add(m);
+  g.add(new THREE.Mesh(GEO_WIN, chaletGlow));
+  g.position.set(x, y, z); g.rotation.y = rot;
+  addObj(g, z + 10);
+  var ch = new THREE.Vector3(1.2, 6, 0.9).applyAxisAngle(Y_AXIS, rot);
+  S.chalets.push({ x: x, z: z, cx: x + ch.x, cy: y + ch.y, cz: z + ch.z });
+}
+function nearChalet(x, z) { for (var i = 0; i < S.chalets.length; i++) { var c = S.chalets[i]; if (Math.abs(c.x - x) < 7 && Math.abs(c.z - z) < 7) return true; } return false; }
+function secLine(z) {
+  var d = diff(z), zz = z, n = 3 + (R() < 0.4 ? 1 : 0);
+  for (var i = 0; i < n; i++) {
+    var cx = cxAt(zz), x = cx + (R() - 0.5) * 3, Hk = 1.9 + R() * 0.5 + d * 0.4, L = 6.4 + R(), w = 2.6;
+    var k = { x: x, z0: zz, L: L, z1: zz + L, Hk: Hk, w: w, big: false };
+    S.kickers.push(k); addObj(kickerMesh(k), k.z1 + 2); arcCoins(k, 21 + d * 4);
+    if (i === 0) { addFlag(x - w - 0.6, k.z1 - 0.2, true); addFlag(x + w + 0.6, k.z1 - 0.2, true); }
+    zz += 34 + R() * 6;
+  }
+  return zz;
+}
+var SECTIONS = { line: secLine, cruise: secCruise, kicker: secKickers, big: secBig, drop: secDrop, rail: secRails, rocks: secRocks, trees: secTrees, rollers: secRollers };
 function genSection() {
   var z = S.genZ;
   if (z < S.flatUntil) { S.genZ = z + 40; return; }
   var d = diff(z);
-  var w = { cruise: 1.4, kicker: 3, big: 1.1 + 1.6 * d, drop: 0.7 + 1.2 * d, rail: 2.2, rocks: 1.2 + 2.2 * d, trees: 0.8 + 1.8 * d, rollers: 1.5 };
+  var w = { cruise: 1.1, kicker: 3.2, line: 1.6 + d, big: 1.4 + 1.6 * d, drop: 0.9 + 1.2 * d, rail: 2, rocks: 1.2 + 2.2 * d, trees: 0.8 + 1.8 * d, rollers: 1.5 };
   var tot = 0, k;
   for (k in w) if (k !== S.lastSec) tot += w[k];
   var r = R() * tot;
   for (k in w) { if (k === S.lastSec) continue; r -= w[k]; if (r <= 0) break; }
   S.lastSec = k;
   S.genZ = SECTIONS[k](z) + 14 + R() * 18;
+  if (S.genZ > S.nextChalet) { addChalet(S.nextChalet); S.nextChalet += 170 + R() * 220; }
 }
 
 // ============================================================ pezzi di terreno (chunk)
@@ -717,6 +804,7 @@ function buildChunk(ci) {
   for (var k = 0; k < count; k++) {
     var zz = z0 + RR() * CH_L, side = RR() < 0.5 ? -1 : 1, dist = hwAt(zz) + 3.2 + Math.pow(RR(), 1.6) * 75, xx = cxAt(zz) + side * dist, s = 0.9 + RR() * 1.1;
     p.set(xx, terrainH(xx, zz) - 0.3, zz); q.setFromAxisAngle(up, RR() * TAU); sc.set(s, s * (0.9 + RR() * 0.3), s);
+    if (Math.abs(xx - liftX(zz)) < 4.5 || nearChalet(xx, zz)) { sc.set(0.001, 0.001, 0.001); p.y -= 50; }
     mtx.compose(p, q, sc); inst.setMatrixAt(k, mtx);
   }
   inst.instanceMatrix.needsUpdate = true; inst.computeBoundingSphere();
@@ -785,7 +873,7 @@ scene.add(pPoints);
 var parts = [];
 for (var pi0 = 0; pi0 < PMAX; pi0++) parts.push({ life: 0 });
 var pNext = 0;
-var COLS = { snow: new THREE.Color(0xffffff), spark: new THREE.Color(0xffd65a), gold: new THREE.Color(0xffec96) };
+var COLS = { snow: new THREE.Color(0xffffff), spark: new THREE.Color(0xffd65a), gold: new THREE.Color(0xffec96), smoke: new THREE.Color(0xd9e0ea) };
 function part(x, y, z, vx, vy, vz, life, size, kind) {
   var p = parts[pNext]; pNext = (pNext + 1) % PMAX;
   p.x = x; p.y = y; p.z = z; p.vx = vx; p.vy = vy; p.vz = vz; p.life = life; p.max = life; p.size = size; p.kind = kind || 'snow';
@@ -801,12 +889,12 @@ function updParticles(dt) {
     var p = parts[i];
     if (p.life <= 0) { pAlpha[i] = 0; continue; }
     p.life -= dt;
-    p.vy -= (p.kind === 'spark' ? 18 : 9) * dt; var dr = 1 - 1.8 * dt; p.vx *= dr; p.vz *= dr; p.vy *= 1 - 0.8 * dt;
+    if (p.kind === 'smoke') { p.vy += 0.3 * dt; p.vx *= 1 - 0.3 * dt; } else { p.vy -= (p.kind === 'spark' ? 18 : 9) * dt; var dr = 1 - 1.8 * dt; p.vx *= dr; p.vz *= dr; p.vy *= 1 - 0.8 * dt; }
     p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
     var a = clamp(p.life / p.max, 0, 1);
     pPos[i * 3] = p.x; pPos[i * 3 + 1] = p.y; pPos[i * 3 + 2] = p.z;
     var c = COLS[p.kind] || COLS.snow; pCol[i * 3] = c.r; pCol[i * 3 + 1] = c.g; pCol[i * 3 + 2] = c.b;
-    pSize[i] = p.size * (p.kind === 'snow' ? (0.6 + (1 - a) * 0.8) : 1); pAlpha[i] = p.kind === 'snow' ? a * 0.85 : a;
+    pSize[i] = p.size * (p.kind === 'snow' ? (0.6 + (1 - a) * 0.8) : p.kind === 'smoke' ? (1 + (1 - a) * 3) : 1); pAlpha[i] = p.kind === 'snow' ? a * 0.85 : p.kind === 'smoke' ? a * 0.4 : a;
   }
   pGeo.attributes.position.needsUpdate = true; pGeo.attributes.color.needsUpdate = true; pGeo.attributes.size.needsUpdate = true; pGeo.attributes.alpha.needsUpdate = true;
 }
@@ -848,96 +936,191 @@ var rider = (function () {
     glove: new THREE.MeshLambertMaterial({ color: 0x1b2433 }), boot: new THREE.MeshLambertMaterial({ color: 0x2b2f38 }),
     helmet: new THREE.MeshPhongMaterial({ color: 0xf5f7fb, shininess: 60 }), stripe: new THREE.MeshLambertMaterial({ color: 0xffcf3f }),
     skin: new THREE.MeshLambertMaterial({ color: 0xf2c29b }), goggle: new THREE.MeshPhongMaterial({ map: goggleTex, shininess: 120, specular: 0xffffff }),
-    board: new THREE.MeshPhongMaterial({ map: boardTex, shininess: 40 }), boardBase: new THREE.MeshLambertMaterial({ color: 0x0b2a4a }), bind: new THREE.MeshLambertMaterial({ color: 0x111827 })
+    board: new THREE.MeshPhongMaterial({ map: boardTex, shininess: 40 }), boardBase: new THREE.MeshLambertMaterial({ color: 0x0b2a4a }), bind: new THREE.MeshLambertMaterial({ color: 0x111827 }),
+    pack: new THREE.MeshLambertMaterial({ color: 0x2c62c9 }), packD: new THREE.MeshLambertMaterial({ color: 0x1b3f86 }), scarf: new THREE.MeshLambertMaterial({ color: 0xffcf3f })
   };
-  // tavola
+  // tavola con attacchi e highback
   var board = new THREE.Group();
   var deck = new THREE.Mesh(new THREE.BoxGeometry(0.29, 0.03, 1.2), [M2.boardBase, M2.boardBase, M2.board, M2.boardBase, M2.boardBase, M2.boardBase]);
   deck.position.y = 0.035; board.add(deck);
   [-1, 1].forEach(function (s) {
     var tip = new THREE.Mesh(new THREE.CylinderGeometry(0.145, 0.145, 0.03, 16, 1, false, s > 0 ? -PI / 2 : PI / 2, PI), M2.board);
     tip.position.set(0, 0.05, s * 0.6); tip.rotation.x = s * 0.18; board.add(tip);
-    var bnd = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.07, 0.13), M2.bind); bnd.position.set(0, 0.08, s * 0.25); board.add(bnd);
+    var bnd = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.05, 0.15), M2.bind); bnd.position.set(0, 0.07, s * 0.25); board.add(bnd);
+    var hb = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.2, 0.15), M2.bind); hb.position.set(-0.12, 0.16, s * 0.25); hb.rotation.z = 0.12; board.add(hb);
+    var strap = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.03, 0.06), M2.stripe); strap.position.set(0.02, 0.17, s * 0.25 + 0.03); board.add(strap);
   });
   board.traverse(function (o) { if (o.isMesh) o.castShadow = true; });
   root.add(board);
   var body = new THREE.Group(); root.add(body);
-  function cyl(mat, r) { var m = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.92, 1, 8), mat); m.castShadow = true; body.add(m); return m; }
-  function sph(mat, r) { var m = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mat); m.castShadow = true; body.add(m); return m; }
-  var parts = {
+  function add(m) { m.castShadow = true; body.add(m); return m; }
+  function cyl(mat, r) { return add(new THREE.Mesh(new THREE.CylinderGeometry(r, r * 0.92, 1, 8), mat)); }
+  function sph(mat, r) { return add(new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mat)); }
+  var pp = {
     thighB: cyl(M2.pantsD, 0.085), shinB: cyl(M2.pantsD, 0.075), thighF: cyl(M2.pants, 0.085), shinF: cyl(M2.pants, 0.075),
     kneeB: sph(M2.pantsD, 0.085), kneeF: sph(M2.pants, 0.085), hip: sph(M2.pants, 0.15),
-    bootB: new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.15), M2.boot), bootF: new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.15), M2.boot),
+    bootB: add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.15), M2.boot)), bootF: add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.15), M2.boot)),
     torso: cyl(M2.jacket, 0.17), chest: sph(M2.jacket, 0.175), belly: sph(M2.jacket, 0.155),
     uArmB: cyl(M2.jacketD, 0.06), lArmB: cyl(M2.jacketD, 0.055), uArmF: cyl(M2.jacket, 0.06), lArmF: cyl(M2.jacket, 0.055),
-    elbB: sph(M2.jacketD, 0.06), elbF: sph(M2.jacket, 0.06), handB: sph(M2.glove, 0.065), handF: sph(M2.glove, 0.065),
-    neck: sph(M2.skin, 0.07)
+    elbB: sph(M2.jacketD, 0.06), elbF: sph(M2.jacket, 0.06), handB: sph(M2.glove, 0.07), handF: sph(M2.glove, 0.07),
+    neck: sph(M2.skin, 0.07),
+    pack: new THREE.Group(), scarf: []
   };
-  body.add(parts.bootB); body.add(parts.bootF); parts.bootB.castShadow = parts.bootF.castShadow = true;
+  var packBox = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.36, 0.28), M2.pack); packBox.castShadow = true; pp.pack.add(packBox);
+  var packTop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.09, 0.29), M2.packD); packTop.position.y = 0.16; pp.pack.add(packTop);
+  var packStr = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.03, 0.3), M2.stripe); packStr.position.y = -0.05; pp.pack.add(packStr);
+  body.add(pp.pack);
+  for (var k = 0; k < 4; k++) pp.scarf.push(add(new THREE.Mesh(new THREE.CylinderGeometry(0.04 - k * 0.006, 0.035 - k * 0.006, 1, 6), M2.scarf)));
   var head = new THREE.Group(); body.add(head);
   var face = new THREE.Mesh(new THREE.SphereGeometry(0.115, 14, 10), M2.skin); face.castShadow = true; head.add(face);
   var helm = new THREE.Mesh(new THREE.SphereGeometry(0.135, 16, 10, 0, TAU, 0, PI * 0.58), M2.helmet); helm.position.y = 0.025; helm.castShadow = true; head.add(helm);
   var strp = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.27), M2.stripe); strp.position.set(0, 0.155, 0); head.add(strp);
   var gog = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.075, 0.2), [M2.goggle, M2.glove, M2.glove, M2.glove, M2.glove, M2.glove]); gog.position.set(0.1, 0.02, 0); head.add(gog);
-  var strap = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.04, 16, 1, true), M2.glove); strap.position.y = 0.02; head.add(strap);
-  parts.head = head;
-  return { root: root, board: board, body: body, parts: parts };
+  var gstrap = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.04, 16, 1, true), M2.glove); gstrap.position.y = 0.02; head.add(gstrap);
+  pp.head = head;
+  return { root: root, board: board, body: body, parts: pp };
 })();
 scene.add(rider.root);
-var Y_AXIS = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3();
+var Y_AXIS = new THREE.Vector3(0, 1, 0), tmpV = new THREE.Vector3(), tmpV2 = new THREE.Vector3(), tmpV3 = new THREE.Vector3();
+var V = function (x, y, z) { return new THREE.Vector3(x, y, z); };
 function seg(mesh, a, b) {
   tmpV.subVectors(b, a); var len = tmpV.length();
   mesh.position.addVectors(a, b).multiplyScalar(0.5);
   if (len > 1e-4) mesh.quaternion.setFromUnitVectors(Y_AXIS, tmpV.multiplyScalar(1 / len));
-  mesh.scale.set(1, len, 1);
+  mesh.scale.set(1, Math.max(len, 0.001), 1);
 }
-function ik3(a, b, l1, l2, bend, out) {
+function ik3(a, b, l1, l2, bend, out, end) {
   var d = tmpV2.subVectors(b, a), dist = d.length(), mx = l1 + l2 - 0.001;
   if (dist > mx) { d.multiplyScalar(mx / dist); dist = mx; }
-  var end = new THREE.Vector3().addVectors(a, d);
+  if (dist < 1e-4) dist = 1e-4;
+  end.copy(a).add(d);
   var x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist), h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
-  var dn = d.clone().normalize();
-  var perp = bend.clone().sub(dn.clone().multiplyScalar(bend.dot(dn))).normalize();
-  out.copy(a).add(dn.multiplyScalar(x)).add(perp.multiplyScalar(h));
-  return end;
+  d.multiplyScalar(1 / dist);
+  tmpV3.copy(bend).addScaledVector(d, -bend.dot(d)).normalize();
+  out.copy(a).addScaledVector(d, x).addScaledVector(tmpV3, h);
 }
-var V = function (x, y, z) { return new THREE.Vector3(x, y, z); };
-var BEND_KNEE = V(1, 0.2, 0), BEND_ELB = V(-0.3, -1, 0);
-function poseRider(o) {
-  // o: c (accovacciato), ga (grab 0..1), grab, air (0..1), t, flail
-  var pp = rider.parts, c = o.c, g = o.ga, airA = o.air, t = o.t;
-  var cc = c + g * 0.6;
-  var hip = V(-0.02 + cc * 0.06, 0.95 - cc * 0.34, 0);
-  var fB = V(0, 0.12, -0.25), fF = V(0, 0.12, 0.25);
-  if (g > 0) { fB.y += g * 0.02; fF.y += g * 0.02; }
-  var kB = new THREE.Vector3(), kF = new THREE.Vector3();
-  var hB = hip.clone().add(V(0, 0, -0.1)), hF = hip.clone().add(V(0, 0, 0.1));
-  var eB = ik3(hB, fB, 0.45, 0.44, BEND_KNEE, kB), eF = ik3(hF, fF, 0.45, 0.44, BEND_KNEE, kF);
-  seg(pp.thighB, hB, kB); seg(pp.shinB, kB, eB); seg(pp.thighF, hF, kF); seg(pp.shinF, kF, eF);
-  pp.kneeB.position.copy(kB); pp.kneeF.position.copy(kF); pp.hip.position.copy(hip);
-  pp.bootB.position.set(0.02, 0.1, -0.25); pp.bootF.position.set(0.02, 0.1, 0.25);
-  var lean = 0.1 + c * 0.22 + g * 0.25;
-  var sh = hip.clone().add(V(lean, 0.52 - c * 0.06 - g * 0.14, 0));
-  seg(pp.torso, hip, sh);
-  pp.belly.position.lerpVectors(hip, sh, 0.25); pp.chest.position.lerpVectors(hip, sh, 0.85);
-  var headP = sh.clone().add(V(0.04 + g * 0.04, 0.2, 0));
-  pp.neck.position.lerpVectors(sh, headP, 0.45);
-  pp.head.position.copy(headP); pp.head.rotation.z = -0.15 - c * 0.2;
-  var sB = sh.clone().add(V(0, -0.03, -0.18)), sF = sh.clone().add(V(0, -0.03, 0.18));
-  var wob = Math.sin(t * 5) * 0.03;
-  var hBt = V(0.08, sh.y - 0.32 + wob, -0.55), hFt = V(0.14, sh.y - 0.28 - wob, 0.55);
-  hBt.lerp(V(0.05, sh.y + 0.18, -0.6), airA); hFt.lerp(V(0.1, sh.y + 0.22, 0.6), airA);
-  if (o.flail) { hBt.set(Math.sin(t * 13) * 0.4, sh.y + Math.cos(t * 11) * 0.4, -0.5); hFt.set(Math.cos(t * 12) * 0.4, sh.y + Math.sin(t * 15) * 0.4, 0.5); }
+var mQ = new THREE.Matrix4(), qA = new THREE.Vector3(), qB = new THREE.Vector3();
+function basisQ(f, u, out) {
+  qB.copy(u).normalize();
+  qA.copy(f).addScaledVector(qB, -f.dot(qB));
+  if (qA.lengthSq() < 1e-6) qA.set(1, 0, 0).addScaledVector(qB, -qB.x);
+  qA.normalize();
+  mQ.makeBasis(qA, qB, tmpV3.crossVectors(qA, qB));
+  return out.setFromRotationMatrix(mQ);
+}
+var JN = ['head', 'neck', 'pelvis', 'hipB', 'hipF', 'knB', 'knF', 'ftB', 'ftF', 'shB', 'shF', 'elB', 'elF', 'hB', 'hF'];
+function newJoints() { var o = {}; JN.forEach(function (n) { o[n] = new THREE.Vector3(); }); return o; }
+var J = newJoints(), JW = newJoints();
+var BEND_KNEE = V(1, 0.2, 0), BEND_ELB = V(-0.3, -1, 0), hT1 = new THREE.Vector3(), hT2 = new THREE.Vector3();
+// pose nel sistema locale del rider: x = verso dove guarda, y = su, z = lungo la tavola
+function computePose(o, J) {
+  var c = o.c, g = o.ga, airA = o.air, t = o.t, cc = c + g * 0.6;
+  J.pelvis.set(-0.02 + cc * 0.06, 0.95 - cc * 0.34, 0);
+  J.hipB.copy(J.pelvis).z -= 0.1; J.hipF.copy(J.pelvis).z += 0.1;
+  hT1.set(0, 0.12 + g * 0.02, -0.25); hT2.set(0, 0.12 + g * 0.02, 0.25);
+  ik3(J.hipB, hT1, 0.45, 0.44, BEND_KNEE, J.knB, J.ftB);
+  ik3(J.hipF, hT2, 0.45, 0.44, BEND_KNEE, J.knF, J.ftF);
+  var lean = 0.1 + c * 0.22 + g * 0.25 + (o.tuck || 0) * 0.15;
+  J.neck.copy(J.pelvis).add(tmpV.set(lean, 0.52 - c * 0.06 - g * 0.14, 0));
+  J.head.copy(J.neck).add(tmpV.set(0.05 + g * 0.04, 0.2, 0));
+  J.shB.copy(J.neck).add(tmpV.set(0, -0.03, -0.18)); J.shF.copy(J.neck).add(tmpV.set(0, -0.03, 0.18));
+  var sy = J.neck.y, wob = Math.sin(t * 5) * 0.03, tk = o.tuck || 0;
+  hT1.set(0.08, sy - 0.32 + wob, -0.55); hT2.set(0.14, sy - 0.28 - wob, 0.55);
+  if (tk > 0) { hT1.lerp(tmpV.set(0.3, sy - 0.25, -0.12), tk); hT2.lerp(tmpV.set(0.35, sy - 0.22, 0.14), tk); }
+  hT1.lerp(tmpV.set(0.05, sy + 0.18, -0.6), airA); hT2.lerp(tmpV.set(0.1, sy + 0.22, 0.6), airA);
   if (g > 0.01) {
-    if (o.grab === 'indy') { hBt.lerp(V(0.17, 0.12, -0.02), g); hFt.lerp(V(0.2, sh.y + 0.25, 0.55), g); }
-    else { hFt.lerp(V(-0.17, 0.12, 0.05), g); hBt.lerp(V(0.0, sh.y + 0.25, -0.6), g); }
+    if (o.grab === 'indy') { hT1.lerp(tmpV.set(0.17, 0.13, -0.02), g); hT2.lerp(tmpV.set(0.2, sy + 0.25, 0.55), g); }
+    else { hT2.lerp(tmpV.set(-0.17, 0.13, 0.05), g); hT1.lerp(tmpV.set(0.0, sy + 0.25, -0.6), g); }
   }
-  var elB = new THREE.Vector3(), elF = new THREE.Vector3();
-  var wB = ik3(sB, hBt, 0.3, 0.3, BEND_ELB, elB), wF = ik3(sF, hFt, 0.3, 0.3, BEND_ELB, elF);
-  seg(pp.uArmB, sB, elB); seg(pp.lArmB, elB, wB); seg(pp.uArmF, sF, elF); seg(pp.lArmF, elF, wF);
-  pp.elbB.position.copy(elB); pp.elbF.position.copy(elF); pp.handB.position.copy(wB); pp.handF.position.copy(wF);
+  ik3(J.shB, hT1, 0.3, 0.3, BEND_ELB, J.elB, J.hB);
+  ik3(J.shF, hT2, 0.3, 0.3, BEND_ELB, J.elF, J.hF);
 }
+var aF = new THREE.Vector3(), aU = new THREE.Vector3(), aL = new THREE.Vector3(), aW = new THREE.Vector3(), aP = new THREE.Vector3(), aP2 = new THREE.Vector3();
+// sistema le parti del corpo sulle articolazioni (sia nella posa normale sia nel ragdoll)
+function applyPose(J, facing, wind, t) {
+  var pp = rider.parts;
+  seg(pp.thighB, J.hipB, J.knB); seg(pp.shinB, J.knB, J.ftB); seg(pp.thighF, J.hipF, J.knF); seg(pp.shinF, J.knF, J.ftF);
+  pp.kneeB.position.copy(J.knB); pp.kneeF.position.copy(J.knF); pp.hip.position.copy(J.pelvis);
+  aU.subVectors(J.knB, J.ftB); basisQ(facing, aU, pp.bootB.quaternion); pp.bootB.position.copy(J.ftB).addScaledVector(aU.normalize(), 0.02);
+  aU.subVectors(J.knF, J.ftF); basisQ(facing, aU, pp.bootF.quaternion); pp.bootF.position.copy(J.ftF).addScaledVector(aU.normalize(), 0.02);
+  seg(pp.torso, J.pelvis, J.neck);
+  pp.belly.position.lerpVectors(J.pelvis, J.neck, 0.25); pp.chest.position.lerpVectors(J.pelvis, J.neck, 0.85);
+  aU.subVectors(J.neck, J.pelvis);
+  basisQ(facing, aU, pp.pack.quaternion);
+  aF.copy(facing).addScaledVector(aU.clone().normalize(), -facing.dot(aU.clone().normalize())).normalize();
+  pp.pack.position.lerpVectors(J.pelvis, J.neck, 0.62).addScaledVector(aF, -0.2);
+  pp.neck.position.lerpVectors(J.neck, J.head, 0.45);
+  aU.subVectors(J.head, J.neck); pp.head.position.copy(J.head); basisQ(facing, aU, pp.head.quaternion);
+  seg(pp.uArmB, J.shB, J.elB); seg(pp.lArmB, J.elB, J.hB); seg(pp.uArmF, J.shF, J.elF); seg(pp.lArmF, J.elF, J.hF);
+  pp.elbB.position.copy(J.elB); pp.elbF.position.copy(J.elF); pp.handB.position.copy(J.hB); pp.handF.position.copy(J.hF);
+  // sciarpa al vento
+  aP.copy(J.neck).lerp(J.head, 0.2);
+  aL.subVectors(J.shF, J.shB).normalize();
+  for (var k = 0; k < pp.scarf.length; k++) {
+    aP2.copy(aP).addScaledVector(wind, 0.13).addScaledVector(aL, Math.sin(t * 15 + k * 1.4) * 0.025 * (k + 1)).y -= 0.012 * (k + 1);
+    seg(pp.scarf[k], aP, aP2); aP.copy(aP2);
+  }
+}
+var POSE_FACE = V(1, 0, 0), POSE_WIND = V(-0.3, 0.05, -1).normalize();
+function poseRider(o) { computePose(o, J); applyPose(J, POSE_FACE, POSE_WIND, o.t); }
 
+// ---- ragdoll: punti collegati da vincoli (Verlet)
+var RLINKS = [['head', 'neck'], ['neck', 'pelvis'], ['shB', 'neck'], ['shF', 'neck'], ['shB', 'shF'], ['shB', 'pelvis'], ['shF', 'pelvis'], ['head', 'shB'], ['head', 'shF'],
+  ['shB', 'elB'], ['elB', 'hB'], ['shF', 'elF'], ['elF', 'hF'], ['pelvis', 'hipB'], ['pelvis', 'hipF'], ['hipB', 'hipF'], ['hipB', 'shB'], ['hipF', 'shF'],
+  ['hipB', 'knB'], ['knB', 'ftB'], ['hipF', 'knF'], ['knF', 'ftF']];
+var RMIN = [['knB', 'knF', 0.14], ['ftB', 'ftF', 0.18], ['hB', 'pelvis', 0.2], ['hF', 'pelvis', 0.2], ['ftB', 'neck', 0.5], ['ftF', 'neck', 0.5], ['knB', 'neck', 0.35], ['knF', 'neck', 0.35]];
+function makeRagdoll(vel, fwd) {
+  rider.root.updateMatrixWorld(true);
+  var m = rider.root.matrixWorld, R = { p: {}, q: {}, rest: [], face: V(1, 0, 0).transformDirection(m), wind: fwd.clone().negate() };
+  JN.forEach(function (n) {
+    var w = J[n].clone().applyMatrix4(m), v = vel.clone();
+    if (n === 'head' || n === 'neck' || n === 'shB' || n === 'shF') v.addScaledVector(fwd, 3.2).y += 2.5;
+    if (n === 'hB' || n === 'hF' || n === 'elB' || n === 'elF') { v.x += (Math.random() - 0.5) * 6; v.y += Math.random() * 4; v.z += (Math.random() - 0.5) * 4; }
+    if (n === 'ftB' || n === 'ftF' || n === 'knB' || n === 'knF') v.addScaledVector(fwd, -2.2);
+    R.p[n] = w; R.q[n] = w.clone().addScaledVector(v, -FIX);
+  });
+  RLINKS.forEach(function (l) { R.rest.push(R.p[l[0]].distanceTo(R.p[l[1]])); });
+  return R;
+}
+var rD = new THREE.Vector3();
+function stepRagdoll(R, dt) {
+  var n, p, q, vx, vy, vz, i, it;
+  for (i = 0; i < JN.length; i++) {
+    n = JN[i]; p = R.p[n]; q = R.q[n];
+    vx = (p.x - q.x) * 0.997; vy = (p.y - q.y) * 0.997; vz = (p.z - q.z) * 0.997;
+    q.copy(p); p.x += vx; p.y += vy - G * dt * dt; p.z += vz;
+  }
+  for (it = 0; it < 8; it++) {
+    for (i = 0; i < RLINKS.length; i++) {
+      var a = R.p[RLINKS[i][0]], b = R.p[RLINKS[i][1]];
+      rD.subVectors(b, a); var len = rD.length(); if (len < 1e-6) continue;
+      var df = (len - R.rest[i]) / len * 0.5; a.addScaledVector(rD, df); b.addScaledVector(rD, -df);
+    }
+    for (i = 0; i < RMIN.length; i++) {
+      var a2 = R.p[RMIN[i][0]], b2 = R.p[RMIN[i][1]];
+      rD.subVectors(b2, a2); var l2 = rD.length(); if (l2 >= RMIN[i][2] || l2 < 1e-6) continue;
+      var d2 = (l2 - RMIN[i][2]) / l2 * 0.5; a2.addScaledVector(rD, d2); b2.addScaledVector(rD, -d2);
+    }
+    for (i = 0; i < JN.length; i++) { p = R.p[JN[i]]; var gy = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.08); if (p.y < gy) p.y = gy; }
+  }
+  // attrito e rimbalzo sul terreno
+  for (i = 0; i < JN.length; i++) {
+    p = R.p[JN[i]]; q = R.q[JN[i]];
+    var g2 = Hgt(p.x, p.z) + (JN[i] === 'head' ? 0.14 : 0.08);
+    if (p.y <= g2 + 0.01) {
+      var vyy = p.y - q.y;
+      if (vyy < 0) q.y = p.y + vyy * 0.25;
+      q.x = p.x - (p.x - q.x) * 0.86; q.z = p.z - (p.z - q.z) * 0.86;
+    }
+  }
+}
+function ragSpeed(R) { var s = 0; for (var i = 0; i < JN.length; i++) s += R.p[JN[i]].distanceTo(R.q[JN[i]]); return s / JN.length / FIX; }
+function ragPose(R) {
+  JN.forEach(function (n) { JW[n].copy(R.p[n]); });
+  aL.subVectors(R.p.shF, R.p.shB).normalize(); aU.subVectors(R.p.neck, R.p.pelvis).normalize();
+  R.face.crossVectors(aU, aL).normalize();
+  applyPose(JW, R.face, R.wind, S.time);
+}
 // segno d'atterraggio
 var ringMat = new THREE.MeshBasicMaterial({ color: 0x4fe0b0, transparent: true, opacity: 0.8, depthWrite: false });
 var ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 40).rotateX(-PI / 2), ringMat);
@@ -956,68 +1139,87 @@ for (var ai = 0; ai < 46; ai++) {
 
 // ============================================================ giocatore e stato
 function newPlayer() {
-  return { x: 0, y: 0, z: 0, yaw: 0, yawRate: 0, speed: 15, vx: 0, vy: 0, vz: 0, vyG: 0, air: false, airT: 0, coyote: 0, fromOllie: false,
-    spin: 0, spinRate: 0, spin0: 0, stance: 0, flip: 0, flipTo: 0, grab: null, grabAmt: 0, lastGrab: 'indy', airAmt: 0, crouch: 0.3, squash: 0,
-    grind: null, grindT: 0, crashed: false, crashT: 0, inv: 0, trick: null, sprayT: 0, tti: 1, landX: 0, landZ: 0, landY: 0, predT: 0,
-    up: new THREE.Vector3(0, 1, 0), lean: 0, toSpeed: 15 };
+  return { x: 0, y: 0, z: 0, yaw: 0, yawRate: 0, speed: 15, vx: 0, vy: 0, vz: 0, vyG: 0, air: false, airT: 0, coyote: 0, lipPop: false,
+    spin: 0, spinRate: 0, spin0: 0, flip: 0, flipRate: 0, flip0: 0, grab: null, grabAmt: 0, lastGrab: 'indy', airAmt: 0, crouch: 0.3, squash: 0, tuck: 0,
+    charging: false, chargeT: 0, grind: null, grindT: 0, crashed: false, crashT: 0, inv: 0, trick: null, sprayT: 0, tti: 1, landX: 0, landZ: 0, landY: 0, predT: 0,
+    up: new THREE.Vector3(0, 1, 0), lean: 0, toSpeed: 15, trailD: 0 };
 }
 function newWorld() {
   clearWorld();
   var seed = (Math.random() * 1e9) | 0;
-  S = { seed: seed, rand: rng(seed), genZ: -60, flatUntil: 60, diffStart: 1e12, startZ: 0, lastSec: '',
-    drops: [], rollers: [], kickers: [], rails: [], rocks: [], coins: [], flags: [], objs: [],
-    time: 0, bank: 0, coinN: 0, tricks: 0, bestTrick: { pts: 0, name: '' }, maxSpeed: 0, crashes: 0, rag: null };
+  S = { seed: seed, rand: rng(seed), genZ: -60, flatUntil: 60, diffStart: 1e12, startZ: 0, lastSec: '', nextChalet: 120, tier: 0,
+    drops: [], rollers: [], kickers: [], rails: [], rocks: [], coins: [], flags: [], objs: [], chalets: [],
+    time: 0, bank: 0, coinN: 0, tricks: 0, bestTrick: { pts: 0, name: '' }, maxSpeed: 0, crashes: 0, rag: null, board: null };
   P = newPlayer();
   P.x = cxAt(0); P.z = 0; P.y = 0;
   AV = { z: -80, speed: 12, ema: 18 };
   combo = { pts: 0, n: 0, t: 0 };
+  resetLift(); trailReset();
   genAhead();
   P.y = Hgt(P.x, P.z);
   resetRiderParts();
   snapCamera();
 }
 function runMeters() { return Math.max(0, P.z - S.startZ); }
-function focusZ() { return P.crashed && S.rag ? S.rag.body.p.z : P.z; }
+function ragCenter() { return S.rag.p.pelvis; }
+function focusZ() { return P.crashed && S.rag ? ragCenter().z : P.z; }
+function speedMul() { return 1 + Math.min(0.9, S.tier * 0.07); }
+function maxSpeed() { return Math.min(48, MAXS * speedMul()); }
 
-// ============================================================ input
-var touches = {}, keySteer = 0, keyGrab = null;
-function steerInput() {
-  var f = keySteer;
-  for (var id in touches) { var t = touches[id]; if (t.mode === 'hold' || t.mode === 'steer') f += t.side; }
-  return clamp(f, -1, 1);
+// ============================================================ input: joystick a sinistra, salto / rotazioni a destra
+var keySteer = 0, keyFlip = 0, keyGrab = null, keyJump = false;
+var joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 }, act = { id: null, st: 0, sy: 0, lx: 0, ly: 0, lt: 0, moved: 0, mode: '', grab: null };
+var padSpin = 0, padFlip = 0, padVS = 0, padVF = 0, JOY_R = 56;
+var joyEl = $('joy'), knobEl = $('joyKnob'), jumpEl = $('jumpBtn'), jumpLbl = $('jumpLbl'), jumpSub = $('jumpSub');
+function resetInput() {
+  joy.id = null; joy.x = joy.y = 0; act.id = null; act.mode = ''; padSpin = padFlip = padVS = padVF = 0;
+  keySteer = keyFlip = 0; keyGrab = null; keyJump = false; if (P) P.charging = false;
+  placeJoy(0, 0, 0, 0, false); jumpEl.classList.remove('down');
 }
-function spinInput() {
-  var f = keySteer;
-  for (var id in touches) { var t = touches[id]; if (t.mode === 'hold' && t.inAir) f += t.side; }
-  return clamp(f, -1, 1);
+function placeJoy(x, y, dx, dy, on) {
+  if (on) { joyEl.style.left = x + 'px'; joyEl.style.top = y + 'px'; joyEl.classList.add('on'); }
+  else { joyEl.style.left = ''; joyEl.style.top = ''; joyEl.classList.remove('on'); }
+  knobEl.style.transform = 'translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
 }
-function grabInput() {
-  for (var id in touches) if (touches[id].mode === 'grab') return touches[id].dir;
-  return keyGrab;
-}
+function joyInput() { return { x: clamp(joy.x + keySteer, -1, 1), y: clamp(joy.y + keyFlip, -1, 1) }; }
+function grabInput() { return act.mode === 'grab' ? act.grab : keyGrab; }
+function canJump() { return !P.air || !!P.grind || P.coyote > 0; }
 function pressStart(id, x, y) {
   ensureAudio();
-  if (state !== 'play' || P.crashed) { touches[id] = { mode: 'none' }; return; }
-  touches[id] = { mode: P.air && !P.grind ? 'hold' : 'steer', inAir: P.air && !P.grind, side: x < W / 2 ? -1 : 1, sx: x, sy: y, ax: x, ay: y, at: now(), st: now(), moved: false };
+  if (state !== 'play' || P.crashed) return;
+  if (x < W * 0.45) { if (joy.id === null) { joy.id = id; joy.ox = x; joy.oy = y; joy.x = joy.y = 0; placeJoy(x, y, 0, 0, true); } return; }
+  if (act.id !== null) return;
+  act.id = id; act.st = now(); act.sy = y; act.lx = x; act.ly = y; act.lt = now(); act.moved = 0; act.grab = null;
+  if (P.air && !P.grind && P.coyote <= 0) act.mode = 'pad';
+  else { act.mode = 'charge'; P.charging = true; P.chargeT = 0; }
+  jumpEl.classList.add('down');
 }
 function pressMove(id, x, y) {
-  var t = touches[id]; if (!t || t.mode === 'none' || t.mode === 'grab' || t.mode === 'used') return;
-  if (now() - t.at > 260) { t.ax = x; t.ay = y; t.at = now(); }
-  var dx = x - t.ax, dy = y - t.ay;
-  if (Math.sqrt(dx * dx + dy * dy) < 28) return;
-  t.moved = true;
-  var vert = Math.abs(dy) > Math.abs(dx);
-  if (!P.air || P.grind) {
-    if (vert && dy < 0) { ollie(); t.mode = 'used'; }
-    return;
+  if (id === joy.id) {
+    var dx = x - joy.ox, dy = y - joy.oy, d = Math.sqrt(dx * dx + dy * dy);
+    if (d > JOY_R) { dx *= JOY_R / d; dy *= JOY_R / d; }
+    joy.x = dx / JOY_R; joy.y = dy / JOY_R; placeJoy(joy.ox, joy.oy, dx, dy, true); return;
   }
-  if (vert) { queueFlip(dy < 0 ? -1 : 1); t.mode = 'used'; }
-  else { t.mode = 'grab'; t.dir = dx < 0 ? 'method' : 'indy'; tutorialEvent('grab'); }
+  if (id !== act.id) return;
+  var mx = x - act.lx, my = y - act.ly, t = now(), dtm = Math.max(8, t - act.lt);
+  act.lx = x; act.ly = y; act.lt = t; act.moved += Math.abs(mx) + Math.abs(my);
+  if (!P.air || P.grind) return;
+  if (act.mode === 'charge' || act.mode === 'grab') { if (act.moved > 16) { act.mode = 'pad'; P.charging = false; } else return; }
+  if (act.mode === 'pad') {
+    // il rider ruota come muovi il dito: orizzontale = spin, verticale = flip
+    var k = 0.0135;
+    padSpin += mx * k; padFlip += my * k;
+    padVS = lerp(padVS, mx * k * 1000 / dtm, 0.45); padVF = lerp(padVF, my * k * 1000 / dtm, 0.45);
+    tutorialEvent('spin');
+  }
 }
 function pressEnd(id) {
-  var t = touches[id]; delete touches[id];
-  if (!t || t.mode === 'none') return;
-  if (!t.moved && now() - t.st < 190 && state === 'play' && (!P.air || P.grind || P.coyote > 0)) ollie();
+  if (id === joy.id) { joy.id = null; joy.x = joy.y = 0; placeJoy(0, 0, 0, 0, false); return; }
+  if (id !== act.id) return;
+  act.id = null; jumpEl.classList.remove('down');
+  if (act.mode === 'charge' && state === 'play' && !P.crashed && canJump()) ollie();
+  if (act.mode === 'pad' && now() - act.lt < 90) { P.spinRate = clamp(padVS, -13, 13); P.flipRate = clamp(padVF, -12, 12); P.flick = true; }
+  act.mode = ''; P.charging = false;
 }
 canvas.addEventListener('touchstart', function (e) { e.preventDefault(); for (var i = 0; i < e.changedTouches.length; i++) { var t = e.changedTouches[i]; pressStart(t.identifier, t.clientX, t.clientY); } }, { passive: false });
 canvas.addEventListener('touchmove', function (e) { e.preventDefault(); for (var i = 0; i < e.changedTouches.length; i++) { var t = e.changedTouches[i]; pressMove(t.identifier, t.clientX, t.clientY); } }, { passive: false });
@@ -1031,19 +1233,38 @@ window.addEventListener('mousemove', function (e) { if (mouseDown) pressMove('m'
 window.addEventListener('mouseup', function () { if (mouseDown) { mouseDown = false; pressEnd('m'); } });
 window.addEventListener('keydown', function (e) {
   if (e.repeat) return;
-  if (e.code === 'Space') { e.preventDefault(); if (state === 'menu' || state === 'over') { startGame(); return; } ensureAudio(); ollie(); }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (state === 'menu' || state === 'over') { startGame(); return; }
+    ensureAudio();
+    if (state === 'play' && canJump()) { keyJump = true; P.charging = true; P.chargeT = 0; }
+  }
   if (e.code === 'ArrowLeft') keySteer = -1;
   if (e.code === 'ArrowRight') keySteer = 1;
-  if (e.code === 'ArrowUp') queueFlip(-1);
-  if (e.code === 'ArrowDown') queueFlip(1);
+  if (e.code === 'ArrowUp') keyFlip = -1;
+  if (e.code === 'ArrowDown') keyFlip = 1;
   if (e.code === 'KeyA') { keyGrab = 'method'; tutorialEvent('grab'); }
   if (e.code === 'KeyD') { keyGrab = 'indy'; tutorialEvent('grab'); }
   if (e.code === 'Escape' || e.code === 'KeyP') togglePause();
 });
 window.addEventListener('keyup', function (e) {
+  if (e.code === 'Space' && keyJump) { keyJump = false; if (state === 'play' && canJump()) ollie(); P.charging = false; }
   if ((e.code === 'ArrowLeft' && keySteer < 0) || (e.code === 'ArrowRight' && keySteer > 0)) keySteer = 0;
+  if ((e.code === 'ArrowUp' && keyFlip < 0) || (e.code === 'ArrowDown' && keyFlip > 0)) keyFlip = 0;
   if ((e.code === 'KeyA' && keyGrab === 'method') || (e.code === 'KeyD' && keyGrab === 'indy')) keyGrab = null;
 });
+var lastBtn = '';
+function updButtons() {
+  var p = P, playing = state === 'play' && !p.crashed;
+  var lbl = !playing ? '' : (p.air && !p.grind && p.coyote <= 0) ? (grabInput() ? 'grab' : 'air') : 'jump';
+  if (lbl !== lastBtn) {
+    lastBtn = lbl;
+    jumpLbl.textContent = lbl === 'air' ? 'Ruota' : lbl === 'grab' ? 'Grab' : 'Salta';
+    jumpSub.textContent = lbl === 'air' ? 'trascina · tieni = grab' : lbl === 'grab' ? 'lascia prima di atterrare' : 'tieni = più alto';
+  }
+  var c = p.charging && canJump() ? clamp(p.chargeT / 0.35, 0, 1) : 0;
+  jumpEl.style.setProperty('--c', c.toFixed(3));
+}
 
 // ============================================================ audio sintetizzato
 var AU = { ctx: null, master: null, noise: null, loops: {} };
@@ -1121,12 +1342,15 @@ function popup(title, sub, tag) {
 // ============================================================ fisica del rider
 function startAir() {
   var p = P;
-  p.air = true; p.airT = 0; p.toSpeed = p.speed; p.spin0 = p.spin; p.flip = 0; p.flipTo = 0; p.predT = 0; p.tti = 1;
-  p.trick = { grabs: {}, flips: 0 };
+  p.air = true; p.airT = 0; p.toSpeed = p.speed; p.spin0 = p.spin; p.flip0 = p.flip; p.spinRate = 0; p.flipRate = 0; p.predT = 0; p.tti = 1;
+  p.trick = { grabs: {} };
+  trailGap();
+  if (act.mode === 'charge' && act.id !== null && p.coyote <= 0) { act.mode = 'pad'; p.charging = false; }
 }
 function ollie() {
   var p = P; if (state !== 'play' || p.crashed) return;
-  var pop = 7.2;
+  var pop = 6.6 + 3.2 * clamp(p.chargeT / 0.35, 0, 1);
+  if (!p.charging) pop = 6.6;
   if (p.grind) {
     var r = p.grind, dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
     p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + pop; p.vz = dir.z * p.speed;
@@ -1136,29 +1360,26 @@ function ollie() {
     p.vx = dx * p.speed; p.vz = dz * p.speed; p.vy = p.vyG + pop;
     startAir();
   } else if (p.coyote > 0) {
-    p.vy += pop + (p.lipPop ? 2.2 : 0); p.coyote = 0;
+    p.vy += pop * 0.8 + (p.lipPop ? 2.4 : 0); p.coyote = 0;
     if (p.lipPop) popup('Pop!', '', 'perfect');
   } else return;
+  p.charging = false; p.chargeT = 0;
   sfx('jump');
-  burst(p.x, p.y + 0.1, p.z, 10, 2.5, 1);
+  burst(p.x, p.y + 0.1, p.z, 12, 2.5, 1);
   tutorialEvent('ollie');
-}
-function queueFlip(dir) {
-  var p = P; if (state !== 'play' || !p.air || p.grind || p.crashed) return;
-  if (p.flipTo !== 0 && Math.sign(p.flipTo) !== dir) return;
-  p.flipTo += dir * TAU; sfx('whoosh');
-  tutorialEvent('flip');
 }
 function updatePlayer(dt) {
   var p = P;
   if (p.inv > 0) p.inv -= dt;
   if (p.crashed) { updateRag(dt); return; }
+  if (p.charging) p.chargeT += dt;
   var dm = diff(p.z);
   if (p.grind) updGrind(dt);
   else if (!p.air) updGround(dt, dm);
   else updAir(dt);
   if (p.crashed) return;
-  var ct = 0.3 + Math.abs(p.yawRate) * 0.08;
+  var ct = 0.3 + Math.abs(p.yawRate) * 0.08 + p.tuck * 0.35;
+  if (p.charging && canJump()) ct = 0.45 + 0.5 * clamp(p.chargeT / 0.35, 0, 1);
   if (p.air) ct = 0.18; if (p.grind) ct = 0.42;
   p.squash *= Math.exp(-dt * 7);
   p.crouch = lerp(p.crouch, ct + p.squash, damp(14, dt));
@@ -1167,27 +1388,31 @@ function updatePlayer(dt) {
   if (state === 'play') collide();
   if (!p.air && !p.grind) {
     p.sprayT -= dt;
-    var rate = clamp((p.speed - 8) / 22, 0, 1) * (0.5 + Math.abs(p.yawRate) * 0.5);
+    var rate = clamp((p.speed - 8) / 22, 0, 1) * (0.5 + Math.abs(p.yawRate) * 0.5) + (p.brake || 0);
     if (p.sprayT <= 0 && rate > 0.05) {
       p.sprayT = 0.012 / (0.2 + rate);
       var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw), side = p.yawRate > 0 ? -1 : 1;
       part(p.x - dx * 0.6 + dz * 0.15 * side, p.y + 0.05, p.z - dz * 0.6 - dx * 0.15 * side, -dx * p.speed * 0.15 + dz * side * (1 + rate * 3), 1.2 + Math.random() * 2.5 * rate, -dz * p.speed * 0.15 - dx * side * (1 + rate * 3), 0.45 + Math.random() * 0.4, 0.18 + Math.random() * 0.35 * rate);
     }
+    p.trailD += p.speed * dt;
+    if (p.trailD > 0.35) { p.trailD = 0; trailAdd(p.x, Hgt(p.x, p.z) + 0.035, p.z, p.yaw); }
   }
   if (p.grind && Math.random() < 0.8) part(p.x + (Math.random() - 0.5) * 0.4, p.y, p.z, (Math.random() - 0.5) * 4, 1 + Math.random() * 3, -2 + (Math.random() - 0.5) * 3, 0.3, 0.12, 'spark');
 }
 function updGround(dt, dm) {
-  var p = P;
-  var steer = state === 'play' ? steerInput() : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
-  if (steer !== 0 && state === 'play') tutorialEvent('steer');
+  var p = P, j = joyInput(), mul = speedMul();
+  var steer = state === 'play' ? j.x : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
+  if (Math.abs(steer) > 0.2 && state === 'play') tutorialEvent('steer');
+  var tuck = state === 'play' ? clamp(-j.y, 0, 1) : 0, brake = state === 'play' ? clamp(j.y, 0, 1) : 0;
+  p.tuck = lerp(p.tuck, tuck, damp(6, dt)); p.brake = brake;
   var e = 0.25, hx = (Hgt(p.x + e, p.z) - Hgt(p.x - e, p.z)) / (2 * e), hz = (Hgt(p.x, p.z + e) - Hgt(p.x, p.z - e)) / (2 * e);
   p.yawRate = lerp(p.yawRate, steer * 1.9, damp(7, dt));
-  p.yaw += (p.yawRate - hx * 1.3 - (steer === 0 ? p.yaw * 0.5 : 0)) * dt;
+  p.yaw += (p.yawRate - hx * 1.3 - (Math.abs(steer) < 0.05 ? p.yaw * 0.5 : 0)) * dt;
   p.yaw = clamp(p.yaw, -1.3, 1.3);
   var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
   var sAlong = -(hx * dx + hz * dz), sinA = sAlong / Math.sqrt(1 + sAlong * sAlong), cosA = 1 / Math.sqrt(1 + sAlong * sAlong);
-  var acc = G * sinA * 0.7 * (1 + 0.3 * dm) - 0.9 - 0.0085 * (1 - 0.2 * dm) * p.speed * p.speed - Math.abs(p.yawRate) * p.speed * 0.06;
-  p.speed = clamp(p.speed + acc * dt, 4, MAXS);
+  var acc = G * sinA * 0.7 * (1 + 0.3 * dm) * mul - 0.9 - 0.0085 / mul * (1 - 0.2 * dm) * (1 - 0.25 * p.tuck) * p.speed * p.speed - Math.abs(p.yawRate) * p.speed * 0.06 - brake * 9;
+  p.speed = clamp(p.speed + acc * dt, 4, maxSpeed());
   var nx = p.x + dx * p.speed * cosA * dt, nz = p.z + dz * p.speed * cosA * dt, ny = Hgt(nx, nz);
   var pred = p.y + p.vyG * dt - 0.5 * G * dt * dt;
   if (ny < pred - 0.0006) {
@@ -1208,9 +1433,11 @@ function isNearLip(x, z) {
 function updAir(dt) {
   var p = P, playing = state === 'play';
   p.airT += dt; if (p.coyote > 0) p.coyote -= dt;
-  var sIn = playing ? spinInput() : 0, gb = playing ? grabInput() : null;
+  var j = playing ? joyInput() : { x: 0, y: 0 };
+  // tenendo fermo il dito a destra: grab (in alto = Method, in basso = Indy)
+  if (playing && act.id !== null && act.mode === 'pad' && act.moved < 16 && now() - act.st > 170) { act.mode = 'grab'; act.grab = act.sy < H_ * 0.5 ? 'method' : 'indy'; tutorialEvent('grab'); }
+  var gb = playing ? grabInput() : null;
   if (gb) { p.grab = gb; p.lastGrab = gb; p.trick.grabs[gb] = (p.trick.grabs[gb] || 0) + dt; } else p.grab = null;
-  if (sIn && playing) tutorialEvent('spin');
   // previsione dell'atterraggio
   p.predT -= dt;
   if (p.predT <= 0) {
@@ -1219,16 +1446,28 @@ function updAir(dt) {
     while (tt < 3) { qvy -= G * 0.025; qx += p.vx * 0.025; qy += qvy * 0.025; qz += p.vz * 0.025; tt += 0.025; if (qy <= Hgt(qx, qz)) break; }
     p.tti = tt; p.landX = qx; p.landZ = qz; p.landY = Hgt(qx, qz);
   }
-  var assist = 1 - clamp(p.tti / 0.55, 0, 1);
-  p.spinRate = lerp(p.spinRate, sIn * (gb ? 6.5 : 9.6), damp(sIn ? 16 : 6, dt));
-  p.spin += p.spinRate * dt;
-  if (!sIn) { var tgt = Math.round(p.spin / PI) * PI, dsp = tgt - p.spin; p.spin += clamp(dsp, -1.5, 1.5) * dt * (2.2 + 9 * assist); }
-  var df = p.flipTo - p.flip;
-  if (Math.abs(df) > 1e-3) {
-    var fr = 9.2 * (gb ? 0.8 : 1);
-    var stepF = Math.sign(df) * Math.min(Math.abs(df), fr * dt * (Math.abs(df) < 0.8 ? 0.6 + assist * 1.5 : 1));
-    var before = Math.floor(Math.abs(p.flip) / PI); p.flip += stepF;
-    if (Math.floor(Math.abs(p.flip) / PI) > before) sfx('whoosh');
+  // il joystick fa ruotare solo nei salti veri, non nei piccoli sbalzi mentre curvi
+  var joyOk = p.airT > 0.12 && p.airT + p.tti > 0.5;
+  if (!joyOk) j = { x: 0, y: 0 };
+  var joyOn = Math.abs(j.x) > 0.18 || Math.abs(j.y) > 0.18, padOn = act.mode === 'pad' && act.id !== null;
+  if (joyOn || padOn) p.flick = false;
+  var gm = gb ? 0.7 : 1;
+  if (Math.abs(j.x) > 0.18) p.spinRate = lerp(p.spinRate, j.x * 10.5 * gm, damp(10, dt));
+  if (Math.abs(j.y) > 0.18) p.flipRate = lerp(p.flipRate, j.y * 9.5 * gm, damp(10, dt));
+  if (joyOn) tutorialEvent('spin');
+  if (padOn) { p.spinRate *= Math.exp(-dt * 25); p.flipRate *= Math.exp(-dt * 25); }
+  var ds = padSpin + p.spinRate * dt, dfl = padFlip + p.flipRate * dt;
+  padSpin = 0; padFlip = 0;
+  p.spin += ds; p.flip += dfl;
+  if (Math.floor(Math.abs(p.flip - p.flip0) / PI) !== Math.floor(Math.abs(p.flip - p.flip0 - dfl) / PI)) sfx('whoosh');
+  if (!joyOn && !padOn) {
+    // nessun comando: lo slancio si esaurisce e vicino a terra il rider si raddrizza da solo (ma solo se è quasi dritto)
+    var assist = 1 - clamp(p.tti / 0.5, 0, 1);
+    var dec = (p.flick ? 1.4 : 12) + assist * 7;
+    p.spinRate *= Math.exp(-dt * dec); p.flipRate *= Math.exp(-dt * dec);
+    var ts = Math.round(p.spin / PI) * PI, tf = Math.round(p.flip / TAU) * TAU;
+    p.spin += clamp((ts - p.spin) * (1.5 + 8 * assist), -3.5, 3.5) * dt;
+    p.flip += clamp((tf - p.flip) * (1.5 + 8 * assist), -3.2, 3.2) * dt;
   }
   p.vy -= G * dt;
   var py = p.y;
@@ -1238,9 +1477,8 @@ function updAir(dt) {
       var r = S.rails[i]; if (p.z < r.z1 || p.z > r.z2) continue;
       var t = (p.z - r.z1) / (r.z2 - r.z1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
       if (Math.abs(p.x - rx) < 0.6 && py >= ry - 0.08 && p.y <= ry + 0.05) {
-        var se = Math.abs(wrapA((p.spin - Math.round(p.spin / (PI / 2)) * (PI / 2))));
-        var fe = Math.abs(p.flipTo - p.flip) + Math.abs(wrapA(p.flip));
-        if (se < 0.5 && fe < 0.6) { mountRail(r, t); return; }
+        var se = Math.abs(wrapA(p.spin - Math.round(p.spin / (PI / 2)) * (PI / 2)));
+        if (se < 0.5 && Math.abs(wrapA(p.flip)) < 0.6) { mountRail(r, t); return; }
       }
     }
   }
@@ -1250,21 +1488,20 @@ function updAir(dt) {
 function spinErr(s) { var e = ((s % PI) + PI) % PI; return Math.min(e, PI - e); }
 function land() {
   var p = P, playing = state === 'play';
-  var sErr = spinErr(p.spin), fRem = Math.abs(p.flipTo - p.flip), fErr = Math.abs(wrapA(p.flip)) + fRem;
-  if (playing && p.inv <= 0 && (sErr > 0.55 || fErr > 0.7 || (p.grab && (sErr > 0.3 || fErr > 0.3)))) {
-    crash(p.grab ? 'Hai tenuto il grab troppo a lungo' : fErr > 0.7 ? 'Flip non chiuso' : 'Atterraggio storto'); return;
+  var sErr = spinErr(p.spin), fErr = Math.abs(wrapA(p.flip));
+  if (playing && p.inv <= 0 && (sErr > 0.55 || fErr > 0.6 || (p.grab && (sErr > 0.3 || fErr > 0.3)))) {
+    crash(p.grab ? 'Hai tenuto il grab troppo a lungo' : fErr > 0.6 ? 'Flip non chiuso' : 'Atterraggio storto'); return;
   }
   var perfectish = sErr < 0.1 && fErr < 0.12 && !p.grab;
-  var nSpin = Math.round((p.spin - p.spin0) / PI), nFlip = Math.round(Math.abs(p.flipTo) / TAU), flipDir = p.flipTo < 0 ? -1 : 1;
-  p.spin = Math.round(p.spin / PI) * PI; p.spinRate = 0; p.flip = 0; p.flipTo = 0;
+  var nSpin = Math.round((p.spin - p.spin0) / PI), fl = p.flip - p.flip0, nFlip = Math.round(Math.abs(fl) / TAU), flipDir = fl < 0 ? -1 : 1;
+  p.spin = Math.round(p.spin / PI) * PI; p.spinRate = 0; p.flip = 0; p.flipRate = 0;
   p.air = false;
   var hs = Math.hypot(p.vx, p.vz);
-  var yaw = Math.atan2(p.vx, p.vz);
-  p.yaw = clamp(yaw, -1.3, 1.3);
+  p.yaw = clamp(Math.atan2(p.vx, p.vz), -1.3, 1.3);
   var n = normalAt(p.x, p.z, tmpV);
   var vIn = -(p.vx * n.x + p.vy * n.y + p.vz * n.z);
   var sketchy = !perfectish && (sErr > 0.35 || fErr > 0.4 || !!p.grab);
-  p.speed = clamp(hs * (sketchy ? 0.82 : 0.97), 4, Math.min(MAXS, Math.max(p.toSpeed * 1.12, 18)));
+  p.speed = clamp(hs * (sketchy ? 0.82 : 0.97), 4, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.12, 18)));
   var dx = Math.sin(p.yaw), dz = Math.cos(p.yaw);
   p.vyG = (Hgt(p.x + dx * 0.2, p.z + dz * 0.2) - p.y) / 0.2 * p.speed;
   var imp = clamp(vIn / 20, 0.08, 1);
@@ -1273,6 +1510,7 @@ function land() {
   burst(p.x, p.y + 0.05, p.z, 8 + Math.round(imp * 30), 3 + imp * 6, 1);
   if (playing) scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy);
   p.grab = null;
+  if (act.mode === 'pad' || act.mode === 'grab') act.mode = 'used';
 }
 var SPIN_PTS = [0, 300, 900, 1800, 3000, 4500, 6300, 8400];
 function scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy) {
@@ -1282,6 +1520,7 @@ function scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy) {
   var sw = (Math.round(P.spin / PI) % 2 !== 0);
   if (nFlip > 0) { var nm = flipDir < 0 ? 'Backflip' : 'Frontflip'; parts.push(nFlip === 1 ? nm : nFlip === 2 ? 'Double ' + nm : nFlip === 3 ? 'Triple ' + nm : nFlip + 'x ' + nm); pts += 1500 * nFlip * (nFlip + 1) / 2; }
   if (a > 0) { parts.push((nSpin > 0 ? 'Frontside ' : 'Backside ') + (a * 180)); pts += SPIN_PTS[Math.min(a, 7)] + Math.max(0, a - 7) * 2400; }
+  if (nFlip > 0 && a > 0) pts *= 1.3;
   for (var k in t.grabs) { var tm = t.grabs[k]; if (tm > 0.12) { parts.push(GRAB_NAMES[k]); pts += 250 + Math.round(tm * 800); } }
   if (P.airT > 1.0) { parts.push(P.airT > 1.8 ? 'Huge Air' : 'Big Air'); pts += Math.round(P.airT * 250); }
   if (!parts.length) return;
@@ -1289,9 +1528,9 @@ function scoreTrick(nSpin, nFlip, flipDir, perfectish, sketchy) {
   var perfect = perfectish && (a > 0 || nFlip > 0 || Object.keys(t.grabs).length > 0);
   if (perfect) pts *= 1.2;
   if (sketchy) pts *= 0.5;
-  pts = Math.round(pts / 10) * 10;
+  pts = Math.round(pts * (1 + S.tier * 0.1) / 10) * 10;
   addCombo(pts, parts.join(' + '), perfect ? 'perfect' : sketchy ? 'sketchy' : '');
-  if (perfect) { sfx('perfect'); P.speed = Math.min(MAXS, P.speed + 1.5); }
+  if (perfect) { sfx('perfect'); P.speed = Math.min(maxSpeed(), P.speed + 1.5); }
   if (a > 0 || nFlip > 0) tutorialEvent('land');
 }
 function addCombo(pts, label, tag) {
@@ -1309,28 +1548,29 @@ function bankCombo() {
 function mountRail(r, t) {
   var p = P;
   var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
-  p.speed = clamp(p.vx * dir.x + p.vy * dir.y + p.vz * dir.z, 8, Math.min(MAXS, Math.max(p.toSpeed * 1.1, 16)));
+  p.speed = clamp(p.vx * dir.x + p.vy * dir.y + p.vz * dir.z, 8, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.1, 16)));
   var slide = spinErr(p.spin) > 0.8;
   p.spin = Math.round(p.spin / (PI / 2)) * (PI / 2); p.spinRate = 0;
   if (state === 'play') {
-    var nSpin = Math.round((p.spin - p.spin0) / PI);
-    scoreTrick(slide ? 0 : nSpin, Math.round(Math.abs(p.flipTo) / TAU), p.flipTo < 0 ? -1 : 1, false, false);
+    var nSpin = Math.round((p.spin - p.spin0) / PI), fl = p.flip - p.flip0;
+    scoreTrick(slide ? 0 : nSpin, Math.round(Math.abs(fl) / TAU), fl < 0 ? -1 : 1, false, false);
   }
-  p.flip = 0; p.flipTo = 0;
+  p.flip = 0; p.flipRate = 0;
   p.grind = r; p.grindT = 0; p.grindPos = t; p.grindSlide = slide; p.air = false; p.grab = null; p.squash = 0.3;
   p.x = lerp(r.x1, r.x2, t); p.y = lerp(r.y1, r.y2, t); p.z = lerp(r.z1, r.z2, t); p.yaw = r.yaw;
+  if (act.mode === 'pad' || act.mode === 'grab') act.mode = 'used';
   sfx('rail');
 }
 function endGrind() {
   var p = P, r = p.grind, tm = p.grindT;
   p.grind = null;
-  if (p.grindSlide) p.spin = Math.round(p.spin / PI) * PI + (p.spin > Math.round(p.spin / PI) * PI ? PI : 0);
+  if (p.grindSlide) p.spin += PI / 2;
   p.spin = Math.round(p.spin / PI) * PI;
   if (state === 'play' && tm > 0.2) addCombo(Math.round((200 + tm * 600) / 10) * 10, p.grindSlide ? 'Boardslide' : (r.kind === 'box' ? '50-50 Box' : '50-50 Grind'), '');
 }
 function updGrind(dt) {
   var p = P, r = p.grind, len = Math.hypot(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1), sl = (r.y1 - r.y2) / len;
-  p.speed = clamp(p.speed + (G * sl * 0.6 - 0.8) * dt, 6, MAXS);
+  p.speed = clamp(p.speed + (G * sl * 0.6 - 0.8) * dt, 6, maxSpeed());
   p.grindPos += p.speed * dt / len; p.grindT += dt;
   if (p.grindPos >= 1) {
     var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
@@ -1361,23 +1601,26 @@ var shakeAmt = 0;
 function crash(reason) {
   var p = P; if (p.crashed) return;
   var vx = p.air ? p.vx : Math.sin(p.yaw) * p.speed, vz = p.air ? p.vz : Math.cos(p.yaw) * p.speed, vy = p.air ? p.vy : p.vyG;
-  p.crashed = true; p.crashT = 0; p.air = false; p.grind = null; p.grab = null; p.trick = null; p.flip = 0; p.flipTo = 0;
-  var q = rider.root.quaternion.clone();
-  S.rag = {
-    body: { p: new THREE.Vector3(p.x, p.y + 0.6, p.z), v: new THREE.Vector3(vx * 0.7, Math.max(vy, 0) * 0.4 + 4, vz * 0.7), q: q.clone(), w: new THREE.Vector3((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, -8 - Math.random() * 5) },
-    board: { p: new THREE.Vector3(p.x, p.y + 0.1, p.z), v: new THREE.Vector3(vx * 0.9 + (Math.random() - 0.5) * 3, Math.max(vy, 0) * 0.4 + 6, vz * 0.9), q: q.clone(), w: new THREE.Vector3(9 + Math.random() * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 10) }
-  };
-  scene.attach(rider.board); scene.attach(rider.body);
+  var vel = new THREE.Vector3(vx, Math.max(vy, -6), vz), fwd = new THREE.Vector3(vx, 0, vz).normalize();
+  // ragdoll dalla posa attuale
+  updRiderVisual(0);
+  S.rag = makeRagdoll(vel.clone().multiplyScalar(0.8), fwd);
+  scene.attach(rider.board);
+  scene.add(rider.body); rider.body.position.set(0, 0, 0); rider.body.quaternion.identity();
+  S.board = { p: rider.board.position.clone(), v: new THREE.Vector3(vx * 0.9 + (Math.random() - 0.5) * 3, Math.max(vy, 0) * 0.4 + 5, vz * 0.9), q: rider.board.quaternion.clone(), w: new THREE.Vector3(9 + Math.random() * 8, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 10) };
+  p.crashed = true; p.crashT = 0; p.air = false; p.grind = null; p.grab = null; p.trick = null; p.flip = 0; p.flipRate = 0; p.spinRate = 0; p.charging = false;
+  act.mode = act.id !== null ? 'used' : '';
   if (combo.n > 0) popup('Combo persa', '', 'lost');
   combo.pts = 0; combo.n = 0; combo.t = 0;
   popup('Wipeout!', reason, 'lost');
   shakeAmt = 0.9; S.crashes++; AV.z += 6 + Math.min(8, runMeters() * 0.004);
   sfx('crash');
   burst(p.x, p.y + 0.3, p.z, 46, 7, 2);
+  trailGap();
   (S.crashLog = S.crashLog || []).push(reason);
 }
 var qTmp = new THREE.Quaternion();
-function stepRag(o, dt, off) {
+function stepRigid(o, dt, off) {
   o.v.y -= G * dt; o.p.addScaledVector(o.v, dt);
   var w = o.w.length();
   if (w > 1e-4) { qTmp.setFromAxisAngle(tmpV.copy(o.w).multiplyScalar(1 / w), w * dt); o.q.premultiply(qTmp); }
@@ -1388,14 +1631,18 @@ function stepRag(o, dt, off) {
     o.v.x *= 1 - 2.2 * dt; o.v.z *= 1 - 1.6 * dt; o.w.multiplyScalar(1 - 3 * dt);
   }
 }
+var ragDust = 0;
 function updateRag(dt) {
-  var p = P, r = S.rag; p.crashT += dt;
-  stepRag(r.body, dt, 0.25); stepRag(r.board, dt, 0.04);
-  if (state === 'play' && p.crashT > 1.3 && (r.body.v.length() < 3 || p.crashT > 2.4)) respawn();
+  var p = P; p.crashT += dt;
+  stepRagdoll(S.rag, dt); stepRigid(S.board, dt, 0.04);
+  var sp = ragSpeed(S.rag), c = ragCenter();
+  ragDust -= dt;
+  if (sp > 3 && ragDust <= 0 && c.y - Hgt(c.x, c.z) < 0.4) { ragDust = 0.05; burst(c.x, c.y, c.z, 3, 2.5, 0.5); }
+  if (state === 'play' && p.crashT > 1.4 && (sp < 1.2 || p.crashT > 2.6)) respawn();
 }
 function respawn() {
-  var p = P, r = S.rag, z = r.body.p.z, cx = cxAt(z), hw = hwAt(z);
-  var x = clamp(r.body.p.x, cx - hw + 2, cx + hw - 2);
+  var p = P, c = ragCenter(), z = c.z, cx = cxAt(z), hw = hwAt(z);
+  var x = clamp(c.x, cx - hw + 2, cx + hw - 2);
   for (var tries = 0; tries < 40; tries++) {
     var bad = false;
     for (var i = 0; i < S.rocks.length; i++) { var o = S.rocks[i]; if (Math.abs(o.z - z) < 4 && Math.abs(o.x - x) < o.r + 1.2) bad = true; }
@@ -1403,9 +1650,9 @@ function respawn() {
     for (var d = 0; d < S.drops.length; d++) { var dd = S.drops[d]; if (z > dd.z0 - 2 && z < dd.z0 + 4) bad = true; }
     if (!bad) break; z += 1.5;
   }
-  p.x = x; p.z = z; p.y = Hgt(x, z); p.yaw = 0; p.yawRate = 0; p.speed = 7; p.vyG = 0; p.spin = 0; p.stance = 0;
+  p.x = x; p.z = z; p.y = Hgt(x, z); p.yaw = 0; p.yawRate = 0; p.speed = 7; p.vyG = 0; p.spin = 0; p.flip = 0;
   p.crashed = false; p.inv = 1.5; p.air = false; p.squash = 0.5;
-  S.rag = null;
+  S.rag = null; S.board = null;
   resetRiderParts();
   burst(p.x, p.y + 0.2, p.z, 14, 3, 1);
 }
@@ -1418,10 +1665,10 @@ function resetRiderParts() {
 // ============================================================ valanga
 function updAval(dt) {
   if (state !== 'play') return;
-  var m = runMeters();
+  var m = runMeters(), mul = speedMul();
   var cur = P.crashed ? 0 : (P.air ? Math.max(0, P.vz) : P.speed * Math.cos(P.yaw));
   AV.ema += (cur - AV.ema) * dt / 5;
-  AV.speed = clamp(AV.ema * 0.94 + 0.7, 9 + Math.min(9, m * 0.002), 10 + Math.min(12, m * 0.0025));
+  AV.speed = clamp(AV.ema * 0.94 + 0.7, (9 + Math.min(9, m * 0.002)) * (1 + (mul - 1) * 0.8), (10 + Math.min(12, m * 0.0025)) * mul);
   AV.z += AV.speed * dt;
   var gap = focusZ() - AV.z;
   if (gap > 45) AV.z = focusZ() - 45;
@@ -1436,13 +1683,12 @@ function caught() {
 
 // ============================================================ tutorial
 var TUT = [
-  { ev: 'steer', text: '<b>Tieni premuto</b> a sinistra o a destra dello schermo per curvare.' },
-  { ev: 'ollie', text: '<b>Tocca veloce</b> lo schermo (o swipe in su) per saltare. Sul bordo di un kicker salti di più.' },
-  { ev: 'spin', text: 'In aria <b>tieni premuto</b> a sinistra o a destra per girare: 360, 540, 720…' },
-  { ev: 'land', text: 'Lascia il dito prima di toccare terra e <b>atterra dritto</b>. Il cerchio verde indica dove atterri.' },
-  { ev: 'flip', text: 'In aria <b>swipe in su</b> = backflip, <b>swipe in giù</b> = frontflip. Serve un salto alto!' },
-  { ev: 'grab', text: 'In aria <b>swipe a sinistra o a destra</b> per un grab, tieni il dito per tenerlo.' },
-  { ev: 'done', text: 'Trick uno dopo l\'altro = <b>combo</b>. E occhio alla valanga dietro di te!' }
+  { ev: 'steer', text: 'Usa il <b>joystick</b> a sinistra per curvare. Spingi in avanti per andare più veloce, indietro per frenare.' },
+  { ev: 'ollie', text: 'Tocca il <b>lato destro</b> per saltare. Tieni premuto per caricare e salta sul bordo dei kicker.' },
+  { ev: 'spin', text: 'In aria <b>trascina il dito</b> a destra: il rider gira come muovi il dito. Orizzontale = spin, verticale = flip.' },
+  { ev: 'land', text: 'Torna dritto prima di toccare terra. Il <b>cerchio verde</b> dice che l\'atterraggio va bene.' },
+  { ev: 'grab', text: 'In aria <b>tieni fermo il dito</b> a destra per un grab (in alto Method, in basso Indy).' },
+  { ev: 'done', text: 'Anche il joystick in aria fa girare il rider. Ogni 450 m si va <b>più veloci</b>: occhio alla valanga!' }
 ];
 var tutStep = 0, tutTimer = 0, hintEl = $('hint'), hintNow = '';
 function tutorialEvent(ev) {
@@ -1457,6 +1703,7 @@ function updateTutorial(dt) {
   if (tutTimer > 0.8) showHint(step.text);
   if (step.ev === 'done' && tutTimer > 6) tutStep++;
   if (step.ev !== 'done' && step.ev !== 'steer' && step.ev !== 'ollie' && tutTimer > 14) { tutStep++; tutTimer = 0; }
+  if (step.ev === 'done' && tutTimer > 9) tutStep++;
 }
 function showHint(t) {
   if (t === hintNow) return; hintNow = t;
@@ -1470,11 +1717,11 @@ function startGame() {
   S.diffStart = P.z + 40; S.startZ = P.z; S.flatUntil = 40;
   AV.z = P.z - 42;
   state = 'play'; stateT = 0;
-  touches = {};
+  resetInput();
   tutStep = 0; tutTimer = 0;
   popsEl.innerHTML = '';
   ['menu', 'over', 'pause'].forEach(function (id) { $(id).classList.add('hidden'); });
-  $('hud').classList.remove('hidden'); $('aval').classList.remove('hidden');
+  $('hud').classList.remove('hidden'); $('aval').classList.remove('hidden'); $('controls').classList.remove('hidden');
 }
 function gameOver() {
   state = 'over';
@@ -1491,7 +1738,7 @@ function gameOver() {
   $('oCoins').textContent = fmt(S.coinN);
   $('oBest').textContent = S.bestTrick.pts ? S.bestTrick.name + ' · ' + fmt(S.bestTrick.pts) : 'Nessuno';
   $('bestOver').textContent = fmt(save.best);
-  $('hud').classList.add('hidden'); $('aval').classList.add('hidden'); $('combo').classList.add('hidden');
+  $('hud').classList.add('hidden'); $('aval').classList.add('hidden'); $('combo').classList.add('hidden'); $('controls').classList.add('hidden');
   $('over').classList.remove('hidden');
   showHint('');
 }
@@ -1500,11 +1747,11 @@ function showMenu() {
   newWorld();
   $('bestMenu').textContent = fmt(save.best);
   $('menu').classList.remove('hidden'); $('over').classList.add('hidden'); $('pause').classList.add('hidden');
-  $('hud').classList.add('hidden'); $('aval').classList.add('hidden'); $('combo').classList.add('hidden');
+  $('hud').classList.add('hidden'); $('aval').classList.add('hidden'); $('combo').classList.add('hidden'); $('controls').classList.add('hidden');
   showHint('');
 }
 function togglePause() {
-  if (state === 'play') { state = 'paused'; $('pause').classList.remove('hidden'); touches = {}; if (AU.ctx) AU.ctx.suspend(); }
+  if (state === 'play') { state = 'paused'; $('pause').classList.remove('hidden'); resetInput(); if (AU.ctx) AU.ctx.suspend(); }
   else if (state === 'paused') { state = 'play'; $('pause').classList.add('hidden'); if (AU.ctx) AU.ctx.resume(); }
 }
 function totalScore() { return Math.round(S.bank + runMeters() * 2); }
@@ -1526,12 +1773,16 @@ function update(dt) {
   updAval(dt);
   if (state === 'play' && combo.n > 0 && !P.air && !P.grind && !P.crashed) { combo.t -= dt; if (combo.t <= 0) bankCombo(); }
   if (state === 'play' && !P.air && !P.crashed && P.speed > S.maxSpeed) S.maxSpeed = P.speed;
+  if (state === 'play') {
+    var tier = Math.floor(runMeters() / 450);
+    if (tier > S.tier) { S.tier = tier; popup('Più veloce!', 'Livello ' + (tier + 1), 'bank'); sfx('bank'); shakeAmt = Math.max(shakeAmt, 0.2); }
+  }
 }
 
 // ============================================================ camera
 var camPos = new THREE.Vector3(), camLook = new THREE.Vector3(), camYaw = 0, camY = 0, camT = 0;
 function focusPos(out) {
-  if (P.crashed && S.rag) return out.copy(S.rag.body.p);
+  if (P.crashed && S.rag) return out.copy(ragCenter());
   return out.set(P.x, P.y, P.z);
 }
 var fpos = new THREE.Vector3();
@@ -1564,25 +1815,167 @@ function updCamera(dt, snap) {
   if (shakeAmt > 0.01) { camera.position.x += (Math.random() - 0.5) * shakeAmt; camera.position.y += (Math.random() - 0.5) * shakeAmt; }
   shakeAmt *= Math.pow(0.03, dt);
   camera.lookAt(camLook);
+  var fovT = baseFov + (menu || P.crashed ? 0 : clamp((sp - 20) * 0.45, 0, 11));
+  if (Math.abs(camera.fov - fovT) > 0.05) { camera.fov = lerp(camera.fov, fovT, damp(3, dt || 0.016)); camera.updateProjectionMatrix(); }
+}
+
+// ============================================================ dettagli: solchi della tavola
+var TRN = 320, trPos = new Float32Array(TRN * 2 * 3), trNor = new Float32Array(TRN * 2 * 3), trGeo = new THREE.BufferGeometry();
+for (var ti = 0; ti < TRN * 2; ti++) trNor[ti * 3 + 1] = 1;
+trGeo.setAttribute('position', new THREE.BufferAttribute(trPos, 3)); trGeo.setAttribute('normal', new THREE.BufferAttribute(trNor, 3));
+(function () { var idx = []; for (var i = 0; i < TRN - 1; i++) { var a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } trGeo.setIndex(idx); })();
+var trMesh = new THREE.Mesh(trGeo, new THREE.MeshLambertMaterial({ color: 0xc0d0e6, transparent: true, opacity: 0.45, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }));
+trMesh.frustumCulled = false; trMesh.renderOrder = 1; scene.add(trMesh);
+var trail = [], trDirty = false;
+function trailReset() { trail = []; trDirty = true; }
+function trailAdd(x, y, z, yaw) { trail.push({ x: x, y: y, z: z, lx: Math.cos(yaw), lz: -Math.sin(yaw), w: 0.1 }); if (trail.length > TRN) trail.shift(); trDirty = true; }
+function trailGap() { if (trail.length && trail[trail.length - 1].w > 0) { var l = trail[trail.length - 1]; trail.push({ x: l.x, y: l.y, z: l.z, lx: l.lx, lz: l.lz, w: 0 }); trDirty = true; } }
+function trailBuild() {
+  if (!trDirty) return; trDirty = false;
+  var n = trail.length;
+  for (var i = 0; i < TRN; i++) {
+    var p = trail[Math.min(i, n - 1)] || { x: 0, y: -999, z: 0, lx: 0, lz: 0, w: 0 }, w = i < n ? p.w : 0;
+    if (i > 0 && i < n && trail[i - 1].w === 0) w = 0;
+    var o = i * 6;
+    trPos[o] = p.x - p.lx * w; trPos[o + 1] = p.y; trPos[o + 2] = p.z - p.lz * w;
+    trPos[o + 3] = p.x + p.lx * w; trPos[o + 4] = p.y; trPos[o + 5] = p.z + p.lz * w;
+  }
+  trGeo.attributes.position.needsUpdate = true;
+}
+
+// ============================================================ dettagli: seggiovia
+var GEO2 = {
+  tower: mergeColored([
+    { geo: new THREE.CylinderGeometry(0.22, 0.34, 10, 8).translate(0, 5, 0), color: function () { return new THREE.Color(0x8d98a8); } },
+    { geo: new THREE.BoxGeometry(3.2, 0.3, 0.35).translate(0, 10, 0), color: function () { return new THREE.Color(0xffcf3f); } },
+    { geo: new THREE.CylinderGeometry(0.28, 0.28, 0.12, 12).rotateZ(PI / 2).translate(-1.35, 9.8, 0), color: function () { return new THREE.Color(0x2a3140); } },
+    { geo: new THREE.CylinderGeometry(0.28, 0.28, 0.12, 12).rotateZ(PI / 2).translate(1.35, 9.8, 0), color: function () { return new THREE.Color(0x2a3140); } }
+  ]),
+  chair: function (riders) {
+    var parts = [
+      { geo: new THREE.CylinderGeometry(0.035, 0.035, 2.1, 5).translate(0, -1.05, 0), color: function () { return new THREE.Color(0x5b6474); } },
+      { geo: new THREE.BoxGeometry(1.5, 0.1, 0.55).translate(0, -2.2, 0), color: function () { return new THREE.Color(0xd23b2a); } },
+      { geo: new THREE.BoxGeometry(1.5, 0.6, 0.08).translate(0, -1.9, -0.27), color: function () { return new THREE.Color(0xd23b2a); } },
+      { geo: new THREE.BoxGeometry(1.6, 0.05, 0.05).translate(0, -1.45, 0.2), color: function () { return new THREE.Color(0x5b6474); } }
+    ];
+    var cols = [0x2c62c9, 0x4fe0b0, 0xffcf3f, 0x8a4fff];
+    for (var i = 0; i < riders; i++) {
+      var col = new THREE.Color(cols[(i * 3 + riders) % 4]), x = -0.4 + i * 0.8;
+      parts.push({ geo: new THREE.BoxGeometry(0.34, 0.55, 0.3).translate(x, -1.85, -0.05), color: (function (c) { return function () { return c; }; })(col) });
+      parts.push({ geo: new THREE.SphereGeometry(0.13, 8, 6).translate(x, -1.45, -0.05), color: function () { return new THREE.Color(0xf5f7fb); } });
+      parts.push({ geo: new THREE.BoxGeometry(0.3, 0.12, 0.5).translate(x, -2.15, 0.25), color: function () { return new THREE.Color(0x22325a); } });
+    }
+    return mergeColored(parts);
+  }
+};
+var chairGeos = [GEO2.chair(0), GEO2.chair(1), GEO2.chair(2)];
+var cableMat = new THREE.LineBasicMaterial({ color: 0x3a4250 });
+var lift = { towers: [], lastZ: -200, meshes: [], cable: null, chairs: [] };
+var chairMat = M.tree;
+function liftX(z) { return cxAt(z) + hwAt(z) + 15; }
+function resetLift() {
+  lift.meshes.forEach(function (m) { scene.remove(m); }); lift.meshes = []; lift.towers = []; lift.lastZ = -200;
+  if (lift.cable) { scene.remove(lift.cable); lift.cable.geometry.dispose(); lift.cable = null; }
+  if (!lift.chairs.length) for (var i = 0; i < 22; i++) { var m = new THREE.Mesh(chairGeos[i % 3], chairMat); m.castShadow = false; m.visible = false; scene.add(m); lift.chairs.push(m); }
+}
+function genLift() {
+  var changed = false;
+  while (lift.lastZ < P.z + 330) {
+    lift.lastZ += 44; var z = lift.lastZ, x = liftX(z), y = terrainH(x, z);
+    var m = new THREE.Mesh(GEO2.tower, M.tree); m.position.set(x, y - 0.2, z); m.rotation.y = Math.atan2(liftX(z + 5) - liftX(z - 5), 10); scene.add(m);
+    lift.meshes.push(m); lift.towers.push({ x: x, y: y + 9.8, z: z }); changed = true;
+  }
+  while (lift.towers.length > 2 && lift.towers[1].z < P.z - 80) { lift.towers.shift(); scene.remove(lift.meshes.shift()); changed = true; }
+  if (changed) {
+    var pos = [];
+    for (var s = -1; s <= 1; s += 2) for (var i = 0; i < lift.towers.length - 1; i++) {
+      for (var k = 0; k < 6; k++) { var a = cableAt(lift.towers, i, k / 6, s), b = cableAt(lift.towers, i, (k + 1) / 6, s); pos.push(a.x, a.y, a.z, b.x, b.y, b.z); }
+    }
+    if (lift.cable) { scene.remove(lift.cable); lift.cable.geometry.dispose(); }
+    var g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    lift.cable = new THREE.LineSegments(g, cableMat); lift.cable.frustumCulled = false; scene.add(lift.cable);
+  }
+}
+var cabTmp = new THREE.Vector3();
+function cableAt(T, i, t, side) {
+  var a = T[i], b = T[i + 1];
+  return cabTmp.set(lerp(a.x, b.x, t) + side * 1.35, lerp(a.y, b.y, t) - 0.9 * Math.sin(PI * t), lerp(a.z, b.z, t));
+}
+function updLift() {
+  var T = lift.towers; if (T.length < 2) return;
+  var z0 = T[0].z, span = T[T.length - 1].z - z0, n = lift.chairs.length;
+  for (var c = 0; c < n; c++) {
+    var side = c % 2 ? 1 : -1, dir = side > 0 ? -1 : 1;
+    var u = ((c * 31 + dir * S.time * 2.4) % span + span) % span, z = z0 + u;
+    var i = 0; while (i < T.length - 2 && T[i + 1].z < z) i++;
+    var t = clamp((z - T[i].z) / (T[i + 1].z - T[i].z), 0, 1), p = cableAt(T, i, t, side);
+    var m = lift.chairs[c]; m.visible = true; m.position.copy(p);
+    m.rotation.set(0, Math.atan2(T[i + 1].x - T[i].x, T[i + 1].z - T[i].z) + (dir > 0 ? 0 : PI), Math.sin(S.time * 1.3 + c) * 0.04);
+  }
+}
+
+// ============================================================ dettagli: nuvole, scie di velocità, brillii
+var cloudMat = new THREE.SpriteMaterial({ map: puffTex, transparent: true, depthWrite: false, fog: false, opacity: 0.85 });
+var clouds = new THREE.Group(); scene.add(clouds);
+(function () { var R2 = rng(5); for (var i = 0; i < 16; i++) { var s = new THREE.Sprite(cloudMat), a = (R2() - 0.5) * 3.2; s.position.set(Math.sin(a) * 420, 110 + R2() * 90, Math.cos(a) * 420); s.scale.set(140 + R2() * 120, 50 + R2() * 40, 1); s.renderOrder = -6; clouds.add(s); } })();
+scene.add(camera);
+var STN = 70, stPos = new Float32Array(STN * 6), stGeo = new THREE.BufferGeometry(), stData = [];
+stGeo.setAttribute('position', new THREE.BufferAttribute(stPos, 3));
+var stMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, fog: false });
+var streaks = new THREE.LineSegments(stGeo, stMat); streaks.frustumCulled = false; camera.add(streaks);
+function stReset(d, far) { var a = Math.random() * TAU, r = 2.2 + Math.random() * 5; d.x = Math.cos(a) * r; d.y = Math.sin(a) * r * 0.65; d.z = far ? -10 - Math.random() * 40 : -50; }
+for (var sti = 0; sti < STN; sti++) { var sd = {}; stReset(sd, true); stData.push(sd); }
+function updStreaks(dt) {
+  var sp = P.crashed ? 0 : (P.air ? Math.hypot(P.vx, P.vz) : P.speed);
+  var op = clamp((sp - 21) / 14, 0, 0.55); stMat.opacity = op; streaks.visible = op > 0.01;
+  if (!streaks.visible) return;
+  var len = 0.6 + sp * 0.08;
+  for (var i = 0; i < STN; i++) {
+    var d = stData[i]; d.z += sp * 1.6 * dt; if (d.z > 0.5) stReset(d, false);
+    var o = i * 6; stPos[o] = d.x; stPos[o + 1] = d.y; stPos[o + 2] = d.z; stPos[o + 3] = d.x; stPos[o + 4] = d.y; stPos[o + 5] = d.z - len;
+  }
+  stGeo.attributes.position.needsUpdate = true;
+}
+var SPN = 260, spPos = new Float32Array(SPN * 3), spPh = new Float32Array(SPN), spGeo = new THREE.BufferGeometry();
+for (var spi = 0; spi < SPN; spi++) { spPh[spi] = Math.random(); spPos[spi * 3 + 1] = -9999; }
+spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3)); spGeo.setAttribute('phase', new THREE.BufferAttribute(spPh, 1));
+var spMat = new THREE.ShaderMaterial({
+  uniforms: { time: { value: 0 }, scale: { value: 400 }, map: { value: dotTex }, glow: { value: 1 } },
+  vertexShader: 'attribute float phase; varying float vA; uniform float time; uniform float scale;\n' +
+    'void main(){ vA = pow(max(sin(time * 2.2 + phase * 40.0), 0.0), 14.0); vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = 0.11 * scale / -mv.z * (0.5 + vA); gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'uniform sampler2D map; uniform float glow; varying float vA; void main(){ float a = texture2D(map, gl_PointCoord).a * vA * glow; if (a < 0.02) discard; gl_FragColor = vec4(1.0, 0.98, 0.9, a);\n#include <colorspace_fragment>\n}',
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending
+});
+var sparkles = new THREE.Points(spGeo, spMat); sparkles.frustumCulled = false; scene.add(sparkles);
+function updSparkles() {
+  spMat.uniforms.time.value = S.time;
+  spMat.uniforms.glow.value = 1 - pal.star * 0.5;
+  var f = P.crashed && S.rag ? ragCenter() : tmpV2.set(P.x, P.y, P.z), ch = false;
+  for (var i = 0; i < SPN; i++) {
+    var o = i * 3;
+    if (spPos[o + 1] < -9000 || spPos[o + 2] < f.z - 6 || spPos[o + 2] > f.z + 60) {
+      var z = f.z + Math.random() * 45 - 3, x = cxAt(z) + (Math.random() - 0.5) * (hwAt(z) * 2 + 6);
+      spPos[o] = x; spPos[o + 1] = Hgt(x, z) + 0.03; spPos[o + 2] = z; ch = true;
+    }
+  }
+  if (ch) spGeo.attributes.position.needsUpdate = true;
 }
 
 // ============================================================ aggiornamento della grafica
 var qBasis = new THREE.Quaternion(), qSpin = new THREE.Quaternion(), qFlip = new THREE.Quaternion(), qLean = new THREE.Quaternion(), mBasis = new THREE.Matrix4();
-var vUp = new THREE.Vector3(), vFwd = new THREE.Vector3(), vRight = new THREE.Vector3(), X_AXIS = new THREE.Vector3(1, 0, 0), Z_AXIS = new THREE.Vector3(0, 0, 1);
+var vUp = new THREE.Vector3(0, 1, 0), vFwd = new THREE.Vector3(), vRight = new THREE.Vector3(), X_AXIS = new THREE.Vector3(1, 0, 0), Z_AXIS = new THREE.Vector3(0, 0, 1);
 function updRiderVisual(dt) {
   var p = P;
   if (p.crashed && S.rag) {
-    var r = S.rag;
-    rider.body.position.copy(r.body.p).add(tmpV.set(0, -0.6, 0)); rider.body.quaternion.copy(r.body.q);
-    rider.board.position.copy(r.board.p); rider.board.quaternion.copy(r.board.q);
-    poseRider({ c: 0.5, ga: 0, t: S.time, air: 1, flail: r.body.v.length() > 3 });
-    rider.root.visible = true;
+    ragPose(S.rag);
+    rider.board.position.copy(S.board.p); rider.board.quaternion.copy(S.board.q);
+    rider.root.visible = true; rider.body.visible = true;
     return;
   }
   rider.root.position.set(p.x, p.y, p.z);
   if (p.air) vUp.lerp(Y_AXIS, damp(4, dt)).normalize();
   else if (p.grind) vUp.lerp(Y_AXIS, damp(10, dt)).normalize();
-  else { normalAt(p.x, p.z, tmpV2); vUp.lerp(tmpV2, damp(12, dt)).normalize(); }
+  else { normalAt(p.x, p.z, tmpV2); vUp.lerp(tmpV2, dt > 0 ? damp(12, dt) : 1).normalize(); }
   var yaw = p.air ? Math.atan2(p.vx, p.vz) : p.yaw;
   vFwd.set(Math.sin(yaw), 0, Math.cos(yaw));
   if (p.grind) { var gr = p.grind; vFwd.set(gr.x2 - gr.x1, gr.y2 - gr.y1, gr.z2 - gr.z1).normalize(); }
@@ -1594,13 +1987,12 @@ function updRiderVisual(dt) {
   qSpin.setFromAxisAngle(Y_AXIS, p.spin);
   qLean.setFromAxisAngle(Z_AXIS, p.air ? 0 : p.lean);
   rider.root.quaternion.copy(qBasis).multiply(qFlip).multiply(qSpin).multiply(qLean);
-  // durante il flip ruota attorno al baricentro, non ai piedi
   if (p.air && Math.abs(p.flip) > 0.01) {
     var off = tmpV.set(0, 0.7, 0).applyQuaternion(qBasis), off2 = tmpV2.set(0, 0.7, 0).applyQuaternion(rider.root.quaternion);
     rider.root.position.add(off).sub(off2);
   }
   rider.root.visible = !(p.inv > 0 && Math.floor(p.inv * 12) % 2 === 0);
-  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt });
+  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt, tuck: p.air ? 0 : p.tuck });
 }
 function updMarkers() {
   var p = P;
@@ -1608,25 +2000,32 @@ function updMarkers() {
     ring.visible = true;
     ring.position.set(p.landX, p.landY + 0.06, p.landZ);
     normalAt(p.landX, p.landZ, tmpV); ring.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
-    var sErr = spinErr(p.spin + p.spinRate * Math.min(p.tti, 0.3)), fErr = Math.abs(p.flipTo - p.flip) + Math.abs(wrapA(p.flip));
-    var ok = sErr < 0.5 && fErr < 0.6 && !p.grab;
+    var la = Math.min(p.tti, 0.25), ok = spinErr(p.spin + p.spinRate * la) < 0.5 && Math.abs(wrapA(p.flip + p.flipRate * la)) < 0.55 && !p.grab;
     ringMat.color.setHex(ok ? 0x4fe0b0 : 0xff3b4f);
     ringMat.opacity = 0.5 + 0.4 * (1 - clamp(p.tti / 1.6, 0, 1));
   } else ring.visible = false;
-  var f = P.crashed && S.rag ? S.rag.body.p : tmpV2.set(p.x, p.y, p.z);
+  var f = P.crashed && S.rag ? ragCenter() : tmpV2.set(p.x, p.y, p.z);
   var gy = Hgt(f.x, f.z), alt = f.y - gy;
   blob.position.set(f.x, gy + 0.04, f.z);
   normalAt(f.x, f.z, tmpV); blob.quaternion.setFromUnitVectors(Y_AXIS, tmpV);
   blob.material.opacity = clamp(0.28 - alt * 0.03, 0, 0.28);
   blob.scale.setScalar(1 + alt * 0.04);
 }
+var smokeT = 0;
 function updWorldVisual(dt) {
   for (var i = 0; i < S.coins.length; i++) {
     var s = S.coins[i], c = s.userData.coin;
-    if (c.taken) { c.taken += dt * 3; s.position.y = c.y + c.taken * 1.5; var sc2 = 1 + c.taken; s.scale.set(sc2, sc2, 1); s.material = coinMat; s.visible = c.taken < 1; }
+    if (c.taken) { s.position.y = c.y + c.taken * 1.5; var sc2 = 1 + c.taken; s.scale.set(sc2, sc2, 1); s.visible = c.taken < 1; }
     else { s.position.y = c.y + Math.sin(S.time * 3 + c.ph) * 0.12; var k = 0.95 + Math.sin(S.time * 4 + c.ph) * 0.08; s.scale.set(k, k, 1); }
   }
   for (var j = 0; j < S.flags.length; j++) { var fl = S.flags[j].userData.flag; fl.rotation.y = Math.sin(S.time * 6 + j) * 0.35; }
+  // fumo dai camini delle baite
+  smokeT -= dt;
+  if (smokeT <= 0 && dt > 0) {
+    smokeT = 0.09;
+    for (var h = 0; h < S.chalets.length; h++) { var ch = S.chalets[h]; if (ch.z > P.z - 20 && ch.z < P.z + 170) part(ch.cx + (Math.random() - 0.5) * 0.3, ch.cy, ch.cz, 0.3 + Math.random() * 0.4, 1.2, (Math.random() - 0.5) * 0.4, 3.5, 0.9, 'smoke'); }
+  }
+  chaletGlow.color.copy(COLS.gold).multiplyScalar(0.6 + pal.star * 0.9);
   // valanga
   var gap = focusZ() - AV.z, show = (state === 'play' || state === 'dying') && gap < 42;
   avGroup.visible = show;
@@ -1647,12 +2046,14 @@ function updWorldVisual(dt) {
   $('white').style.opacity = white.toFixed(3);
 }
 function updLights() {
-  var f = P.crashed && S.rag ? S.rag.body.p : tmpV2.set(P.x, P.y, P.z);
+  var f = P.crashed && S.rag ? ragCenter() : tmpV2.set(P.x, P.y, P.z);
   var sd = tmpV.set(pal.sd[0], Math.max(0.35, pal.sd[1] + 0.25), pal.sd[2]).normalize();
   sun.position.set(f.x + sd.x * 40, f.y + sd.y * 40, f.z + sd.z * 40);
   sun.target.position.set(f.x, f.y, f.z + 4);
   sky.position.copy(camera.position); stars.position.copy(camera.position);
   mountains.position.set(camera.position.x, f.y - 60, camera.position.z);
+  clouds.position.set(camera.position.x, camera.position.y, camera.position.z);
+  cloudMat.color.copy(pal.fog).lerp(COLS.snow, 0.55 - pal.star * 0.4);
 }
 
 // ============================================================ HUD
@@ -1665,6 +2066,7 @@ function updateHud() {
   var sp = P.crashed ? 0 : (P.air ? Math.hypot(P.vx, P.vz) : P.speed);
   setText('spd', Math.round(sp * 3.6) + ' km/h');
   setText('coins', S.coinN + (S.coinN === 1 ? ' fiocco' : ' fiocchi'));
+  setText('lvl', 'Liv. ' + (S.tier + 1));
   var gap = Math.max(0, focusZ() - AV.z);
   setText('avalM', Math.round(gap) + ' m');
   var wv = Math.round(clamp(1 - gap / 45, 0.03, 1) * 100) + '%'; if (hudCache.bar !== wv) { hudCache.bar = wv; $('avalBar').style.width = wv; }
@@ -1688,7 +2090,7 @@ function frame(ts) {
     acc += dt; var n = 0;
     while (acc >= FIX && n < 20) { update(FIX); acc -= FIX; n++; if (state === 'over') break; }
     genT -= dt;
-    if (genT <= 0 && state !== 'over') { genT = 0.25; genAhead(); pruneWorld(); }
+    if (genT <= 0 && state !== 'over') { genT = 0.25; genAhead(); pruneWorld(); genLift(); }
     updParticles(dt);
     updateTutorial(dt);
   }
@@ -1699,6 +2101,7 @@ function frame(ts) {
   updWorldVisual(running ? dt : 0);
   updLights();
   updFlakes(running ? dt : 0);
+  updLift(); trailBuild(); updStreaks(running ? dt : 0); updSparkles(); updButtons();
   renderer.render(scene, camera);
   updateHud();
   updateAudio();
@@ -1715,9 +2118,9 @@ function boot() {
 }
 window.__debug = {
   get S() { return S; }, get P() { return P; }, get state() { return state; }, get AV() { return AV; },
-  start: startGame, crash: function () { crash('test'); }, ollie: ollie, flip: queueFlip,
-  steer: function (v) { keySteer = v; }, grab: function (g) { keyGrab = g; }, H: function (x, z) { return Hgt(x, z); }, cx: function (z) { return cxAt(z); },
-  step: function (n, bot) { for (var i = 0; i < n; i++) { if (bot) bot(P, S); update(FIX); if (state !== 'play') break; if (i % 30 === 0) { genAhead(); pruneWorld(); } } },
+  start: startGame, crash: function () { crash('test'); }, ollie: ollie, flip: function (v) { keyFlip = v; },
+  steer: function (v) { keySteer = v; }, grab: function (g) { keyGrab = g; }, pad: function (a, b) { act.mode = 'pad'; act.id = 'dbg'; act.moved = 100; padSpin += a; padFlip += b; }, flick: function (a, b) { P.spinRate = a; P.flipRate = b; P.flick = true; }, unpad: function () { act.mode = ''; act.id = null; }, H: function (x, z) { return Hgt(x, z); }, cx: function (z) { return cxAt(z); },
+  step: function (n, bot) { for (var i = 0; i < n; i++) { if (bot) bot(P, S); update(FIX); if (state !== 'play') break; if (i % 30 === 0) { genAhead(); pruneWorld(); genLift(); } } },
   info: function () { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles, geos: renderer.info.memory.geometries, objs: scene.children.length }; }
 };
 boot();

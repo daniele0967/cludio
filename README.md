@@ -31,7 +31,7 @@ python3 build.py
 
 # POWDER RUN 3D — snowboard infinito
 
-Gioco di snowboard originale in **3D** (Three.js) per **Scriptable**: camera alle spalle del rider, pista infinita generata al volo con kicker, salti nel vuoto, rail e box, dossi, sassi e alberi, e una valanga che ti insegue.
+Gioco di snowboard originale in **3D** (Three.js) per **Scriptable**: camera alle spalle del rider, pista infinita generata al volo con kicker e linee di salti, salti nel vuoto, rail e box, dossi, sassi e alberi, seggiovia e baite, caduta con ragdoll e una valanga che ti insegue.
 
 ## Come giocare su iPhone
 1. In Scriptable tocca **+**, incolla il contenuto di [`snow/PowderRun.js`](snow/PowderRun.js) (circa 70 righe) e avvia.
@@ -40,13 +40,14 @@ Gioco di snowboard originale in **3D** (Three.js) per **Scriptable**: camera all
 3. Record e impostazioni finiscono in `Scriptable/PowderRun/record.json`.
 
 ## Comandi
-- **Tieni premuto a sinistra / a destra**: curvi.
-- **Tocco veloce** o **swipe in su**: salto. Saltare sul bordo di un kicker dà una spinta in più.
-- **In aria, tieni premuto a sinistra / a destra**: giri (180, 360, 540…). Lascia prima di atterrare.
-- **In aria, swipe in su / in giù**: backflip / frontflip (ripeti lo swipe per il doppio).
-- **In aria, swipe a sinistra / a destra**: Method / Indy grab, finché tieni il dito.
+- **Joystick a sinistra**: curvi. Spingi in avanti per andare più veloce, indietro per frenare.
+- **Tasto a destra**: tocca per saltare, tieni premuto per caricare un salto più alto. Saltare sul bordo di un kicker dà una spinta in più.
+- **In aria, trascina il dito a destra**: il rider ruota come muovi il dito (orizzontale = spin, verticale = flip). Se lasci il dito con uno scatto, continua a girare per inerzia.
+- **In aria, joystick**: anche lui fa ruotare il rider (sinistra/destra = spin, su/giù = flip).
+- **In aria, tieni fermo il dito a destra**: grab (in alto Method, in basso Indy).
 - Il cerchio a terra mostra dove atterri: verde se l'atterraggio va bene, rosso se cadi.
-- Sul computer: frecce ← → = curva e spin, Spazio = salto, ↑ ↓ = flip, A / D = grab, P = pausa.
+- Ogni 450 m si sale di livello e si va più veloci (anche la valanga).
+- Sul computer: frecce = joystick, Spazio = salto, A / D = grab, P = pausa.
 
 ## Sviluppo
 Sorgenti in `snow3d/` (`index.html` interfaccia, `game.js` gioco, `vendor/three.min.js` motore 3D, licenza MIT).
