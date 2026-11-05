@@ -62,10 +62,10 @@ La prima versione 2D è ancora in `snow/powder2d.html`.
 
 # PLAYMAKER — basket a enigmi in 3D
 
-Gioco di basket originale a enigmi in **3D** (Three.js) per **Scriptable** e browser: il tempo si ferma quando hai la palla e disegni la giocata col dito. 50 livelli a scenari in 5 capitoli (Campetto, Liceo, College, Pro, Finale), con storia, punteggio, cronometro e 3 stelle per livello.
+Gioco di basket a enigmi in **3D** (Three.js) per **Scriptable** e browser, con le meccaniche di Score Hero (grafica, squadre e livelli sono originali). Il tempo si ferma quando hai la palla: **o passi o tiri**, non si palleggia. 50 livelli già impegnativi dal primo, in 5 ambientazioni (Playground, Spiaggia al tramonto, Palestra del liceo, Rooftop notturno, Arena delle finali), con punteggio, cronometro e 3 stelle.
 
 - Su iPhone: in Scriptable incolla [`basket/Playmaker.js`](basket/Playmaker.js) (scarica il gioco da GitHub, circa 4,7 MB la prima volta) oppure [`basket/PlaymakerCompleto.js`](basket/PlaymakerCompleto.js) (offline). La carriera si salva in `Scriptable/Playmaker/carriera.json`.
 - Nel browser: apri `basket/playmaker.html`. La vecchia versione 2D è in `basket/playmaker2d.html`.
-- Comandi: trascina dal giocatore con la palla a un compagno (passaggio, anche curvo), al canestro (tiro con barra del tempismo), in un punto vuoto (palleggio, anche curvo per usare i blocchi). Passando vicino al compagno sotto canestro e finendo sul ferro: alley-oop.
-- Scenari: ultimo tiro con il cronometro, contropiede, rimessa dal fondo, pick and roll con blocchi, difesa a zona, isolamento contro il pressing, tiri liberi decisivi.
+- Comandi: trascina dal giocatore con la palla a un compagno per passare (anche con traiettoria curva). Per tirare trascina verso il canestro: il punto in cui finisce il dito è la mira, e se è fuori dal ferro la palla va fuori. Una curva verso l'alto alza la parabola. Passando vicino al compagno sotto canestro: alley-oop.
+- Ogni livello ha un **pivot** che protegge il ferro come il portiere di Score Hero: salta e stoppa i tiri che gli passano vicino. Gli altri difensori contestano il tiro e restringono la zona buona.
 - Sorgenti in `basket3d/`: `sim.js` (simulazione, livelli e risolutore, senza grafica), `game3d.js` (grafica e animazioni), `index.html` (interfaccia), `vendor/three-bundle.min.js` (Three.js con GLTFLoader e SkeletonUtils, licenza MIT), `assets/Xbot.glb` (modello umano con animazioni dagli esempi di Three.js, di origine Mixamo). Dopo ogni modifica: `python3 basket3d/build.py`. Ogni livello è verificato dal risolutore, che usa le stesse regole del gioco.
