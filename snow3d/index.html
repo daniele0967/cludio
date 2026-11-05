@@ -126,7 +126,18 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 #jumpBtn.down > div { background: rgba(255, 90, 54, .55); }
 #jumpLbl { font: 800 20px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; }
 #jumpSub { font: 700 9px/1.2 var(--round); letter-spacing: .04em; color: var(--frost); max-width: 86px; }
-#swipeLbl { position: fixed; right: calc(max(16px, env(safe-area-inset-right, 0px)) + 4px); bottom: calc(env(safe-area-inset-bottom, 0px) + 152px);
+#trickBtn, #grabBtn { position: fixed; width: 78px; height: 78px; border-radius: 50%; pointer-events: none; display: grid; place-items: center; padding: 4px; }
+#trickBtn { right: calc(max(16px, env(safe-area-inset-right, 0px)) + 130px); bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  background: conic-gradient(#b48cff calc(var(--c, 0) * 1turn), rgba(234, 244, 255, .25) 0); }
+#grabBtn { right: calc(max(16px, env(safe-area-inset-right, 0px)) + 28px); bottom: calc(env(safe-area-inset-bottom, 0px) + 150px); background: rgba(234, 244, 255, .25); }
+#trickBtn > div, #grabBtn > div { width: 100%; height: 100%; border-radius: 50%; display: grid; place-content: center; gap: 1px; text-align: center; background: rgba(11, 22, 48, .62); }
+#trickBtn.down > div { background: rgba(140, 100, 255, .6); }
+#grabBtn.down > div { background: rgba(79, 224, 176, .55); }
+#trickBtn b, #grabBtn b { font: 800 16px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; }
+#trickBtn small, #grabBtn small { font: 700 8.5px/1.15 var(--round); color: var(--frost); max-width: 64px; }
+#powers { position: fixed; left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 104px); display: flex; gap: 6px; pointer-events: none; }
+#powers span { padding: 5px 10px; border-radius: 999px; font: 800 11.5px var(--round); letter-spacing: .06em; text-transform: uppercase; color: #0b1630; white-space: nowrap; font-variant-numeric: tabular-nums; }
+#swipeLbl { position: fixed; right: calc(max(16px, env(safe-area-inset-right, 0px)) + 120px); bottom: calc(env(safe-area-inset-bottom, 0px) + 118px);
   pointer-events: none; padding: 6px 11px; border-radius: 10px; background: rgba(11, 22, 48, .7); border: 1px solid rgba(255, 207, 63, .5);
   font: 800 14px var(--display); letter-spacing: .06em; text-transform: uppercase; color: var(--gold); opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s; }
 #swipeLbl.on { opacity: 1; transform: none; }
@@ -155,7 +166,7 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
   #pops { top: 30%; }
   #combo { top: calc(30% - 46px); }
 }
-@media (max-height: 460px) { #tutCard { top: calc(env(safe-area-inset-top, 0px) + 8px); width: min(56vw, 460px); padding: 7px 12px 9px; } #tutTitle { font-size: 17px; } #tutText { font-size: 12.5px; } #swipeLbl { bottom: calc(env(safe-area-inset-bottom, 0px) + 146px); } .tlist { max-height: 46vh; } #hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); width: min(50vw, 440px); font-size: 13px; padding: 7px 10px; } }
+@media (max-height: 460px) { #tutCard { top: calc(env(safe-area-inset-top, 0px) + 8px); width: min(56vw, 460px); padding: 7px 12px 9px; } #tutTitle { font-size: 17px; } #tutText { font-size: 12.5px; } #swipeLbl { bottom: calc(env(safe-area-inset-bottom, 0px) + 112px); } #powers { top: calc(env(safe-area-inset-top, 0px) + 54px); } #grabBtn { bottom: calc(env(safe-area-inset-bottom, 0px) + 146px); } .tlist { max-height: 46vh; } #hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 54px); width: min(42vw, 400px); font-size: 13px; padding: 7px 10px; } }
 @media (prefers-reduced-motion: reduce) { .pop { animation-duration: 1.2s; } #hint { transition: none; } }
 </style>
 </head>
@@ -182,9 +193,12 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 <div id="aval" class="hidden"><span>Valanga</span><div class="bar"><i id="avalBar"></i></div><b id="avalM">45 m</b></div>
 <div id="controls" class="hidden">
   <div id="joy"><div id="joyKnob"></div></div>
+  <div id="trickBtn"><div><b>Trick</b><small id="trickSub">joystick = direzione</small></div></div>
+  <div id="grabBtn"><div><b>Grab</b><small id="grabSub">tieni premuto</small></div></div>
   <div id="jumpBtn"><div><span id="jumpLbl">Salta</span><span id="jumpSub">tieni = più alto</span></div></div>
 </div>
 <div id="swipeLbl"></div>
+<div id="powers"></div>
 <div id="tutCard" class="hidden"><div id="tutStep"></div><div id="tutTitle"></div><div id="tutText"></div><div id="tutTip"></div><div id="tutDots"></div></div>
 <div id="combo" class="hidden"><span id="comboTxt"></span><i id="comboBar"></i></div>
 <div id="pops"></div>
@@ -240,10 +254,13 @@ button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
       <li><span>↓</span><div><b>Frontflip</b><br><em>swipe veloce = Double Frontflip</em></div></li>
       <li><span>↖ ↗</span><div><b>Rodeo</b> (flip all'indietro storto)<br><em>lento 540 · medio 720 · veloce 900</em></div></li>
       <li><span>↙ ↘</span><div><b>Misty</b> (flip in avanti storto)<br><em>lento 540 · medio 720 · veloce 900</em></div></li>
-      <li><span>●</span><div><b>Grab</b>: dito fermo in aria<br><em>in alto: Method, Nose · in basso: Tail, Indy</em></div></li>
+      <li><span>TR</span><div><b>Tasto TRICK</b>: punta il joystick e premi<br><em>tocco = 180 · tieni di più = 360, 540, 720 · le direzioni sono come gli swipe</em></div></li>
+      <li><span>GR</span><div><b>Tasto GRAB</b>: tienilo in aria, anche durante i trick<br><em>joystick: centro Indy · su Nose · giù Tail · sinistra Method · destra Melon</em></div></li>
+      <li><span>●</span><div><b>Grab col dito</b>: dito fermo in aria<br><em>in alto: Method, Nose · in basso: Tail, Indy</em></div></li>
       <li><span>↗ ●</span><div><b>Trick + grab</b>: swipe e poi tieni fermo<br><em>es. Frontside 360 Indy</em></div></li>
       <li><span>⟿</span><div><b>Più trick nello stesso salto</b><br><em>uno swipe dopo l'altro: i punti si sommano e salgono</em></div></li>
-      <li><span>═</span><div><b>Rail e box</b>: entra dritto o saltaci sopra<br><em>sul rail swipe ← → = Boardslide · tocca = salta via</em></div></li>
+      <li><span>═</span><div><b>Rail e box</b>: saltaci vicino e ti attacchi da solo<br><em>joystick sul rail: ← → Boardslide / Lipslide · ↑ Nose Press · ↓ Tail Press · SALTA = via</em></div></li>
+      <li><span>★</span><div><b>Poteri</b> sulla pista<br><em>Super salto · Slow-mo · Punti x2 · Magnete · Scudo · Turbo</em></div></li>
     </ul>
     <button class="primary" id="btnTricksClose">Chiudi</button>
   </div>

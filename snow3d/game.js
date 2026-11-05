@@ -442,7 +442,7 @@ function arcCoins(k, v) {
   for (var i = 1; i <= 7; i++) {
     var t = 0.1 + i * 0.12, z = k.z1 + vz * t, y = lipY + vy * t - 0.5 * G * t * t + 1.0 + lift;
     if (y < Hgt(k.x, z) + 1.2) break;
-    addCoin(k.x, y, z);
+    if (i === 4 && R() < 0.3) addPower(k.x, y + 0.3, z); else addCoin(k.x, y, z);
   }
 }
 function addDrop(z0, D, L) {
@@ -527,6 +527,7 @@ function secRollers(z) {
 }
 function secCruise(z) {
   var len = 45 + R() * 40, off = (R() - 0.5) * 14;
+  if (R() < 0.7) { var kz = z + 16, kx = cxAt(kz) + (R() - 0.5) * 10, kk = { x: kx, z0: kz, L: 5.5, z1: kz + 5.5, Hk: 1.3 + R() * 0.5, w: 2.2, big: false }; S.kickers.push(kk); addObj(kickerMesh(kk), kk.z1 + 2); arcCoins(kk, 20); }
   if (R() < 0.75) coinLine(z + 8, 9, function (i, zz) { return cxAt(zz) + off + Math.sin(i * 0.6) * 3; }, 0);
   return z + len;
 }
@@ -590,16 +591,17 @@ var SECTIONS = { line: secLine, cruise: secCruise, kicker: secKickers, big: secB
 var TUT_SEQ = ['kicker', 'cruise', 'big', 'rail', 'kicker', 'big', 'rail', 'line'];
 function genSection() {
   var z = S.genZ;
-  if (S.tut && z >= S.flatUntil) { var kt = TUT_SEQ[(S.tutI = (S.tutI || 0) + 1) % TUT_SEQ.length]; S.genZ = SECTIONS[kt](z) + 14 + R() * 8; return; }
+  if (S.tut && z >= S.flatUntil) { var kt = TUT_SEQ[(S.tutI = (S.tutI || 0) + 1) % TUT_SEQ.length]; S.genZ = SECTIONS[kt](z) + 14 + R() * 8; if (kt === 'rail') { var tz = S.genZ - 6, tx = cxAt(tz); addPower(tx, Hgt(tx, tz) + 1.3, tz, (S.tutI % 4 === 2) ? 'slow' : 'jump'); } return; }
   if (z < S.flatUntil) { S.genZ = z + 40; return; }
   var d = diff(z);
-  var w = { cruise: 1.1, kicker: 3.2, line: 1.6 + d, big: 1.4 + 1.6 * d, drop: 0.9 + 1.2 * d, rail: 2, rocks: 1.2 + 2.2 * d, trees: 0.8 + 1.8 * d, rollers: 1.5 };
+  var w = { cruise: 0.5, kicker: 4, line: 2.6 + d, big: 2.2 + 1.4 * d, drop: 1.0 + 1.0 * d, rail: 2.4, rocks: 0.8 + 1.6 * d, trees: 0.5 + 1.2 * d, rollers: 1.4 };
   var tot = 0, k;
   for (k in w) if (k !== S.lastSec) tot += w[k];
   var r = R() * tot;
   for (k in w) { if (k === S.lastSec) continue; r -= w[k]; if (r <= 0) break; }
   S.lastSec = k;
-  S.genZ = SECTIONS[k](z) + 14 + R() * 18;
+  S.genZ = SECTIONS[k](z) + 8 + R() * 10;
+  if (R() < 0.5) { var pz = S.genZ - 4, px = cxAt(pz) + (R() - 0.5) * 8; addPower(px, Hgt(px, pz) + 1.3, pz); }
   if (S.genZ > S.nextChalet) { addChalet(S.nextChalet); S.nextChalet += 170 + R() * 220; }
 }
 
@@ -672,6 +674,7 @@ function pruneWorld() {
   for (var i = 0; i < S.objs.length; i++) { var o = S.objs[i]; if (o.userData.z < lim) { scene.remove(o); if (o.userData.own) o.traverse(function (c) { if (c.geometry && c.geometry !== GEO.post) c.geometry.dispose(); }); } else keep.push(o); }
   S.objs = keep;
   S.coins = S.coins.filter(function (c) { return c.parent && !(c.userData.coin.taken > 1.2); });
+  S.powers = S.powers.filter(function (c) { return c.parent && !(c.userData.pw.taken > 1.2); });
   S.flags = S.flags.filter(function (f) { return !!f.parent; });
   S.rocks = S.rocks.filter(function (r) { return r.z > lim; });
   S.rails = S.rails.filter(function (r) { return r.z2 > lim; });
@@ -891,7 +894,8 @@ var GRAB_POSE = {
   melon: { hand: 'F', at: [-0.17, 0.13, -0.05], tuck: 0.6 }, stale: { hand: 'B', at: [-0.17, 0.13, -0.12], tuck: 0.6 }
 };
 function computePose(o, J) {
-  var c = o.c, g = o.ga, airA = o.air, t = o.t, gp = GRAB_POSE[o.grab] || GRAB_POSE.indy, cc = c + g * gp.tuck;
+  var c = o.c, g = o.ga, airA = o.air, t = o.t, gp = GRAB_POSE[o.grab] || GRAB_POSE.indy, cc = c + g * gp.tuck, tb = o.tb || 0;
+  if (o.tk && o.tk !== 'spin') cc += tb * 0.55 * (1 - g);
   J.pelvis.set(-0.02 + cc * 0.06, 0.97 - cc * 0.36 + (o.bob || 0), 0);
   J.hipB.copy(J.pelvis).z -= 0.11; J.hipF.copy(J.pelvis).z += 0.11;
   var tw = g > 0.01 && o.grab === 'nose' ? 0.05 * g : g > 0.01 && o.grab === 'tail' ? -0.05 * g : 0;
@@ -912,6 +916,12 @@ function computePose(o, J) {
     if (gp.hand === 'B') { hT1.lerp(tgt, g); hT2.lerp(tmpV2.set(0.2, sy + 0.25, 0.58), g); }
     else { hT2.lerp(tgt, g); hT1.lerp(tmpV2.set(0.0, sy + 0.25, -0.62), g); }
   }
+  if (o.tk && tb > 0.01 && g < 0.5) {
+    var b2 = tb * (1 - g * 2);
+    if (o.tk === 'spin') { hT1.lerp(tmpV.set(0.28, sy + 0.02, 0.22), b2 * 0.85); hT2.lerp(tmpV.set(0.05, sy + 0.38, 0.78), b2 * 0.85); }
+    else { hT1.lerp(tmpV.set(0.3, J.knB.y + 0.06, -0.12), b2); hT2.lerp(tmpV.set(0.33, J.knF.y + 0.06, 0.16), b2); }
+  }
+  if (o.flair) { hT1.y += Math.sin(t * 9) * 0.08 * o.flair; hT2.y += Math.cos(t * 8) * 0.08 * o.flair; }
   ik3(J.shB, hT1, 0.31, 0.31, BEND_ELB, J.elB, J.hB);
   ik3(J.shF, hT2, 0.31, 0.31, BEND_ELB, J.elF, J.hF);
 }
@@ -1030,7 +1040,7 @@ function newWorld(tut) {
   clearWorld();
   var seed = (Math.random() * 1e9) | 0;
   S = { seed: seed, rand: rng(seed), genZ: -60, flatUntil: 60, diffStart: 1e12, startZ: 0, lastSec: '', nextChalet: 120, tier: 0, tut: !!tut,
-    drops: [], rollers: [], kickers: [], rails: [], rocks: [], coins: [], flags: [], objs: [], chalets: [],
+    drops: [], rollers: [], kickers: [], rails: [], rocks: [], coins: [], flags: [], objs: [], chalets: [], powers: [], pw: {}, shield: false, slowPulse: 0,
     time: 0, bank: 0, coinN: 0, tricks: 0, bestTrick: { pts: 0, name: '' }, maxSpeed: 0, crashes: 0, rag: null, board: null };
   P = newPlayer();
   P.x = cxAt(0); P.z = 0; P.y = 0;
@@ -1046,7 +1056,7 @@ function runMeters() { return Math.max(0, P.z - S.startZ); }
 function ragCenter() { return S.rag.p.pelvis; }
 function focusZ() { return P.crashed && S.rag ? ragCenter().z : P.z; }
 function speedMul() { return 1 + Math.min(0.9, S.tier * 0.07); }
-function maxSpeed() { return Math.min(48, MAXS * speedMul()); }
+function maxSpeed() { return Math.min(52, MAXS * speedMul() * (S.pw && S.pw.turbo > 0 ? 1.3 : 1)); }
 function playing() { return state === 'play'; }
 
 // ============================================================ trick: uno swipe = un trick preciso
@@ -1096,10 +1106,23 @@ var joy = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
 var act = { id: null, sx: 0, sy: 0, st: 0, lx: 0, ly: 0, lt: 0, still: 0, mode: '', swiped: false, grab: null };
 var JOY_R = 56;
 var joyEl = $('joy'), knobEl = $('joyKnob'), jumpEl = $('jumpBtn'), jumpLbl = $('jumpLbl'), jumpSub = $('jumpSub'), swipeEl = $('swipeLbl');
+var trickEl = $('trickBtn'), grabEl = $('grabBtn'), trickSub = $('trickSub'), grabSub = $('grabSub');
+var grabT = null, trickT = null, btnR = { t: null, g: null, at: 0 };
+function inBtn(r, x, y) { return r && x > r.left - 12 && x < r.right + 12 && y > r.top - 12 && y < r.bottom + 12; }
+function refreshBtns() { btnR.t = trickEl.getBoundingClientRect(); btnR.g = grabEl.getBoundingClientRect(); btnR.at = now(); }
+function trickLevel(held) { return held < 0.2 ? 1 : held < 0.42 ? 2 : held < 0.66 ? 3 : 4; }
+function joyGrab() { var j = joyInput(); if (Math.abs(j.x) < 0.35 && Math.abs(j.y) < 0.35) return 'indy'; if (Math.abs(j.y) >= Math.abs(j.x)) return j.y < 0 ? 'nose' : 'tail'; return j.x < 0 ? 'method' : 'melon'; }
+function fireTrickBtn(held) {
+  var j = joyInput(), dx = j.x, dy = j.y;
+  if (Math.abs(dx) < 0.3 && Math.abs(dy) < 0.3) { dx = 1; dy = 0; }
+  var v = [0, 1, 2.5, 4, 6][trickLevel(held)];
+  if (!inAir() && canJump()) ollie();
+  if (inAir()) startTrick(trickFromSwipe(dx * 100, dy * 100, v));
+}
 function minDim() { return Math.max(300, Math.min(W, H_)); }
 function resetInput() {
   joy.id = null; joy.x = joy.y = 0; act.id = null; act.mode = ''; act.swiped = false; act.grab = null;
-  keySteer = keyFlip = 0; keyGrab = null; keyJump = false; if (P) P.charging = false;
+  keySteer = keyFlip = 0; keyGrab = null; keyJump = false; if (P) P.charging = false; grabT = null; trickT = null; trickEl.classList.remove('down'); grabEl.classList.remove('down');
   placeJoy(0, 0, 0, 0, false); jumpEl.classList.remove('down');
 }
 function placeJoy(x, y, dx, dy, on) {
@@ -1110,13 +1133,16 @@ function placeJoy(x, y, dx, dy, on) {
 var swipeT = 0;
 function swipeLabel(txt, queued) { swipeEl.textContent = (queued ? 'poi ' : '') + txt; swipeEl.className = 'on'; swipeT = 1.1; }
 function joyInput() { return { x: clamp(joy.x + keySteer, -1, 1), y: clamp(joy.y + keyFlip, -1, 1) }; }
-function grabInput() { return act.mode === 'grab' ? act.grab : keyGrab; }
+function grabInput() { if (grabT !== null) return joyGrab(); return act.mode === 'grab' ? act.grab : keyGrab; }
 function canJump() { return !P.air || !!P.grind || P.coyote > 0; }
 function inAir() { return P.air && !P.grind; }
 function quadGrab(x, y) { var top = y < H_ * 0.5, right = x > W * 0.75; return top ? (right ? 'nose' : 'method') : (right ? 'indy' : 'tail'); }
 function pressStart(id, x, y) {
   ensureAudio();
   if (state !== 'play' || P.crashed) return;
+  if (!btnR.t || now() - btnR.at > 1000) refreshBtns();
+  if (inBtn(btnR.g, x, y) && grabT === null) { grabT = id; grabEl.classList.add('down'); if (inAir()) tutEvent('grab'); return; }
+  if (inBtn(btnR.t, x, y) && trickT === null) { trickT = { id: id, st: now() }; trickEl.classList.add('down'); return; }
   if (x < W * 0.45) { if (joy.id === null) { joy.id = id; joy.ox = x; joy.oy = y; joy.x = joy.y = 0; placeJoy(x, y, 0, 0, true); } return; }
   if (act.id !== null) return;
   act.id = id; act.sx = act.lx = x; act.sy = act.ly = y; act.st = act.lt = now(); act.still = now(); act.swiped = false; act.grab = null;
@@ -1125,6 +1151,7 @@ function pressStart(id, x, y) {
   jumpEl.classList.add('down');
 }
 function pressMove(id, x, y) {
+  if (id === grabT || (trickT && id === trickT.id)) return;
   if (id === joy.id) {
     var dx = x - joy.ox, dy = y - joy.oy, d = Math.sqrt(dx * dx + dy * dy);
     if (d > JOY_R) { dx *= JOY_R / d; dy *= JOY_R / d; }
@@ -1149,6 +1176,8 @@ function pressMove(id, x, y) {
   else act.mode = 'post';
 }
 function pressEnd(id) {
+  if (id === grabT) { grabT = null; grabEl.classList.remove('down'); return; }
+  if (trickT && id === trickT.id) { var held = (now() - trickT.st) / 1000; trickT = null; trickEl.classList.remove('down'); if (state === 'play' && !P.crashed) fireTrickBtn(held); return; }
   if (id === joy.id) { joy.id = null; joy.x = joy.y = 0; placeJoy(0, 0, 0, 0, false); return; }
   if (id !== act.id) return;
   act.id = null; jumpEl.classList.remove('down');
@@ -1214,6 +1243,12 @@ function updButtons(dt) {
   }
   var c = p.charging && canJump() ? clamp(p.chargeT / 0.35, 0, 1) : 0;
   jumpEl.style.setProperty('--c', c.toFixed(3));
+  var tl = trickT ? trickLevel((now() - trickT.st) / 1000) : 0;
+  trickEl.style.setProperty('--c', (tl / 4).toFixed(2));
+  var ts = trickT ? (['', '180 / flip', '360', '540', '720'][tl]) : (p.grind ? 'salta via' : 'joystick = direzione');
+  if (trickSub.textContent !== ts) trickSub.textContent = ts;
+  var gs = grabT !== null && inAir() ? GRAB_NAMES[joyGrab()] : p.grind ? 'joystick = trick rail' : 'tieni premuto';
+  if (grabSub.textContent !== gs) grabSub.textContent = gs;
   if (swipeT > 0) { swipeT -= dt; if (swipeT <= 0) swipeEl.className = ''; }
 }
 
@@ -1300,7 +1335,7 @@ function startAir() {
 }
 function ollie() {
   var p = P; if (state !== 'play' || p.crashed) return;
-  var pop = 6.6 + 3.2 * (p.charging ? clamp(p.chargeT / 0.35, 0, 1) : 0);
+  var pop = (6.6 + 3.2 * (p.charging ? clamp(p.chargeT / 0.35, 0, 1) : 0)) * (S.pw.jump > 0 ? 1.55 : 1);
   if (p.grind) {
     var r = p.grind, dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
     p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + pop * 0.9; p.vz = dir.z * p.speed;
@@ -1358,7 +1393,7 @@ function updGround(dt, dm) {
   var tuck = pl ? clamp(-j.y, 0, 1) : 0, brake = pl ? clamp(j.y, 0, 1) : 0;
   p.tuck = lerp(p.tuck, tuck, damp(6, dt)); p.brake = lerp(p.brake, brake, damp(8, dt));
   var e = 0.25, hx = (Hgt(p.x + e, p.z) - Hgt(p.x - e, p.z)) / (2 * e), hz = (Hgt(p.x, p.z + e) - Hgt(p.x, p.z - e)) / (2 * e);
-  var gl2 = 1 + hx * hx + hz * hz, gk = G * 0.72 * (1 + 0.3 * dm) * mul / gl2;
+  var gl2 = 1 + hx * hx + hz * hz, gk = G * 0.72 * (1 + 0.3 * dm) * mul * (S.pw.turbo > 0 ? 1.6 : 1) / gl2;
   var vx = p.gvx - hx * gk * dt, vz = p.gvz - hz * gk * dt;
   // sterzo: la tavola gira, la velocità la segue grazie alla lamina
   p.yawRate = lerp(p.yawRate, steer * (2.2 - clamp(p.speed / 40, 0, 0.6)), damp(7, dt));
@@ -1382,6 +1417,7 @@ function updGround(dt, dm) {
   if (ny < pred - 0.0006) {
     p.vx = p.gvx; p.vz = p.gvz; p.vy = p.vyG;
     p.lipPop = isNearLip(p.x, p.z);
+    if (S.pw.jump > 0 && p.lipPop) p.vy += 4.5;
     p.x = nx; p.z = nz; p.y = pred; p.coyote = 0.16; startAir(); return;
   }
   p.vyG = (ny - p.y) / dt;
@@ -1391,7 +1427,7 @@ function updGround(dt, dm) {
   if (!(p.railCool > 0)) for (var i = 0; i < S.rails.length; i++) {
     var r = S.rails[i]; if (p.z < r.z1 || p.z > r.z1 + 2.2) continue;
     var t = (p.z - r.z1) / (r.z2 - r.z1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
-    if (Math.abs(p.x - rx) < 1.0 && Math.abs(ry - p.y) < 0.55) { p.vx = p.gvx; p.vy = p.vyG; p.vz = p.gvz; startAir(); mountRail(r, t); return; }
+    if (Math.abs(p.x - rx) < 1.6 && Math.abs(ry - p.y) < 0.7) { p.vx = p.gvx; p.vy = p.vyG; p.vz = p.gvz; startAir(); mountRail(r, t); return; }
   }
   var cx = cxAt(p.z), hw = hwAt(p.z);
   if (Math.abs(p.x - cx) > hw + 4.5 && state === 'play' && p.inv <= 0 && !S.tut) crash('Sei finito tra gli alberi');
@@ -1417,9 +1453,7 @@ function updAir(dt) {
   updTrick(dt);
   if (!p.tr) {
     // piccole correzioni col joystick e raddrizzamento vicino a terra
-    var j = pl && p.airT > 0.12 ? joyInput() : { x: 0, y: 0 };
-    p.spin += -j.x * 2.6 * dt; p.flip += j.y * 2.4 * dt;
-    if (Math.abs(j.x) < 0.15 && Math.abs(j.y) < 0.15) {
+    {
       var assist = 1 - clamp(p.tti / 0.5, 0, 1), ts = Math.round(p.spin / PI) * PI, tf = Math.round(p.flip / TAU) * TAU;
       p.spin += clamp((ts - p.spin) * (1.5 + 8 * assist), -3.5, 3.5) * dt;
       p.flip += clamp((tf - p.flip) * (1.5 + 8 * assist), -3.2, 3.2) * dt;
@@ -1430,11 +1464,16 @@ function updAir(dt) {
   var py = p.y;
   p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
   // rail "magnetici": basta passarci sopra scendendo a meno di 1,3 m
-  if (p.vy < 1.5 && !(p.railCool > 0) && (!p.tr || trickRemaining() < 0.5)) {
+  // rail: se ci salti vicino il rider viene attirato sopra e si attacca per forza
+  if (!(p.railCool > 0)) {
     for (var i = 0; i < S.rails.length; i++) {
-      var r = S.rails[i]; if (p.z < r.z1 - 0.3 || p.z > r.z2 - 0.8) continue;
-      var t = clamp((p.z - r.z1) / (r.z2 - r.z1), 0, 1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t);
-      if (Math.abs(p.x - rx) < 1.3 && p.y <= ry + 0.5 && py >= ry - 0.35) { if (p.tr) { p.done.push(p.tr.t); p.tr = null; } mountRail(r, t); return; }
+      var r = S.rails[i]; if (p.z < r.z1 - 7 || p.z > r.z2 - 0.6) continue;
+      var t = clamp((p.z - r.z1) / (r.z2 - r.z1), 0, 1), rx = lerp(r.x1, r.x2, t), ry = lerp(r.y1, r.y2, t), dxr = rx - p.x;
+      if (Math.abs(dxr) < 3.5 && p.y > ry - 0.8) { var rvx = (r.x2 - r.x1) / (r.z2 - r.z1) * p.vz; p.vx += (dxr * 7 - (p.vx - rvx) * 2.5) * dt; }
+      if (p.z >= r.z1 - 0.3 && Math.abs(dxr) < 2.4 && p.vy < 4 && p.y <= ry + 1.0 && py >= ry - 0.7) {
+        if (p.tr) { p.spin = p.tr.s0 + p.tr.t.spin; p.flip = p.tr.f0 + p.tr.t.flip; p.done.push(p.tr.t); p.tr = null; }
+        p.tq = []; mountRail(r, t); return;
+      }
     }
   }
   var g = Hgt(p.x, p.z);
@@ -1497,11 +1536,13 @@ function scoreTrick(perfectish, sketchy) {
   if (sketchy) pts *= 0.5;
   pts = Math.round(pts * (1 + S.tier * 0.1) / 10) * 10;
   addCombo(pts, parts.join(' + '), perfect ? 'perfect' : sketchy ? 'sketchy' : '');
+  if (perfect && pts >= 2500) S.slowPulse = 0.5;
   if (perfect) { sfx('perfect'); var hs = P.speed, ns = Math.min(maxSpeed(), hs + 1.5); P.gvx *= ns / hs; P.gvz *= ns / hs; P.speed = ns; }
   for (var q = 0; q < done.length; q++) tutEvent('land', done[q]);
   if (grabNames.length) tutEvent('landgrab');
 }
 function addCombo(pts, label, tag) {
+  if (S.pw.x2 > 0) pts *= 2;
   combo.pts += pts; combo.n++; combo.t = 2.6; S.tricks++;
   if (pts > S.bestTrick.pts) S.bestTrick = { pts: pts, name: label };
   popup(label, (tag === 'perfect' ? 'Perfect  ' : tag === 'sketchy' ? 'Sketchy  ' : '') + '+' + fmt(pts), tag);
@@ -1514,44 +1555,50 @@ function bankCombo() {
   if (combo.n > 1) { popup('Combo x' + mult, '+' + fmt(tot), 'bank'); sfx('bank'); }
   combo.pts = 0; combo.n = 0; combo.t = 0;
 }
+var G_NAMES = { '5050': '50-50', board: 'Boardslide', lip: 'Lipslide', nose: 'Nose Press', tail: 'Tail Press' };
 function mountRail(r, t) {
   var p = P;
   var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
   p.speed = clamp(p.vx * dir.x + p.vy * dir.y + p.vz * dir.z, 9, Math.min(maxSpeed(), Math.max(p.toSpeed * 1.1, 16)));
-  var slide = spinErr(p.spin) > 0.75;
-  p.spin = Math.round(p.spin / (PI / 2)) * (PI / 2); p.slideTo = p.spin;
+  p.gBase = Math.round(p.spin / PI) * PI;
   if (state === 'play') scoreTrick(false, false);
   p.flip = 0; p.tr = null; p.tq = [];
-  p.grind = r; p.grindT = 0; p.slideT = 0; p.grindPos = t; p.grindSlide = slide; p.air = false; p.grab = null; p.squash = 0.3;
+  p.grind = r; p.grindT = 0; p.grindPos = t; p.air = false; p.grab = null; p.squash = 0.35;
+  p.gState = '5050'; p.gStateT = 0; p.gParts = []; p.gPitch = 0; p.kSlide = false;
   p.x = lerp(r.x1, r.x2, t); p.y = lerp(r.y1, r.y2, t); p.z = lerp(r.z1, r.z2, t); p.yaw = r.yaw;
   if (act.id !== null) act.mode = 'post';
-  sfx('rail');
+  sfx('rail'); shakeAmt = Math.max(shakeAmt, 0.15);
+  popup(r.kind === 'box' ? 'Box!' : 'Rail!', 'joystick = trick sul rail', '');
   tutEvent('grind');
 }
-function toggleSlide() {
-  var p = P; if (!p.grind) return;
-  p.grindSlide = !p.grindSlide; p.slideTo += p.grindSlide ? PI / 2 : -PI / 2;
-  if (p.grindT > 0.2) { var n = p.grindSlide ? '50-50' : 'Boardslide'; p.grindParts = (p.grindParts || 0) + 1; }
-  sfx('rail');
-}
+function toggleSlide() { if (P.grind) P.kSlide = !P.kSlide; }
 function endGrind() {
   var p = P, r = p.grind, tm = p.grindT;
   p.grind = null;
-  var base = Math.round(p.slideTo / PI) * PI;
-  p.spin = base; p.slideTo = base;
-  var nm = p.grindSlide ? 'Boardslide' : (r.kind === 'box' ? '50-50 Box' : '50-50 Grind');
-  if ((p.grindParts || 0) > 0) nm = 'Rail Combo';
-  if (state === 'play' && tm > 0.2) addCombo(Math.round((250 + tm * 650 + (p.grindParts || 0) * 400) / 10) * 10, nm, '');
-  p.grindParts = 0;
+  if (p.gStateT > 0.2) p.gParts.push(p.gState);
+  var names = [], last = '';
+  for (var i = 0; i < p.gParts.length; i++) { var n = p.gParts[i] === '5050' && r.kind === 'box' ? '50-50 Box' : G_NAMES[p.gParts[i]]; if (n !== last) names.push(n); last = n; }
+  if (!names.length) names.push(r.kind === 'box' ? '50-50 Box' : '50-50');
+  var styled = p.gParts.filter(function (g) { return g !== '5050'; }).length;
+  p.spin = p.gBase; p.gPitch = 0;
+  if (state === 'play' && tm > 0.2) addCombo(Math.round((250 + tm * 650 + (names.length - 1) * 450 + styled * 300) / 10) * 10, names.slice(0, 4).join(' → '), '');
 }
 function updGrind(dt) {
   var p = P, r = p.grind, len = Math.hypot(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1), sl = (r.y1 - r.y2) / len;
-  p.speed = clamp(p.speed + (G * sl * 0.55 - 0.6) * dt, 7, maxSpeed());
+  var j = state === 'play' ? joyInput() : { x: 0, y: 0 }, st = '5050';
+  if (Math.abs(j.x) > 0.45 && Math.abs(j.x) >= Math.abs(j.y)) st = j.x > 0 ? 'board' : 'lip';
+  else if (j.y < -0.45) st = 'nose'; else if (j.y > 0.45) st = 'tail';
+  if (p.kSlide && st === '5050') st = 'board';
+  if (st !== p.gState) { if (p.gStateT > 0.2) p.gParts.push(p.gState); p.gState = st; p.gStateT = 0; sfx('rail'); swipeLabel(G_NAMES[st], false); if (st !== '5050') tutEvent('railtrick'); }
+  p.gStateT += dt;
+  var tgt = p.gBase + (st === 'board' ? -PI / 2 : st === 'lip' ? PI / 2 : 0);
+  p.spin = lerp(p.spin, tgt, damp(16, dt));
+  p.gPitch = lerp(p.gPitch, st === 'nose' ? 0.24 : st === 'tail' ? -0.24 : 0, damp(12, dt));
+  p.speed = clamp(p.speed + (G * sl * 0.55 - 0.6 - (st !== '5050' ? 0.6 : 0)) * dt, 7, maxSpeed());
   p.grindPos += p.speed * dt / len; p.grindT += dt;
-  p.spin = lerp(p.spin, p.slideTo, damp(14, dt));
   if (p.grindPos >= 1) {
     var dir = tmpV.set(r.x2 - r.x1, r.y2 - r.y1, r.z2 - r.z1).normalize();
-    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + 1.2; p.vz = dir.z * p.speed;
+    p.vx = dir.x * p.speed; p.vy = dir.y * p.speed + 1.4; p.vz = dir.z * p.speed;
     endGrind(); startAir(); p.coyote = 0.15; p.lipPop = false; p.railCool = 0.4; return;
   }
   p.x = lerp(r.x1, r.x2, p.grindPos); p.y = lerp(r.y1, r.y2, p.grindPos); p.z = lerp(r.z1, r.z2, p.grindPos);
@@ -1567,6 +1614,16 @@ function collide() {
       for (var j = 0; j < 8; j++) part(c.x, c.y, c.z, (Math.random() - 0.5) * 5, Math.random() * 4, (Math.random() - 0.5) * 5, 0.45, 0.18, 'gold');
     }
   }
+  for (var w = 0; w < S.powers.length; w++) {
+    var ps = S.powers[w], pd = ps.userData.pw; if (pd.taken) continue;
+    var ex = pd.x - p.x, ey = pd.y - by, ez = pd.z - p.z;
+    if (ex * ex + ey * ey + ez * ez < 3.6) { pd.taken = 0.001; givePower(pd.type); for (var jj = 0; jj < 16; jj++) part(pd.x, pd.y, pd.z, (Math.random() - 0.5) * 7, Math.random() * 5, (Math.random() - 0.5) * 7, 0.6, 0.25, 'gold'); }
+  }
+  if (S.pw.magnet > 0) for (var m = 0; m < S.coins.length; m++) {
+    var mc = S.coins[m].userData.coin; if (mc.taken) continue;
+    var mx = p.x - mc.x, my = by - mc.y, mz = p.z - mc.z, md = Math.sqrt(mx * mx + my * my + mz * mz);
+    if (md < 11) { var f = Math.min(1, FIX * 9 / Math.max(md, 0.5) * 3); mc.x += mx * f; mc.y += my * f; mc.z += mz * f; S.coins[m].position.x = mc.x; S.coins[m].position.z = mc.z; }
+  }
   if (p.inv > 0) return;
   for (var k = 0; k < S.rocks.length; k++) {
     var o = S.rocks[k]; if (Math.abs(o.z - p.z) > 2.5) continue;
@@ -1577,6 +1634,13 @@ function collide() {
 var shakeAmt = 0;
 function crash(reason) {
   var p = P; if (p.crashed) return;
+  if (S.shield && state === 'play') {
+    // lo scudo salva: il rider si raddrizza e continua
+    S.shield = false; p.inv = 1.6; popup('Salvato!', 'lo scudo ha retto', 'perfect'); sfx('perfect'); shakeAmt = Math.max(shakeAmt, 0.4);
+    if (p.air) { p.tr = null; p.tq = []; p.spin = Math.round(p.spin / PI) * PI; p.flip = Math.round(p.flip / TAU) * TAU; p.grab = null; if (act.mode === 'grab') act.mode = 'post'; grabT = null; land(); }
+    else { p.gvx *= 0.6; p.gvz *= 0.6; }
+    burst(p.x, p.y + 0.5, p.z, 30, 5, 2); return;
+  }
   var vx = p.air ? p.vx : p.gvx, vz = p.air ? p.vz : p.gvz, vy = p.air ? p.vy : p.vyG;
   var vel = new THREE.Vector3(vx, Math.max(vy, -6), vz), fwd = new THREE.Vector3(vx, 0, vz).normalize();
   updRiderVisual(0);
@@ -1667,8 +1731,11 @@ var TSTEPS = [
   { title: '360', text: 'Ora uno <b>swipe veloce</b> orizzontale. Più è veloce, più giri: 360, 540, 720.', check: function (e, t) { return e === 'land' && t.kind === 'spin' && t.units >= 2; } },
   { title: 'Flip', text: 'In aria <b>swipe in su</b> = backflip, <b>in giù</b> = frontflip. Meglio sui kicker grandi.', check: function (e, t) { return e === 'land' && t.kind === 'flip'; } },
   { title: 'Rodeo e Misty', text: '<b>Swipe in diagonale</b>: verso l\'alto = Rodeo, verso il basso = Misty.', check: function (e, t) { return e === 'land' && t.kind === 'off'; } },
-  { title: 'Grab', text: 'In aria <b>tieni il dito fermo</b> a destra. In alto: Method e Nose, in basso: Tail e Indy. Lascia prima di atterrare.', need: ['landgrab'] },
-  { title: 'Rail', text: 'Entra <b>dritto</b> su un rail o saltaci sopra. Sul rail: swipe ← → per lo slide, tocca per saltare via.', need: ['grind'] },
+  { title: 'Tasto Trick', text: 'Punta il <b>joystick</b> (o lascialo al centro) e premi <b>TRICK</b>. Tienilo più a lungo per più rotazione. A terra salta da solo.', check: function (e, t) { return e === 'land' && !!t; } },
+  { title: 'Grab', text: 'In aria tieni premuto <b>GRAB</b>, anche durante un trick. Il joystick sceglie il grab. Lascia prima di atterrare.', need: ['landgrab'] },
+  { title: 'Rail', text: 'Salta <b>vicino a un rail</b>: ti attacchi da solo. Entrare dritto funziona uguale.', need: ['grind'] },
+  { title: 'Trick sul rail', text: 'Sul rail muovi il <b>joystick</b>: ← → Boardslide e Lipslide, ↑ Nose Press, ↓ Tail Press.', need: ['railtrick'] },
+  { title: 'Poteri', text: 'Prendi una <b>sfera colorata</b>: Super salto, Slow-mo, Punti x2, Magnete, Scudo o Turbo.', need: ['power'] },
   { title: 'Combo', text: 'Fai <b>due trick di fila</b> senza restare troppo a terra: i punti si moltiplicano.', need: ['combo'] }
 ];
 var tut = { i: 0, got: {}, doneT: 0 }, tutCard = $('tutCard'), tutTitle = $('tutTitle'), tutText = $('tutText'), tutStepEl = $('tutStep'), tutDots = $('tutDots'), tutTip = $('tutTip');
@@ -1857,6 +1924,78 @@ function trailBuild() {
   trGeo.attributes.position.needsUpdate = true;
 }
 
+// ============================================================ dettagli: scia luminosa della tavola in aria
+var BTN = 46, btPos = new Float32Array(BTN * 2 * 3), btCol = new Float32Array(BTN * 2 * 3), btGeo = new THREE.BufferGeometry(), btPts = [];
+btGeo.setAttribute('position', new THREE.BufferAttribute(btPos, 3)); btGeo.setAttribute('color', new THREE.BufferAttribute(btCol, 3));
+(function () { var idx = []; for (var i = 0; i < BTN - 1; i++) { var a = i * 2; idx.push(a, a + 2, a + 1, a + 1, a + 2, a + 3); } btGeo.setIndex(idx); })();
+var btMesh = new THREE.Mesh(btGeo, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+btMesh.frustumCulled = false; scene.add(btMesh);
+var btA = new THREE.Vector3(), btB = new THREE.Vector3(), btC = new THREE.Color();
+function updBoardTrail() {
+  var p = P, on = p.air && !p.crashed && state === 'play' && p.airT > 0.08;
+  if (on) {
+    rider.root.updateMatrixWorld(true);
+    btA.set(0, 0.05, -0.72); rider.board.localToWorld(btA); btB.set(0, 0.05, 0.72); rider.board.localToWorld(btB);
+    btPts.push({ a: btA.clone(), b: btB.clone() }); if (btPts.length > BTN) btPts.shift();
+  } else if (btPts.length) { btPts.shift(); if (btPts.length) btPts.shift(); }
+  btC.set(1, 0.78, 0.3); if (S.pw && S.pw.slow > 0) btC.set(0.6, 0.5, 1); else if (p.tr && p.tr.t.kind !== 'spin') btC.set(0.4, 0.9, 1);
+  var n = btPts.length;
+  for (var i = 0; i < BTN; i++) {
+    var q = btPts[Math.min(i, n - 1)], o = i * 6, f = n ? (i / n) * (i < n ? 1 : 0) : 0;
+    if (!q) { btPos[o + 1] = -9999; btPos[o + 4] = -9999; continue; }
+    btPos[o] = q.a.x; btPos[o + 1] = q.a.y; btPos[o + 2] = q.a.z; btPos[o + 3] = q.b.x; btPos[o + 4] = q.b.y; btPos[o + 5] = q.b.z;
+    var k = f * f * 0.85;
+    btCol[o] = btC.r * k; btCol[o + 1] = btC.g * k; btCol[o + 2] = btC.b * k; btCol[o + 3] = btC.r * k; btCol[o + 4] = btC.g * k; btCol[o + 5] = btC.b * k;
+  }
+  btGeo.attributes.position.needsUpdate = true; btGeo.attributes.color.needsUpdate = true;
+}
+
+// ============================================================ poteri sulla pista
+var PW = {
+  jump: { name: 'Super salto', col: '#4fe0b0', dur: 14, glyph: 'up' }, slow: { name: 'Slow-mo', col: '#9a86ff', dur: 12, glyph: 'clock' },
+  x2: { name: 'Punti x2', col: '#ffcf3f', dur: 16, glyph: 'x2' }, magnet: { name: 'Magnete', col: '#ff5a8a', dur: 16, glyph: 'mag' },
+  shield: { name: 'Scudo', col: '#58d8ff', dur: 0, glyph: 'shield' }, turbo: { name: 'Turbo', col: '#ff7a2f', dur: 7, glyph: 'bolt' }
+};
+var PW_KEYS = ['jump', 'slow', 'x2', 'magnet', 'shield', 'turbo'];
+PW_KEYS.forEach(function (k) {
+  var d = PW[k];
+  d.tex = canvasTex(128, 128, function (c) {
+    var g = c.createRadialGradient(64, 64, 10, 64, 64, 64); g.addColorStop(0, d.col); g.addColorStop(0.62, d.col); g.addColorStop(0.64, 'rgba(255,255,255,.95)'); g.addColorStop(0.72, 'rgba(255,255,255,.0)');
+    c.fillStyle = 'rgba(255,255,255,.18)'; c.beginPath(); c.arc(64, 64, 62, 0, TAU); c.fill();
+    c.fillStyle = g; c.beginPath(); c.arc(64, 64, 46, 0, TAU); c.fill();
+    c.strokeStyle = '#ffffff'; c.fillStyle = '#ffffff'; c.lineWidth = 9; c.lineCap = 'round'; c.lineJoin = 'round';
+    if (d.glyph === 'up') { c.beginPath(); c.moveTo(64, 88); c.lineTo(64, 38); c.moveTo(44, 56); c.lineTo(64, 36); c.lineTo(84, 56); c.stroke(); }
+    else if (d.glyph === 'clock') { c.lineWidth = 7; c.beginPath(); c.arc(64, 64, 24, 0, TAU); c.stroke(); c.beginPath(); c.moveTo(64, 64); c.lineTo(64, 48); c.moveTo(64, 64); c.lineTo(76, 70); c.stroke(); }
+    else if (d.glyph === 'x2') { c.font = '900 40px -apple-system, Helvetica, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('x2', 64, 66); }
+    else if (d.glyph === 'mag') { c.lineWidth = 11; c.beginPath(); c.arc(64, 58, 20, PI, 0); c.lineTo(84, 82); c.moveTo(44, 58); c.lineTo(44, 82); c.stroke(); }
+    else if (d.glyph === 'shield') { c.beginPath(); c.moveTo(64, 36); c.lineTo(88, 46); c.quadraticCurveTo(88, 78, 64, 92); c.quadraticCurveTo(40, 78, 40, 46); c.closePath(); c.fill(); }
+    else { c.beginPath(); c.moveTo(70, 34); c.lineTo(46, 68); c.lineTo(62, 68); c.lineTo(56, 94); c.lineTo(82, 58); c.lineTo(66, 58); c.closePath(); c.fill(); }
+  });
+  d.mat = new THREE.SpriteMaterial({ map: d.tex, transparent: true, depthWrite: false });
+});
+function addPower(x, y, z, type) {
+  if (!type) type = PW_KEYS[Math.floor(R() * PW_KEYS.length)];
+  var s = new THREE.Sprite(PW[type].mat); s.scale.set(1.5, 1.5, 1); s.position.set(x, y, z);
+  s.userData.pw = { type: type, x: x, y: y, z: z, taken: 0, ph: R() * 6 };
+  addObj(s, z); S.powers.push(s);
+}
+function givePower(type) {
+  var d = PW[type];
+  if (type === 'shield') S.shield = true; else S.pw[type] = d.dur;
+  popup(d.name + '!', type === 'shield' ? 'salva una caduta' : type === 'slow' ? 'il tempo rallenta in aria' : type === 'jump' ? 'salti molto più alti' : type === 'x2' ? 'punti doppi' : type === 'magnet' ? 'attira i fiocchi' : 'più veloce', 'bank');
+  sfx('perfect'); sfx('bank'); shakeAmt = Math.max(shakeAmt, 0.2);
+  tutEvent('power');
+}
+var pwHtml = '';
+function updPowersHud(dt) {
+  var h = '';
+  if (S && state === 'play') {
+    for (var k in S.pw) { if (S.pw[k] > 0) { S.pw[k] -= dt; if (S.pw[k] > 0) h += '<span style="background:' + PW[k].col + '">' + PW[k].name + ' ' + Math.ceil(S.pw[k]) + 's</span>'; } }
+    if (S.shield) h += '<span style="background:' + PW.shield.col + '">Scudo</span>';
+  }
+  if (h !== pwHtml) { pwHtml = h; $('powers').innerHTML = h; }
+}
+
 // ============================================================ dettagli: seggiovia
 var GEO2 = {
   tower: mergeColored([
@@ -1997,7 +2136,7 @@ function updRiderVisual(dt) {
   vRight.crossVectors(vUp, vFwd).normalize();
   mBasis.makeBasis(vRight, vUp, vFwd);
   qBasis.setFromRotationMatrix(mBasis);
-  qFlip.setFromAxisAngle(X_AXIS, p.air ? p.flip : 0);
+  qFlip.setFromAxisAngle(X_AXIS, p.air ? p.flip : (p.grind ? p.gPitch || 0 : 0));
   qSpin.setFromAxisAngle(Y_AXIS, p.spin);
   qLean.setFromAxisAngle(Z_AXIS, p.air ? 0 : p.lean);
   rider.root.quaternion.copy(qBasis).multiply(qFlip).multiply(qSpin).multiply(qLean);
@@ -2006,7 +2145,13 @@ function updRiderVisual(dt) {
     rider.root.position.add(off).sub(off2);
   }
   rider.root.visible = !(p.inv > 0 && Math.floor(p.inv * 12) % 2 === 0);
-  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt * (p.tr ? 0.5 : 1), tuck: p.air ? 0 : p.tuck, edge: p.air ? 0 : p.edge, twist: p.air && p.tr ? 0.6 : 0, look: p.air ? 0 : -p.yawRate * 0.3 });
+  var tb = p.tr ? Math.sin(PI * clamp(p.tr.u, 0, 1)) : 0;
+  p.tbS = lerp(p.tbS || 0, tb, damp(14, dt || 0.016));
+  poseRider({ c: p.crouch, ga: p.grabAmt, grab: p.grab || p.lastGrab, t: S.time, air: p.airAmt * (p.tr ? 0.5 : 1), tuck: p.air ? 0 : p.tuck, edge: p.air ? 0 : p.edge,
+    twist: p.air && p.tr ? 0.6 : 0, look: p.air ? 0 : -p.yawRate * 0.3, tk: p.tr ? p.tr.t.kind : null, tb: p.tbS, flair: p.air && !p.tr && !p.grab && p.airT > 0.3 ? 0.6 : 0 });
+  // la tavola si piega nei grab
+  var g2 = p.grabAmt, gk = p.grab || p.lastGrab;
+  rider.board.rotation.set(gk === 'nose' ? -0.22 * g2 : gk === 'tail' ? 0.22 * g2 : 0, 0, gk === 'method' ? 0.32 * g2 : gk === 'melon' ? 0.22 * g2 : gk === 'indy' ? -0.2 * g2 : 0);
 }
 function updMarkers() {
   var p = P;
@@ -2031,6 +2176,11 @@ function updWorldVisual(dt) {
     var s = S.coins[i], c = s.userData.coin;
     if (c.taken) { s.position.y = c.y + c.taken * 1.5; var sc2 = 1 + c.taken; s.scale.set(sc2, sc2, 1); s.visible = c.taken < 1; }
     else { s.position.y = c.y + Math.sin(S.time * 3 + c.ph) * 0.12; var k = 0.95 + Math.sin(S.time * 4 + c.ph) * 0.08; s.scale.set(k, k, 1); }
+  }
+  for (var w = 0; w < S.powers.length; w++) {
+    var ps = S.powers[w], pd = ps.userData.pw;
+    if (pd.taken) { pd.taken += dt * 3; var sc3 = 1.5 * (1 + pd.taken); ps.scale.set(sc3, sc3, 1); ps.material.opacity = 1; ps.visible = pd.taken < 1; ps.position.y = pd.y + pd.taken; }
+    else { ps.position.y = pd.y + Math.sin(S.time * 2.5 + pd.ph) * 0.2; var k2 = 1.45 + Math.sin(S.time * 5 + pd.ph) * 0.12; ps.scale.set(k2, k2, 1); if (Math.random() < 0.15) part(pd.x + (Math.random() - 0.5), ps.position.y + (Math.random() - 0.5), pd.z, 0, 0.6, 0, 0.5, 0.15, 'gold'); }
   }
   for (var j = 0; j < S.flags.length; j++) { var fl = S.flags[j].userData.flag; fl.rotation.y = Math.sin(S.time * 6 + j) * 0.35; }
   // fumo dai camini delle baite
@@ -2095,13 +2245,19 @@ function updateHud() {
 }
 
 // ============================================================ loop principale
-var last = 0, acc = 0, genT = 0;
+var last = 0, acc = 0, genT = 0, timeScale = 1;
 function frame(ts) {
   var dt = last ? (ts - last) / 1000 : 0.016; last = ts;
   if (dt > 0.1) dt = 0.1;
   var running = state !== 'paused' && state !== 'over';
+  if (running && S) {
+    var tsT = 1;
+    if (S.slowPulse > 0) { S.slowPulse -= dt; tsT = 0.35; }
+    else if (S.pw.slow > 0 && P.air && !P.crashed) tsT = 0.5;
+    timeScale = lerp(timeScale, tsT, damp(8, dt));
+  }
   if (running) {
-    acc += dt; var n = 0;
+    acc += dt * timeScale; var n = 0;
     while (acc >= FIX && n < 20) { update(FIX); acc -= FIX; n++; if (state === 'over') break; }
     genT -= dt;
     if (genT <= 0 && state !== 'over') { genT = 0.25; genAhead(); pruneWorld(); genLift(); }
@@ -2115,7 +2271,7 @@ function frame(ts) {
   updWorldVisual(running ? dt : 0);
   updLights();
   updFlakes(running ? dt : 0);
-  updLift(); trailBuild(); updStreaks(running ? dt : 0); updSparkles(); updButtons(running ? dt : 0);
+  updLift(); trailBuild(); updStreaks(running ? dt : 0); updSparkles(); updButtons(running ? dt : 0); updBoardTrail(); updPowersHud(running ? dt : 0);
   renderer.render(scene, camera);
   updateHud();
   updateAudio();
@@ -2132,6 +2288,7 @@ function boot() {
 }
 window.__debug = {
   get S() { return S; }, get P() { return P; }, get state() { return state; }, get AV() { return AV; }, get tut() { return tut; },
+  press: pressStart, move: pressMove, release: pressEnd,
   start: startGame, crash: function () { crash('test'); }, ollie: ollie, swipe: function (dx, dy, v) { startTrick(trickFromSwipe(dx, dy, v)); }, trick: trickFromSwipe,
   steer: function (v) { keySteer = v; }, joyY: function (v) { keyFlip = v; }, grab: function (g) { keyGrab = g; }, slide: toggleSlide, H: function (x, z) { return Hgt(x, z); }, cx: function (z) { return cxAt(z); },
   step: function (n, bot) { for (var i = 0; i < n; i++) { if (bot) bot(P, S); update(FIX); updTut(FIX); if (state !== 'play') break; if (i % 30 === 0) { genAhead(); pruneWorld(); genLift(); } } },
