@@ -26,3 +26,28 @@ Dopo ogni modifica:
 ```
 python3 build.py
 ```
+
+---
+
+# POWDER RUN — snowboard infinito
+
+Gioco di snowboard originale per **Scriptable**: pista infinita generata al volo, salti, flip, grab, rail e una valanga che ti insegue.
+
+## Come giocare su iPhone
+1. In Scriptable tocca **+**, incolla il contenuto di [`snow/PowderRun.js`](snow/PowderRun.js) (circa 70 righe) e avvia.
+   Alla prima apertura scarica il gioco da GitHub (serve internet), poi funziona anche offline.
+2. Alternativa senza internet: incolla [`snow/PowderRunCompleto.js`](snow/PowderRunCompleto.js), la versione completa.
+3. Record e impostazioni finiscono in `Scriptable/PowderRun/record.json`.
+
+## Comandi
+- **Tieni premuto e lascia**: salto (più tieni, più salti in alto). Lasciare sul bordo di un kicker dà una spinta in più.
+- **In aria, tieni premuto a sinistra / a destra**: backflip / frontflip.
+- **In aria, swipe** su / giù / avanti / indietro: Method / Indy / Nose Grab / Tail Grab.
+- Atterra parallelo alla pista (la linea tratteggiata sotto di te diventa verde quando l'angolo va bene).
+- Sul computer: Spazio = salto, frecce ← → = flip, W A S D = grab, P = pausa.
+
+## Sviluppo
+Il gioco è tutto in `snow/powder.html` (si apre anche nel browser). Dopo ogni modifica:
+```
+python3 snow/build.py
+```
