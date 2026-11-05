@@ -984,8 +984,8 @@ function pressMove(id, x, y) {
   if (act.mode === 'pad') {
     // il rider ruota come muovi il dito: orizzontale = spin, verticale = flip
     var k = 0.0135;
-    padSpin += mx * k; padFlip += my * k;
-    padVS = lerp(padVS, mx * k * 1000 / dtm, 0.45); padVF = lerp(padVF, my * k * 1000 / dtm, 0.45);
+    padSpin -= mx * k; padFlip += my * k;
+    padVS = lerp(padVS, -mx * k * 1000 / dtm, 0.45); padVF = lerp(padVF, my * k * 1000 / dtm, 0.45);
     tutorialEvent('spin');
   }
 }
@@ -1177,7 +1177,7 @@ function updatePlayer(dt) {
 }
 function updGround(dt, dm) {
   var p = P, j = joyInput(), mul = speedMul();
-  var steer = state === 'play' ? j.x : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
+  var steer = state === 'play' ? -j.x : Math.sin(S.time * 0.5) * 0.4 - p.yaw * 0.8;
   if (Math.abs(steer) > 0.2 && state === 'play') tutorialEvent('steer');
   var tuck = state === 'play' ? clamp(-j.y, 0, 1) : 0, brake = state === 'play' ? clamp(j.y, 0, 1) : 0;
   p.tuck = lerp(p.tuck, tuck, damp(6, dt)); p.brake = brake;
@@ -1228,7 +1228,7 @@ function updAir(dt) {
   var joyOn = Math.abs(j.x) > 0.18 || Math.abs(j.y) > 0.18, padOn = act.mode === 'pad' && act.id !== null;
   if (joyOn || padOn) p.flick = false;
   var gm = gb ? 0.7 : 1;
-  if (Math.abs(j.x) > 0.18) p.spinRate = lerp(p.spinRate, j.x * 10.5 * gm, damp(10, dt));
+  if (Math.abs(j.x) > 0.18) p.spinRate = lerp(p.spinRate, -j.x * 10.5 * gm, damp(10, dt));
   if (Math.abs(j.y) > 0.18) p.flipRate = lerp(p.flipRate, j.y * 9.5 * gm, damp(10, dt));
   if (joyOn) tutorialEvent('spin');
   if (padOn) { p.spinRate *= Math.exp(-dt * 25); p.flipRate *= Math.exp(-dt * 25); }
