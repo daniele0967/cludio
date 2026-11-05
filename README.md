@@ -29,25 +29,30 @@ python3 build.py
 
 ---
 
-# POWDER RUN — snowboard infinito
+# POWDER RUN 3D — snowboard infinito
 
-Gioco di snowboard originale per **Scriptable**: pista infinita generata al volo, salti, flip, grab, rail e una valanga che ti insegue.
+Gioco di snowboard originale in **3D** (Three.js) per **Scriptable**: camera alle spalle del rider, pista infinita generata al volo con kicker, salti nel vuoto, rail e box, dossi, sassi e alberi, e una valanga che ti insegue.
 
 ## Come giocare su iPhone
 1. In Scriptable tocca **+**, incolla il contenuto di [`snow/PowderRun.js`](snow/PowderRun.js) (circa 70 righe) e avvia.
-   Alla prima apertura scarica il gioco da GitHub (serve internet), poi funziona anche offline.
-2. Alternativa senza internet: incolla [`snow/PowderRunCompleto.js`](snow/PowderRunCompleto.js), la versione completa.
+   Alla prima apertura scarica il gioco da GitHub (serve internet), poi funziona anche offline. Lo script scarica sempre l'ultima versione.
+2. Alternativa senza internet: incolla [`snow/PowderRunCompleto.js`](snow/PowderRunCompleto.js), la versione completa (circa 800 KB, contiene anche il motore 3D).
 3. Record e impostazioni finiscono in `Scriptable/PowderRun/record.json`.
 
 ## Comandi
-- **Tieni premuto e lascia**: salto (più tieni, più salti in alto). Lasciare sul bordo di un kicker dà una spinta in più.
-- **In aria, tieni premuto a sinistra / a destra**: backflip / frontflip.
-- **In aria, swipe** su / giù / avanti / indietro: Method / Indy / Nose Grab / Tail Grab.
-- Atterra parallelo alla pista (la linea tratteggiata sotto di te diventa verde quando l'angolo va bene).
-- Sul computer: Spazio = salto, frecce ← → = flip, W A S D = grab, P = pausa.
+- **Tieni premuto a sinistra / a destra**: curvi.
+- **Tocco veloce** o **swipe in su**: salto. Saltare sul bordo di un kicker dà una spinta in più.
+- **In aria, tieni premuto a sinistra / a destra**: giri (180, 360, 540…). Lascia prima di atterrare.
+- **In aria, swipe in su / in giù**: backflip / frontflip (ripeti lo swipe per il doppio).
+- **In aria, swipe a sinistra / a destra**: Method / Indy grab, finché tieni il dito.
+- Il cerchio a terra mostra dove atterri: verde se l'atterraggio va bene, rosso se cadi.
+- Sul computer: frecce ← → = curva e spin, Spazio = salto, ↑ ↓ = flip, A / D = grab, P = pausa.
 
 ## Sviluppo
-Il gioco è tutto in `snow/powder.html` (si apre anche nel browser). Dopo ogni modifica:
+Sorgenti in `snow3d/` (`index.html` interfaccia, `game.js` gioco, `vendor/three.min.js` motore 3D, licenza MIT).
+Dopo ogni modifica:
 ```
 python3 snow/build.py
 ```
+che crea `snow/powder.html` (si apre anche nel browser) e i due script Scriptable.
+La prima versione 2D è ancora in `snow/powder2d.html`.

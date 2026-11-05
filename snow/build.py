@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-"""Costruisce gli script Scriptable di Powder Run a partire da powder.html.
+"""Costruisce Powder Run 3D (snow/powder.html) dai sorgenti in snow3d/ e gli script Scriptable.
 
 - PowderRun.js         script corto: scarica il gioco da GitHub e lo tiene in cache
 - PowderRunCompleto.js versione completa con il gioco dentro (funziona offline)
 """
 import json, pathlib
 here = pathlib.Path(__file__).parent
-html = (here / 'powder.html').read_text()
+src3d = here.parent / 'snow3d'
+html = (src3d / 'index.html').read_text()
+for tag, f in [('THREE', 'vendor/three.min.js'), ('GAME', 'game.js')]:
+    code = (src3d / f).read_text()
+    assert '</script' not in code.lower(), f
+    html = html.replace('/*__%s__*/' % tag, code, 1)
 assert '/*__SAVE__*/null' in html
+(here / 'powder.html').write_text(html)
 
 HEADER = """// Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
@@ -58,7 +64,7 @@ def chunks(text, n=120):
 
 lines = ',\n'.join(json.dumps(c, ensure_ascii=True) for c in chunks(html))
 full = HEADER + """// POWDER RUN - snowboard infinito (versione completa, funziona offline)
-// File generato da snow/build.py: modifica snow/powder.html.
+// File generato da snow/build.py: modifica i sorgenti in snow3d/.
 """ + RUNTIME + """
 const PEZZI = [
 """ + lines + """
