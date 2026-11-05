@@ -60,11 +60,12 @@ La prima versione 2D è ancora in `snow/powder2d.html`.
 
 ---
 
-# PLAYMAKER — basket a enigmi
+# PLAYMAKER — basket a enigmi in 3D
 
-Gioco di basket originale a enigmi per **Scriptable** e browser: il tempo si ferma quando hai la palla e disegni la giocata col dito. 50 livelli in 5 capitoli (Campetto, Liceo, College, Pro, Finale), 3 stelle per livello.
+Gioco di basket originale a enigmi in **3D** (Three.js) per **Scriptable** e browser: il tempo si ferma quando hai la palla e disegni la giocata col dito. 50 livelli a scenari in 5 capitoli (Campetto, Liceo, College, Pro, Finale), con storia, punteggio, cronometro e 3 stelle per livello.
 
-- Su iPhone: in Scriptable incolla [`basket/Playmaker.js`](basket/Playmaker.js) (scarica il gioco da GitHub) oppure [`basket/PlaymakerCompleto.js`](basket/PlaymakerCompleto.js) (offline). La carriera si salva in `Scriptable/Playmaker/carriera.json`.
-- Nel browser: apri `basket/playmaker.html`.
-- Comandi: trascina dal giocatore con la palla a un compagno (passaggio, anche curvo), al canestro (tiro con barra del tempismo), in un punto vuoto (palleggio). Sul canestro con un compagno sotto: alley-oop.
-- Sorgenti: `basket/index.html` e `basket/game.js`. Dopo ogni modifica: `python3 basket/build.py`. Ogni livello è verificato da un risolutore interno che cerca almeno una soluzione.
+- Su iPhone: in Scriptable incolla [`basket/Playmaker.js`](basket/Playmaker.js) (scarica il gioco da GitHub, circa 4,7 MB la prima volta) oppure [`basket/PlaymakerCompleto.js`](basket/PlaymakerCompleto.js) (offline). La carriera si salva in `Scriptable/Playmaker/carriera.json`.
+- Nel browser: apri `basket/playmaker.html`. La vecchia versione 2D è in `basket/playmaker2d.html`.
+- Comandi: trascina dal giocatore con la palla a un compagno (passaggio, anche curvo), al canestro (tiro con barra del tempismo), in un punto vuoto (palleggio, anche curvo per usare i blocchi). Passando vicino al compagno sotto canestro e finendo sul ferro: alley-oop.
+- Scenari: ultimo tiro con il cronometro, contropiede, rimessa dal fondo, pick and roll con blocchi, difesa a zona, isolamento contro il pressing, tiri liberi decisivi.
+- Sorgenti in `basket3d/`: `sim.js` (simulazione, livelli e risolutore, senza grafica), `game3d.js` (grafica e animazioni), `index.html` (interfaccia), `vendor/three-bundle.min.js` (Three.js con GLTFLoader e SkeletonUtils, licenza MIT), `assets/Xbot.glb` (modello umano con animazioni dagli esempi di Three.js, di origine Mixamo). Dopo ogni modifica: `python3 basket3d/build.py`. Ogni livello è verificato dal risolutore, che usa le stesse regole del gioco.
