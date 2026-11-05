@@ -57,3 +57,14 @@ python3 snow/build.py
 ```
 che crea `snow/powder.html` (si apre anche nel browser) e i due script Scriptable.
 La prima versione 2D è ancora in `snow/powder2d.html`.
+
+---
+
+# PLAYMAKER — basket a enigmi
+
+Gioco di basket originale a enigmi per **Scriptable** e browser: il tempo si ferma quando hai la palla e disegni la giocata col dito. 50 livelli in 5 capitoli (Campetto, Liceo, College, Pro, Finale), 3 stelle per livello.
+
+- Su iPhone: in Scriptable incolla [`basket/Playmaker.js`](basket/Playmaker.js) (scarica il gioco da GitHub) oppure [`basket/PlaymakerCompleto.js`](basket/PlaymakerCompleto.js) (offline). La carriera si salva in `Scriptable/Playmaker/carriera.json`.
+- Nel browser: apri `basket/playmaker.html`.
+- Comandi: trascina dal giocatore con la palla a un compagno (passaggio, anche curvo), al canestro (tiro con barra del tempismo), in un punto vuoto (palleggio). Sul canestro con un compagno sotto: alley-oop.
+- Sorgenti: `basket/index.html` e `basket/game.js`. Dopo ogni modifica: `python3 basket/build.py`. Ogni livello è verificato da un risolutore interno che cerca almeno una soluzione.
