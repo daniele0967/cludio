@@ -579,7 +579,7 @@ window.__pr = {
   get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
-  groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
+  grabPoint: grabPoint, GRABS: GRABS, PS: PS, poseRider: poseRider, groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
   scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes

@@ -2886,7 +2886,7 @@ function curlFingers(amount, side) {
 }
 
 // ------------------------------------------------------------ pose del rider (ogni fotogramma)
-var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false, comp: 0, compV: 0 };
+var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false, comp: 0, compV: 0, pull: new THREE.Vector3(), up: new THREE.Vector3(0, 1, 0), lvy: 0, steerS: 0 };
 var _bq = new THREE.Quaternion(), _bx = new THREE.Vector3(), _by = new THREE.Vector3(), _bz = new THREE.Vector3(), _c = new THREE.Vector3(), _U = new THREE.Vector3(), _F = new THREE.Vector3();
 var _hipP = new THREE.Vector3(), _tg = new THREE.Vector3(), _tg2 = new THREE.Vector3(), _pl = new THREE.Vector3(), _sh = new THREE.Vector3(), _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _qc = new THREE.Quaternion();
 var _bpos = new THREE.Vector3();
@@ -2900,13 +2900,13 @@ var BOARD_T = 0.013;
 //  free:  dove va la mano libera rispetto alla spalla [avanti(petto), verso la punta, su]
 //  elbow: verso dove punta il gomito della mano che afferra [avanti, punta, su]
 var GPOSE = {
-  nose:    { pt: [0.7, 0, 0.02], board: { toeUp: 0, noseUp: 0.7, yaw: 0, up: 0.16, back: 0, along: -0.08 }, body: { hip: 0.52, bend: 0.8, side: 0.6, twist: 0.25, arch: 0 }, free: [-0.05, -0.6, 0.1], elbow: [0.3, 0.4, 0.6] },
-  mute:    { pt: [0.06, 1, 0.0], board: { toeUp: 0.35, noseUp: -0.4, yaw: -0.45, up: 0.12, back: -0.05, along: 0 }, body: { hip: 0.44, bend: 0.9, side: 0.25, twist: 0.05, arch: 0 }, free: [-0.3, -0.45, 0.35], elbow: [0.6, 0.2, 0.4] },
+  nose:    { pt: [0.7, 0, 0.02], board: { toeUp: 0, noseUp: 0.6, yaw: 0, up: 0.2, back: 0, along: -0.2 }, body: { hip: 0.52, bend: 0.8, side: 0.6, twist: 0.25, arch: 0 }, free: [-0.05, -0.6, 0.1], elbow: [0.3, 0.4, 0.6] },
+  mute:    { pt: [0.06, 1, 0.0], board: { toeUp: 0.22, noseUp: -0.1, yaw: -0.22, up: 0.24, back: -0.08, along: 0.04 }, body: { hip: 0.46, bend: 0.75, side: 0.25, twist: 0.05, arch: 0 }, free: [-0.3, -0.45, 0.35], elbow: [0.6, 0.2, 0.4] },
   indy:    { pt: [-0.05, 1, 0.0], board: { toeUp: 0.5, noseUp: 0.2, yaw: 0.15, up: 0.16, back: -0.05, along: 0 }, body: { hip: 0.43, bend: 0.8, side: -0.1, twist: -0.15, arch: 0 }, free: [0.3, 0.35, 0.5], elbow: [0.6, -0.2, 0.4] },
   japan:   { pt: [0.18, 1, -0.01], board: { toeUp: 1.05, noseUp: -0.35, yaw: 0.1, up: 0.3, back: 0.28, along: -0.05 }, body: { hip: 0.5, bend: 0.55, side: 0.2, twist: 0.25, arch: 0.25 }, free: [0, 0, 0.72], elbow: [0.5, 0.5, 0.3] },
-  tail:    { pt: [-0.7, 0, 0.02], board: { toeUp: 0, noseUp: -0.6, yaw: 0, up: 0.14, back: 0, along: 0.08 }, body: { hip: 0.52, bend: 0.7, side: -0.6, twist: -0.3, arch: 0 }, free: [0.1, 0.6, 0.12], elbow: [0.2, -0.4, 0.6] },
+  tail:    { pt: [-0.7, 0, 0.02], board: { toeUp: 0, noseUp: -0.55, yaw: 0, up: 0.18, back: 0, along: 0.2 }, body: { hip: 0.52, bend: 0.7, side: -0.6, twist: -0.3, arch: 0 }, free: [0.1, 0.6, 0.12], elbow: [0.2, -0.4, 0.6] },
   stale:   { pt: [-0.14, -1, -0.01], board: { toeUp: -0.55, noseUp: 0.35, yaw: 0.25, up: 0.22, back: 0.2, along: 0.05 }, body: { hip: 0.52, bend: 0.3, side: -0.35, twist: -0.45, arch: 0.15 }, free: [0.5, 0.3, 0.05], elbow: [-0.6, -0.4, 0.2] },
-  melon:   { pt: [0.08, -1, -0.01], board: { toeUp: -0.6, noseUp: -0.3, yaw: -0.35, up: 0.18, back: 0.12, along: 0 }, body: { hip: 0.47, bend: 0.45, side: 0.35, twist: 0.35, arch: 0 }, free: [-0.2, -0.3, 0.6], elbow: [-0.6, 0.3, 0.2] },
+  melon:   { pt: [0.08, -1, -0.01], board: { toeUp: -0.45, noseUp: -0.15, yaw: -0.25, up: 0.22, back: 0.12, along: 0 }, body: { hip: 0.47, bend: 0.45, side: 0.35, twist: 0.35, arch: 0 }, free: [-0.2, -0.3, 0.6], elbow: [-0.6, 0.3, 0.2] },
   method:  { pt: [0.02, -1, -0.03], board: { toeUp: -1.35, noseUp: 0.2, yaw: -0.15, up: 0.42, back: 0.4, along: -0.02 }, body: { hip: 0.56, bend: 0.25, side: 0.15, twist: 0.45, arch: 0.45 }, free: [-0.15, -0.45, 0.65], elbow: [-0.5, 0.2, 0.5] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
@@ -2949,6 +2949,9 @@ function poseRider(dt, mode) {
     _v1.set(0, 1, 0).applyQuaternion(P.q); _v2.set(0, 0, ss).applyQuaternion(P.q); _v3.set(1, 0, 0).applyQuaternion(P.q);
     _bpos.addScaledVector(_v1, GP.board.up * gk).addScaledVector(_v2, -GP.board.back * gk).addScaledVector(_v3, GP.board.along * gk);
   }
+  // la mano che afferra tira la tavola verso di se' (correzione calcolata sotto, conservata tra i fotogrammi)
+  if (!(GP && PS.grab > 0.05)) PS.pull.multiplyScalar(1 - damp(9, dt));
+  _bpos.add(PS.pull);
   rig.board.position.copy(_bpos);
   rig.board.updateMatrixWorld(true);
   _bx.set(1, 0, 0).applyQuaternion(_bq); _by.set(0, 1, 0).applyQuaternion(_bq); _bz.set(0, 0, 1).applyQuaternion(_bq);
@@ -2960,7 +2963,11 @@ function poseRider(dt, mode) {
   if (air && PS.grab > 0.05) crouch = Math.max(crouch, 0.55 + 0.45 * PS.grab);
   if (rail) crouch = 0.45;
   if (P.landT < 0.3 && P.mode === 'ground') crouch = Math.max(crouch, (1 - P.landT / 0.3) * (P.quality === 'sketchy' ? 1 : 0.75));
-  PS.crouch = lerp(PS.crouch, crouch, damp(12, dt));
+  PS.crouch = lerp(PS.crouch, crouch, damp(air ? 12 : 7, dt));
+  // piccole compressioni delle gambe sui cambi di pendenza (si muove morbido invece che rigido)
+  if (P.mode === 'ground' && PS.init) PS.compV -= clamp(P.vy - PS.lvy, -0.6, 0.6) * 0.5;
+  PS.lvy = P.vy;
+  PS.steerS = lerp(PS.steerS, P.mode === 'ground' ? (P.steer || 0) : 0, damp(5, dt));
   PS.lean = lerp(PS.lean, clamp(lean, -0.9, 0.9), damp(9, dt));
   var spinW = air && A ? A.ws : 0, flipW = air && A ? A.wf : 0;
   // dinamica in aria: raccolta nei flip, apertura del corpo poco prima di atterrare
@@ -2972,6 +2979,7 @@ function poseRider(dt, mode) {
   if (air && PS.open > 0.05 && PS.grab < 0.1) crouch = lerp(crouch, 0.15, PS.open * 0.7);
   var twist = 0.38 - (P.charge > 0 ? P.prewind * 0.9 * P.charge : 0) + clamp(-spinW * 0.09, -0.75, 0.75) * (ss);
   if (P.mode === 'ground' && P.brake) twist += 0.3;
+  if (P.mode === 'ground') twist += -PS.steerS * 0.3 * ss * (P.sw ? -1 : 1);
   PS.twist = lerp(PS.twist, twist, damp(8, dt));
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
   // ---- bacino
@@ -2985,6 +2993,7 @@ function poseRider(dt, mode) {
   }
   _v3.set(P.hx, 0, P.hz).normalize();
   _U.copy(_v2).applyAxisAngle(_v3, -PS.lean * 0.9).normalize();
+  if (PS.init && !air) { PS.up.lerp(_U, damp(10, dt)).normalize(); _U.copy(PS.up); } else PS.up.copy(_U);
   if (P.wobble > 0) { P.wobble = Math.max(0, P.wobble - dt * 1.6); _U.applyAxisAngle(_v1, Math.sin(rig.t * 22) * 0.12 * P.wobble); }
   _hipP.set(P.x, P.y, P.z).addScaledVector(_by, BOARD_T).addScaledVector(_U, hipH).addScaledVector(_v1, PS.xOff).addScaledVector(_c, -0.04 - PS.crouch * 0.06);
   // in aria con grab il bacino si avvicina alla tavola: le ginocchia salgono
@@ -3015,6 +3024,7 @@ function poseRider(dt, mode) {
   _tg.normalize();
   if (air && A && A.landX !== undefined) { _tg2.set(A.landX - P.x, (A.landY - P.y) * 0.6, A.landZ - P.z).normalize(); _tg.lerp(_tg2, 0.5).normalize(); }
   if (air && Math.abs(spinW) > 2) _tg.applyAxisAngle(AY, clamp(spinW * 0.12, -0.9, 0.9));
+  if (P.mode === 'ground') _tg.applyAxisAngle(AY, -PS.steerS * 0.45);
   PS.look.lerp(_tg, damp(6, dt)).normalize();
   B.Spine2.getWorldQuaternion(_qa);
   _v3.set(0, 1, 0).applyQuaternion(_qa); _v4.set(0, 0, 1).applyQuaternion(_qa);
@@ -3026,29 +3036,43 @@ function poseRider(dt, mode) {
   _qa.multiply(rig.bind.Spine2.q.clone().invert()); _qa.multiply(rig.bind.Neck.q);
   _qa.slerp(_qb, 0.45); setWorldQ(B.Neck, _qa);
   setWorldQ(B.Head, _qb);
-  // ---- gambe: caviglie sugli attacchi, ginocchia verso le punte dei piedi
+  // ---- gambe e braccia (due passate nei grab: la tavola viene tirata fino alla mano)
   var front = ss > 0 ? 'Left' : 'Right', back = ss > 0 ? 'Right' : 'Left';
-  [[front, 0.255, 15], [back, -0.255, -9]].forEach(function (lg) {
-    var x = lg[1], tgt = _tg.copy(_bpos).addScaledVector(_bx, x).addScaledVector(_by, BOARD_T + 0.085);
-    _pl.copy(_c).addScaledVector(_bx, x > 0 ? 0.25 : 0.45).addScaledVector(_by, 0.25);
-    if (air && (PS.grab > 0.05 || PS.tuck > 0.05)) _pl.addScaledVector(_by, 0.6 * Math.max(PS.grab, PS.tuck));
-    solveLimb(lg[0] + 'UpLeg', lg[0] + 'Leg', lg[0] + 'Foot', tgt, L.thigh, L.shin, _pl, ZF);
-    _F.copy(_bz).multiplyScalar(ss).applyAxisAngle(_by, lg[2] * DEG * ss * (x > 0 ? 1 : 1));
-    setFootQ(lg[0] + 'Foot', _F, _by);
-    setFootQ(lg[0] + 'ToeBase', _F, _by);
-  });
-  // ---- braccia
+  function legs() {
+    [[front, 0.255, 15], [back, -0.255, -9]].forEach(function (lg) {
+      var x = lg[1], tgt = _tg.copy(_bpos).addScaledVector(_bx, x).addScaledVector(_by, BOARD_T + 0.085);
+      _pl.copy(_c).addScaledVector(_bx, x > 0 ? 0.25 : 0.45).addScaledVector(_by, 0.25);
+      if (air && (PS.grab > 0.05 || PS.tuck > 0.05)) _pl.addScaledVector(_by, 0.6 * Math.max(PS.grab, PS.tuck));
+      solveLimb(lg[0] + 'UpLeg', lg[0] + 'Leg', lg[0] + 'Foot', tgt, L.thigh, L.shin, _pl, ZF);
+      _F.copy(_bz).multiplyScalar(ss).applyAxisAngle(_by, lg[2] * DEG * ss);
+      setFootQ(lg[0] + 'Foot', _F, _by);
+      setFootQ(lg[0] + 'ToeBase', _F, _by);
+    });
+  }
+  legs();
   var t = rig.t;
-  B[front + 'Arm'].getWorldPosition(_sh);
   armPose(front, true, G0, gi, air, rail, t, dt);
   armPose(back, false, G0, gi, air, rail, t, dt);
+  if (G0 && GP && PS.grab > 0.25) {
+    var gh = G0.hand === 'front' ? front : back;
+    for (var it = 0; it < 2; it++) {
+      B[gh + 'Hand'].getWorldPosition(_v4);
+      grabPoint(G0, G0.hand === 'front', _v5).applyQuaternion(rig.board.quaternion).add(rig.board.position);
+      _v4.sub(_v5).multiplyScalar(0.9 * PS.grab);
+      if (_v4.lengthSq() < 1e-5) break;
+      PS.pull.add(_v4); if (PS.pull.length() > 0.32) PS.pull.setLength(0.32);
+      _bpos.add(_v4); rig.board.position.copy(_bpos); rig.board.updateMatrixWorld(true);
+      legs();
+      armPose(gh, G0.hand === 'front', G0, gi, air, rail, t, dt, true);
+    }
+  }
   curlFingers(0.35);
   if (G0 && PS.grab > 0.2) curlFingers(1.25 * PS.grab, (G0.hand === 'front') === (front === 'Left') ? 'L' : 'R');
   PS.init = true;
 }
 var _hand = { L: new THREE.Vector3(), R: new THREE.Vector3() }, _handV = { L: new THREE.Vector3(), R: new THREE.Vector3() }, _handInit = false;
 var _hd = new THREE.Vector3();
-function armPose(side, isFront, G0, gi, air, rail, t, dt) {
+function armPose(side, isFront, G0, gi, air, rail, t, dt, exact) {
   var B = rig.B, L = rig.L, ss = stanceSign(), S = side[0];
   B[side + 'Arm'].getWorldPosition(_sh);
   var dirX = isFront ? 1 : -1, tgt = _tg2, GP = G0 ? gpose(G0) : null, grabbing = G0 && PS.grab > 0.02 && ((G0.hand === 'front') === isFront);
@@ -3073,7 +3097,8 @@ function armPose(side, isFront, G0, gi, air, rail, t, dt) {
   // molla sulle mani: seguono con un filo di ritardo e rimbalzano (si sente la forza della rotazione)
   var h = _hand[S], hv = _handV[S];
   if (!_handInit || !PS.init) { h.copy(tgt); hv.set(0, 0, 0); }
-  else if (grabbing && PS.grab > 0.6) { h.lerp(tgt, damp(35, dt)); hv.set(0, 0, 0); }
+  else if (exact || (grabbing && PS.grab > 0.6)) { if (exact) h.copy(tgt); else h.lerp(tgt, damp(35, dt)); hv.set(0, 0, 0); }
+  else if (!air) { h.lerp(tgt, damp(9, dt)); hv.set(0, 0, 0); }
   else {
     var kS = air ? 140 : 220, cS = air ? 15 : 24;
     _hd.copy(tgt).sub(h).multiplyScalar(kS).addScaledVector(hv, -cS);
@@ -4135,7 +4160,7 @@ window.__pr = {
   get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
-  groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
+  grabPoint: grabPoint, GRABS: GRABS, PS: PS, poseRider: poseRider, groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
   scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
