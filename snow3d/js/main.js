@@ -21,6 +21,7 @@ var GOALS = [
   { t: 'Atterra uno spin partendo in switch', ev: 'land', ok: function (e) { return e.trick && /Cab|Switch/.test(e.trick.name); } },
   { t: 'Atterra un 720 o più', ev: 'land', ok: function (e) { return e.trick && e.trick.deg >= 720; } },
   { t: 'Salta un kicker XL', ev: 'land', ok: function (e) { return e.kick === 'XL'; } },
+  { t: 'Atterra un trick sul Super Big Air', ev: 'land', ok: function (e) { return e.kick === 'BA' && e.trick; } },
   { t: 'Fai un 270 On su un rail o un box', ev: 'railOn', ok: function (e) { return /On /.test(e.name); } },
   { t: 'Atterra un 1080', ev: 'land', ok: function (e) { return e.trick && e.trick.deg >= 1080; } },
   { t: 'Fai un doppio flip', ev: 'land', ok: function (e) { return e.trick && e.trick.nf >= 2; } }
@@ -144,6 +145,7 @@ function handleEvents() {
     switch (e.t) {
       case 'pop': sfx('pop'); burst(P.x, P.y, P.z, 10, 1.4, 1.2, 0.18); if (e.perfect) popup('Pop!', '', '', 'small'); break;
       case 'grab': sfx('grab'); break;
+      case 'lip': if (e.size === 'BA') { popup('Super Big Air', 'hai tempo per tutto', '', 'goal'); sfx('whoosh'); } break;
       case 'flexpop': popup(e.nose ? 'Nollie' : 'Ollie', 'dal press', '', 'small'); break;
       case 'land': {
         var imp = clamp(e.impact / 9, 0.2, 1);
@@ -251,7 +253,7 @@ function updAids(dt) {
 // ------------------------------------------------------------ camera
 // tre camere: classica alle spalle, bassa "da video" un po' di lato, lontana per vedere la linea
 var CAMS = [
-  { name: 'Classica', d: 5.0, h: 1.95, look: 4.5, ly: 0.55, fov: 58, air: 0.8, side: 0 },
+  { name: 'Classica', d: 5.0, h: 1.85, look: 6.0, ly: 1.0, fov: 60, air: 0.8, side: 0 },
   { name: 'Video', d: 3.4, h: 0.85, look: 3.0, ly: 0.75, fov: 66, air: 0.6, side: 1.1 },
   { name: 'Lontana', d: 8.2, h: 3.4, look: 6.0, ly: 0.2, fov: 55, air: 1.2, side: 0 }
 ];
@@ -359,6 +361,7 @@ function frame(now) {
   var dC = P ? dist() : 0;
   genUntil(dC + 760);
   syncChunks(dC);
+  syncFar(dC);
   syncPark(dC);
   if (W.pd > 2000 && ((gtime * 10) | 0) % 50 === 0) pruneWorld(dC - 180);
   if (PROF.on) { var _n = performance.now(); PROF['stream'] = (PROF['stream'] || 0) + _n - _pt; _pt = _n; }
@@ -375,7 +378,7 @@ function frame(now) {
   if (PROF.on) { var _n = performance.now(); PROF['cam'] = (PROF['cam'] || 0) + _n - _pt; _pt = _n; }
   sky.position.copy(camera.position);
   if (mountains) mountains.position.set(camera.position.x, camera.position.y - 40, camera.position.z);
-  clouds.position.set(camera.position.x, camera.position.y + 950, camera.position.z);
+  clouds.position.set(camera.position.x, camera.position.y + 2700, camera.position.z);
   bgCam.position.copy(camera.position); bgCam.quaternion.copy(camera.quaternion);
   if (bgCam.fov !== camera.fov || bgCam.aspect !== camera.aspect) { bgCam.fov = camera.fov; bgCam.aspect = camera.aspect; bgCam.updateProjectionMatrix(); }
   cloudMat.uniforms.uOff.value.x += dt * 0.0015; cloudMat.uniforms.uOff.value.y += dt * 0.0006;
@@ -565,7 +568,7 @@ function boot() {
     makeRig(buf).buf = buf;
   } catch (err) { console.error(err); }
   // primo fotogramma per compilare gli shader, poi via il caricamento
-  syncChunks(0, 99); syncPark(0);
+  syncChunks(0, 99); syncPark(0); for (var fb = 0; fb < 30; fb++) syncFar(0);
   // si compilano subito tutti i materiali (anche quelli che compaiono piu' avanti), cosi' in partita non ci sono scatti
   warmup();
   state = 'menu'; refreshMenu(); show('menu', true);

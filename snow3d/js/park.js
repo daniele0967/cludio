@@ -23,7 +23,7 @@ function mergeByMaterial(group, keep) {
   group.updateMatrixWorld(true);
   var inv = new THREE.Matrix4().copy(group.matrixWorld).invert(), buckets = {}, out = new THREE.Group(), m4 = new THREE.Matrix4();
   group.traverse(function (o) {
-    if (!o.isMesh || (keep && keep(o)) || Array.isArray(o.material)) return;
+    if (!o.isMesh || o.isInstancedMesh || (keep && keep(o)) || Array.isArray(o.material)) return;
     var k = o.material.uuid; (buckets[k] || (buckets[k] = { mat: o.material, list: [], shadow: o.castShadow })).list.push(o);
   });
   for (var k in buckets) {
@@ -114,6 +114,7 @@ function buildKick(f) {
     var sp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6), poleMat2); sp.position.set(cx(sd) + su, sy + 0.5, -sd); g.add(sp);
   }
   if (f.tag === 'big') g.add(buildArch(f.d0 - 22, f.u, 'BIG AIR'));
+  if (f.tag === 'super') buildSuper(f, g);
   var snow = g.children[0];
   return mergeByMaterial(g, function (o) { return o === snow; });
 }
@@ -140,6 +141,35 @@ function bannerMat(text, bg, fg) {
   return new THREE.MeshStandardMaterial({ map: t, roughness: 0.6, side: THREE.DoubleSide });
 }
 // arco gonfiabile
+// super salto: arco, file di bandiere lungo la rincorsa, tribune piene di pubblico ai lati dell'atterraggio
+var crowdGeo = mergeGeos([[new THREE.CylinderGeometry(0.2, 0.24, 0.9, 6).translate(0, 0.45, 0), 0xffffff], [new THREE.SphereGeometry(0.13, 8, 6).translate(0, 1.05, 0), 0xe0b090]]);
+var crowdMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 });
+var standMat = new THREE.MeshStandardMaterial({ color: 0x5c6670, roughness: 0.6, metalness: 0.4 });
+var CROWD_COLS = [0xff5a36, 0x21b8ff, 0xf4c01e, 0xe8eef6, 0x1d8f8c, 0xc7323b, 0x6c5ce7, 0x22283a];
+function buildSuper(f, g) {
+  g.add(buildArch(f.d0 - 26, f.u, 'SUPER BIG AIR'));
+  for (var i = 0; i < 7; i++) [-1, 1].forEach(function (sd) {
+    var d = f.d0 - 22 + i * 4, u = f.u + sd * (f.hw + 1.6 + i * 0.1), y = groundH(cx(d) + u, -d);
+    var pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 4.5, 6), poleMat2); pole.position.set(cx(d) + u, y + 2.25, -d); g.add(pole);
+    var fl = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.6), flagMats[i % 3]); fl.position.set(cx(d) + u + sd * 0.52, y + 3.6, -d); fl.rotation.y = sd * 0.25; g.add(fl);
+  });
+  // tribune
+  var dStand = f.dLand + (f.dLandE - f.dLand) * 0.75, col = new THREE.Color(), m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(1, 1, 1), pp = new THREE.Vector3();
+  [-1, 1].forEach(function (sd) {
+    var u0 = f.u + sd * (halfW(dStand) + 7), base = baseH(cx(dStand) + u0, -dStand), rows = 6, perRow = 22, im = new THREE.InstancedMesh(crowdGeo, crowdMat, rows * perRow), n = 0;
+    for (var r = 0; r < rows; r++) {
+      var step = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6 + r * 0.7, 26), standMat);
+      var uu = u0 + sd * r * 1.4; step.position.set(cx(dStand) + uu, base + (0.6 + r * 0.7) / 2 - 0.2, -dStand); step.castShadow = true; step.receiveShadow = true; g.add(step);
+      for (var k = 0; k < perRow; k++) {
+        pp.set(cx(dStand) + uu + (Math.random() - 0.5) * 0.4, base + 0.4 + r * 0.7, -dStand - 12 + k * 1.15 + (Math.random() - 0.5) * 0.3);
+        q.setFromAxisAngle(AY, sd > 0 ? -PI / 2 : PI / 2); m4.compose(pp, q, sc); im.setMatrixAt(n, m4);
+        im.setColorAt(n, col.set(CROWD_COLS[(k * 7 + r * 3) % CROWD_COLS.length])); n++;
+      }
+    }
+    im.castShadow = true; g.add(im);
+  });
+}
+
 // arco gonfiabile: le gambe stanno fuori dalla pista, sulle sponde
 function buildArch(d, u, text) {
   var g = new THREE.Group(), span = halfW(d) + 1.2, c0 = cx(d), y = profY(d), sy = 0.62;
@@ -292,6 +322,7 @@ function clearPark() {
   for (var k in parkObjs) disposeObj(parkObjs[k]);
   parkObjs = {};
   for (k in chunks) dropChunk(+k);
+  clearFar();
   for (k in towers) { liftGroup.remove(towers[k]); delete towers[k]; }
 }
 var VIEW_AHEAD = 540;

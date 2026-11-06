@@ -25,7 +25,7 @@ var scene = new THREE.Scene();
 // e si disegna il mondo vicino con una camera che arriva a 1,2 km. Cosi' anche i telefoni con poca
 // precisione di profondita' non confondono la neve vicina con le montagne lontane.
 var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1200);
-var bgScene = new THREE.Scene(), bgCam = new THREE.PerspectiveCamera(60, 1, 20, 9000);
+var bgScene = new THREE.Scene(), bgCam = new THREE.PerspectiveCamera(60, 1, 20, 16000);
 
 var VW = 1, VH = 1;
 
@@ -368,20 +368,20 @@ function buildMountains() {
   var sunV = sunDir.clone();
   var Hf = function (x, z, r) {
     var ridge = ridge2(x / 1300 + 7, z / 1300 + 3, 21, 6), big = fbm2(x / 3200, z / 3200, 9, 3);
-    var amp = 320 + 1250 * sm01((r - 900) / 2000);
+    var amp = 900 + 1500 * sm01((r - 3400) / 3500);
     // verso valle (z negativo) la valle si apre: montagne piu' basse e lontane
     var ahead = sm01((-z / r - 0.35) / 0.6);
     amp *= 1 - 0.12 * ahead;
-    return -280 - 40 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
+    return -600 - 40 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
   };
   for (var j = 0; j <= RS; j++) {
-    var t = j / RS, r = 900 + Math.pow(t, 1.35) * 3400;
+    var t = j / RS, r = 3400 + Math.pow(t, 1.2) * 5200;
     for (var i = 0; i <= AS; i++) {
       var a = i / AS * TAU, x = Math.cos(a) * r, z = Math.sin(a) * r, y = Hf(x, z, r);
       pos.push(x, y, z);
       var e = 6, hx = Hf(x + e, z, r) - Hf(x - e, z, r), hz = Hf(x, z + e, r) - Hf(x, z - e, r);
       var nx = -hx, ny = 2 * e, nz = -hz, nl = Math.sqrt(nx * nx + ny * ny + nz * nz); nx /= nl; ny /= nl; nz /= nl;
-      var snowy = clamp((ny - 0.42) / 0.2, 0, 1) * clamp((y + 160) / 140, 0, 1);
+      var snowy = clamp((ny - 0.38) / 0.2, 0, 1) * clamp((y + 400) / 200, 0, 1);
       var forest = clamp((-y - 150) / 80, 0, 1) * clamp((ny - 0.6) / 0.2, 0, 1);
       // roccia a strati, ghiacciai azzurrini in alto sui pendii dolci, boschi in basso
       var strata = 0.5 + 0.5 * Math.sin(y * 0.09 + vnoise2(x / 300, z / 300, 4) * 3);
@@ -391,8 +391,8 @@ function buildMountains() {
       var l = Math.max(0, nx * sunV.x + ny * sunV.y + nz * sunV.z);
       lit.copy(tmp).multiplyScalar(0.36 + 0.95 * l * (LT.sunI / 3));
       lit.r *= 0.92; lit.b *= 1.08;
-      var f = 1 - Math.exp(-r / 2600), hf = clamp((-y + 60) / 700, 0, 1);
-      lit.lerp(haze, clamp(0.1 + f * 0.5 + hf * 0.2, 0, 0.85));
+      var f = 1 - Math.exp(-r / 5000), hf = clamp((-y + 60) / 900, 0, 1);
+      lit.lerp(haze, clamp(0.08 + f * 0.32 + hf * 0.15, 0, 0.7));
       col.push(lit.r, lit.g, lit.b);
     }
   }
@@ -409,6 +409,59 @@ function buildMountains() {
   bgScene.add(mountains);
 }
 
+// ------------------------------------------------------------ catene montuose ai lati della valle (ancorate al mondo: parallasse vera)
+// Partono dal bordo del terreno vicino (u = 300 m) e salgono a vette di 1-1,5 km fino a 3 km di distanza.
+// Si disegnano nel passaggio di sfondo con la sua nebbia: piu' sono lontane, piu' si sbiadiscono.
+var FAR_B = 400, FAR_US = (function () { var a = [0, 12, 24, 40, 60, 90, 130, 180, 240, 300, 320, 350]; for (var u = 400; u < 900; u += 70) a.push(u); for (u = 900; u <= 3200; u += 160) a.push(u); return a; })();
+var farBlocks = {}, farMat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: true, side: THREE.DoubleSide });
+bgScene.fog = new THREE.Fog(0xd6e5f3, 900, 9500);
+function farHeight(u, d) {
+  var a = Math.abs(u), base = profY(d) + crossH(u, d);
+  if (a < 360) return base;
+  var x = cx(d) + u, m = sm01((a - 360) / 700);
+  var ridge = ridge2(x / 700 + 13, d / 700 + 5, 33, 5), big = fbm2(x / 1800, d / 1800, 41, 3);
+  return base + m * (60 + (ridge * 1.1 + big * 0.6) * (260 + 620 * sm01((a - 600) / 1800)));
+}
+function buildFarBlock(k, side) {
+  var d0 = k * FAR_B, rows = Math.round(FAR_B / 20) + 1, us = FAR_US, cols = us.length, n = rows * cols;
+  var pos = new Float32Array(n * 3), col = new Float32Array(n * 3), cc = new THREE.Color(), yRef = profY(d0);
+  var SN = new THREE.Color(0xf4f7fb), RK = new THREE.Color(0x6a6567), RK2 = new THREE.Color(0x4a4648), FO = new THREE.Color(0x24382d), FO2 = new THREE.Color(0x30473a);
+  for (var r = 0; r < rows; r++) {
+    var d = d0 + r * 20, c0 = cx(d);
+    for (var c = 0; c < cols; c++) {
+      var u = us[c] * side, h = farHeight(u, d), i = r * cols + c;
+      pos[i * 3] = c0 + u; pos[i * 3 + 1] = h - yRef - (Math.abs(u) <= 320 ? 1.5 : 0); pos[i * 3 + 2] = -d + d0;
+      var e = 10, hx = farHeight(u + e, d) - farHeight(u - e, d), hz = farHeight(u, d + e) - farHeight(u, d - e);
+      var nx = -hx, ny = 2 * e, nz = hz, nl = Math.sqrt(nx * nx + ny * ny + nz * nz); nx /= nl; ny /= nl; nz /= nl;
+      var rel = h - profY(d), nn = vnoise2((c0 + u) / 90, d / 90, 7) * 0.5 + 0.5;
+      // bosco sui pendii bassi e dolci, roccia sui ripidi, neve in alto e dove e' in piano
+      var forest = clamp((380 - rel) / 160, 0, 1) * clamp((ny - 0.55) / 0.2, 0, 1) * (0.6 + nn * 0.5) * clamp((Math.abs(u) - 30) / 40, 0, 1);
+      var rock = clamp((0.72 - ny) / 0.2, 0, 1) * (0.7 + nn * 0.4);
+      cc.copy(SN).lerp(nn > 0.5 ? RK : RK2, clamp(rock, 0, 1)).lerp(nn > 0.45 ? FO : FO2, clamp(forest, 0, 0.95));
+      var l = Math.max(0, nx * sunDir.x + ny * sunDir.y - nz * sunDir.z);
+      cc.multiplyScalar(0.62 + 0.5 * l * (LT ? LT.sunI / 3.4 : 1)); cc.b = Math.min(1, cc.b * 1.06);
+      col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
+    }
+  }
+  var idx = new Uint16Array((rows - 1) * (cols - 1) * 6), q = 0;
+  for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
+    var a0 = r * cols + c, b0 = a0 + 1, c2 = a0 + cols, d2 = c2 + 1;
+    if (side > 0) { idx[q++] = a0; idx[q++] = b0; idx[q++] = c2; idx[q++] = b0; idx[q++] = d2; idx[q++] = c2; }
+    else { idx[q++] = a0; idx[q++] = c2; idx[q++] = b0; idx[q++] = b0; idx[q++] = c2; idx[q++] = d2; }
+  }
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeBoundingSphere();
+  var m = new THREE.Mesh(geo, farMat); m.position.set(0, yRef, -d0);
+  bgScene.add(m); return m;
+}
+function syncFar(dC) {
+  var k0 = Math.floor((dC - 900) / FAR_B), k1 = Math.floor((dC + 3600) / FAR_B), built = 0;
+  for (var key in farBlocks) { var kk = +key.split(':')[0]; if (kk < k0 || kk > k1) { bgScene.remove(farBlocks[key]); farBlocks[key].geometry.dispose(); delete farBlocks[key]; } }
+  for (var k = k0; k <= k1 && built < 2; k++) [-1, 1].forEach(function (sd) { var key = k + ':' + sd; if (!farBlocks[key] && built < 2) { farBlocks[key] = buildFarBlock(k, sd); built++; } });
+}
+function clearFar() { for (var key in farBlocks) { bgScene.remove(farBlocks[key]); farBlocks[key].geometry.dispose(); } farBlocks = {}; }
+
 // ------------------------------------------------------------ nuvole
 var cloudTex = canvasTex(512, 512, function (g, w, h) {
   var img = g.createImageData(w, h);
@@ -423,13 +476,13 @@ var cloudTex = canvasTex(512, 512, function (g, w, h) {
 var cloudMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, fog: false,
   uniforms: { map: { value: cloudTex }, uOff: { value: new THREE.Vector2() }, uCol: { value: new THREE.Color(0xffffff) }, uShade: { value: new THREE.Color(0xc6d2e2) }, uAmt: { value: 0.6 } },
-  vertexShader: 'varying vec2 vUv; varying float vR; void main(){ vUv = uv; vR = length(position.xy) / 6000.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  vertexShader: 'varying vec2 vUv; varying float vR; void main(){ vUv = uv; vR = length(position.xy) / 12000.0; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
   fragmentShader: 'uniform sampler2D map; uniform vec2 uOff; uniform vec3 uCol, uShade; uniform float uAmt; varying vec2 vUv; varying float vR;\n' +
     'void main(){ vec4 t = texture2D(map, vUv * 3.0 + uOff); vec4 t2 = texture2D(map, vUv * 7.0 - uOff * 1.7 + 0.37);\n' +
     ' float a = clamp(t.a * 1.3 - (1.0 - uAmt) * 0.9 + t2.a * 0.25, 0.0, 1.0) * smoothstep(1.0, 0.45, vR);\n' +
     ' vec3 c = mix(uCol, uShade, t2.a * 0.6); gl_FragColor = vec4(c, a * 0.85);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
 });
-var clouds = new THREE.Mesh(new THREE.CircleGeometry(6000, 48), cloudMat);
+var clouds = new THREE.Mesh(new THREE.CircleGeometry(12000, 48), cloudMat);
 clouds.rotation.x = PI / 2; clouds.frustumCulled = false; clouds.renderOrder = -8;
 bgScene.add(clouds);
 
@@ -441,7 +494,7 @@ function applyLight(name) {
   sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
   sun.color.set(LT.sun); sun.intensity = LT.sunI;
   hemi.color.set(LT.hemiS); hemi.groundColor.set(LT.hemiG); hemi.intensity = LT.hemiI;
-  scene.fog.color.set(LT.haze); scene.fog.near = name === 'nuvoloso' ? 80 : 130; scene.fog.far = name === 'nuvoloso' ? 520 : 640;
+  scene.fog.color.set(LT.haze); bgScene.fog.color.set(LT.haze); if (typeof clearFar === 'function') clearFar(); scene.fog.near = name === 'nuvoloso' ? 80 : 130; scene.fog.far = name === 'nuvoloso' ? 520 : 640;
   skyMat.uniforms.uTop.value.set(LT.top); skyMat.uniforms.uHor.value.set(LT.hor); skyMat.uniforms.uSun.value.copy(sunDir);
   skyMat.uniforms.uSunCol.value.set(LT.sun); skyMat.uniforms.uSunI.value = name === 'nuvoloso' ? 0.15 : 1;
   cloudMat.uniforms.uAmt.value = LT.cloud;

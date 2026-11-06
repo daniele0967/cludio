@@ -17,7 +17,7 @@ function newWorld(seed, mode) {
     seed: seed, R: rng(seed), mode: mode,
     prof: {}, pd: -240, py: 0, pa: 0.1,
     feats: [], fb: {}, rails: [], rb: {}, deco: [], sections: [],
-    blocks: {}, level: 0, tutI: 0, nid: 1, lastType: '', startD: 0
+    blocks: {}, level: 0, tutI: 0, nid: 1, lastType: '', startD: 0, nextBA: 650
   };
   // profilo prima del punto di partenza: piano leggero, poi la partenza vera
   var y = 0; W.py = 60 * 0.12;
@@ -85,7 +85,7 @@ function crossH(u, d) {
   var e = a - W0;
   var h = 1.5 * sm01(e / 6);
   // il fianco sale fino a ~110 m dalla pista, poi diventa un altopiano: oltre si vedono le montagne lontane
-  if (e > 4) { var ew = Math.min(e, 110) - 4; h += 0.2 * Math.pow(ew, 1.28) + (e > 110 ? 0.12 * (e - 110) : 0); }
+  if (e > 4) { var ew = Math.min(e, 75) - 4; h += 0.2 * Math.pow(ew, 1.28) + (e > 75 ? 0.08 * (e - 75) : 0); }
   // dune morbide di neve fresca
   h += 0.7 * sm01((e - 1) / 5) * Math.max(0, vnoise2(u * 0.11, d * 0.09, 31) + 0.2);
   if (e > 10) {
@@ -157,7 +157,8 @@ var KICKS = {
   S: { name: 'S', h: 0.8, th: 10, vd: 10.5, hw: 2.6 },
   M: { name: 'M', h: 1.25, th: 13, vd: 12.5, hw: 3.0 },
   L: { name: 'L', h: 1.75, th: 16, vd: 14.5, hw: 3.5 },
-  XL: { name: 'XL', h: 2.3, th: 19, vd: 16.5, hw: 4.0 }
+  XL: { name: 'XL', h: 2.3, th: 19, vd: 16.5, hw: 4.0 },
+  BA: { name: 'BA', h: 3.6, th: 27, vd: 21, hw: 5.0 }   // super salto: 3-4 secondi in aria
 };
 var POP_MAX = 2.4;     // spinta massima dell'ollie (m/s, lungo la normale)
 var POP_LIP = 0.5;     // spinta in piu' se si salta proprio sul lip
@@ -458,8 +459,10 @@ function nextSection() {
     t = wpick(R, { cruise: 0.5, kickS: 1.2 - lvl, kickM: 1.6, kickL: 0.6 + 1.2 * lvl, kickXL: 0.15 + 0.9 * lvl, line: 1.6 + lvl, rails: 2.4, rollers: 0.6, double: 0.9 });
     if (t === W.lastType && (t === 'rails' || t === 'kickXL')) t = 'line';
   }
+  if (W.mode !== 'tutorial' && W.mode !== 'menu' && d >= W.nextBA) { t = 'super'; W.nextBA = d + 1100 + R() * 500; }
   W.lastType = t;
   switch (t) {
+    case 'super': secCruise(25, 11 * DEG); secKick('BA', [0], 'super'); secCruise(30, 10 * DEG); break;
     case 'cruise': secCruise(30 + R() * 30); break;
     case 'kickS': secKick('S', [laneFor(R)]); break;
     case 'kickM': secKick('M', [laneFor(R)]); break;
