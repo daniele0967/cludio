@@ -1,4 +1,5 @@
 // ============================================================ GRAFICA: scena, luce, cielo, neve, montagne
+var DIAG = { errors: [], snow: 'ok', post: 'spento', gl: 0 };
 var canvas = $('game'), renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
@@ -10,16 +11,27 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+DIAG.gl = renderer.capabilities.isWebGL2 ? 2 : 1;
+renderer.debug.onShaderError = function (gl, program, vs, fs) {
+  var log = (gl.getProgramInfoLog(program) || '') + ' ' + (gl.getShaderInfoLog(fs) || '') + ' ' + (gl.getShaderInfoLog(vs) || '');
+  DIAG.errors.push(log.slice(0, 400));
+};
+window.addEventListener('error', function (e) { DIAG.errors.push(String(e.message).slice(0, 300)); });
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 7000);
+// due passaggi: prima cielo, nuvole e montagne lontane (con la loro camera), poi si pulisce la profondita'
+// e si disegna il mondo vicino con una camera che arriva a 1,2 km. Cosi' anche i telefoni con poca
+// precisione di profondita' non confondono la neve vicina con le montagne lontane.
+var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1200);
+var bgScene = new THREE.Scene(), bgCam = new THREE.PerspectiveCamera(60, 1, 20, 9000);
+
 var VW = 1, VH = 1;
 
 // ------------------------------------------------------------ luce: tre momenti della giornata
 var LIGHTS = {
-  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.1, top: 0x1f63c6, hor: 0xcfe1f3, haze: 0xd6e5f3, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.55, exp: 0.86, env: 0.75, snowfall: 0.15, cloud: 0.55 },
-  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.0, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe2dbd2, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.5, exp: 0.9, env: 0.7, snowfall: 0.1, cloud: 0.45 },
-  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 2.6, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.55, exp: 0.98, env: 0.65, snowfall: 0.08, cloud: 0.6 },
-  nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 0.9, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xd0d8e2, hemiS: 0xd8e2ee, hemiG: 0xeef1f5, hemiI: 1.4, exp: 0.95, env: 0.9, snowfall: 1, cloud: 0.95 }
+  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.7, top: 0x1a58bd, hor: 0xa9c7e6, haze: 0xbfd4ea, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.32, exp: 0.8, env: 0.42, snowfall: 0.15, cloud: 0.55 },
+  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.6, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe0d9d0, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.3, exp: 0.82, env: 0.42, snowfall: 0.1, cloud: 0.45 },
+  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 3.0, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.35, exp: 0.95, env: 0.45, snowfall: 0.08, cloud: 0.6 },
+  nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 1.3, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xcdd6e1, hemiS: 0xd8e2ee, hemiG: 0xe6eaf0, hemiI: 1.05, exp: 0.92, env: 0.6, snowfall: 1, cloud: 0.95 }
 };
 var LT = null;
 var sunDir = new THREE.Vector3();
@@ -33,7 +45,7 @@ sun.shadow.bias = -0.00025; sun.shadow.normalBias = 0.03;
 scene.add(sun); scene.add(sun.target);
 var hemi = new THREE.HemisphereLight(0xbfd8ff, 0xffffff, 0.6);
 scene.add(hemi);
-scene.fog = new THREE.Fog(0xd6e5f3, 70, 560);
+scene.fog = new THREE.Fog(0xd6e5f3, 130, 640);
 
 // ------------------------------------------------------------ cielo
 var skyMat = new THREE.ShaderMaterial({
@@ -57,7 +69,7 @@ var skyMat = new THREE.ShaderMaterial({
 });
 var sky = new THREE.Mesh(new THREE.SphereGeometry(5000, 48, 24), skyMat);
 sky.frustumCulled = false; sky.renderOrder = -10;
-scene.add(sky);
+bgScene.add(sky);
 
 // ------------------------------------------------------------ texture procedurali
 function canvasTex(w, h, draw, repeat) {
@@ -97,13 +109,21 @@ function tileNoise(N, scale, oct, seed) {
   }
   return hf;
 }
-var snowNormal = heightToNormal(tileNoise(256, 1.6, 5, 3), 256, 3.2);
+// neve fresca: grandi ondulazioni morbide (accumuli del vento) piu' una grana fine di cristalli
+var snowNormal = (function () {
+  var a = tileNoise(256, 1.0, 4, 3), b = tileNoise(256, 5.5, 3, 11), hf = new Float32Array(a.length);
+  for (var i = 0; i < a.length; i++) hf[i] = a[i] + b[i] * 0.22;
+  return heightToNormal(hf, 256, 3.4);
+})();
 
 // ------------------------------------------------------------ materiale neve (battitura, brillantini)
-var snowUniforms = { uCordFade: { value: 1 }, uSparkle: { value: 1 } };
+var snowUniforms = { uCordFade: { value: 0 }, uSparkle: { value: 1 } }; // niente righe di pista battuta: e' tutta neve fresca
+var SNOW_SIMPLE = false; // diventa vero se il telefono rifiuta lo shader della neve: si usa quello standard
 function makeSnowMat(opts) {
-  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.7 }, opts || {}));
+  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.75, 0.75), envMapIntensity: 0.7 }, opts || {}));
+  m.customProgramCacheKey = function () { return SNOW_SIMPLE ? 'snow-simple' : 'snow-full-2'; };
   m.onBeforeCompile = function (sh) {
+    if (SNOW_SIMPLE) return;
     sh.uniforms.uCordFade = snowUniforms.uCordFade; sh.uniforms.uSparkle = snowUniforms.uSparkle;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aCord;\nvarying vec3 vCord;')
       .replace('#include <uv_vertex>', '#include <uv_vertex>\nvCord = aCord;');
@@ -170,13 +190,16 @@ function terrainGrid(d0, len, rowStep, us, inner, sink) {
       var steep = clamp((0.78 - ny) / 0.22, 0, 1), rn = 0.5 + 0.5 * vnoise2((c0 + u) * 0.08, d * 0.08, 5);
       var rock = au > hw + 20 ? clamp(steep * 1.4 - 0.2 + (rn - 0.5) * 0.9, 0, 1) : 0;
       cc.copy(SNOW).lerp(SNOWB, au > hw + 3 ? 0.6 : 0.15);
+      var lap = (hl + hr + hu + hd - 4 * h) / Math.max(1, dx * 0.5 * rowStep);
+      var ao = clamp(1 - lap * 0.9, 0.78, 1.04);
+      cc.multiplyScalar(0.94 * ao); cc.b = Math.min(1, cc.b + (1 - ao) * 0.25);
       if (rock > 0) cc.lerp(rn > 0.5 ? ROCK : ROCKD, rock * 0.92);
       col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
       uv[i * 2] = (c0 + u) / 3.2; uv[i * 2 + 1] = (base + r * rowStep) / 3.2;
       cord[i * 3] = u; cord[i * 3 + 1] = d % 512; cord[i * 3 + 2] = inner ? clamp((hw - 0.6 - au) / 1.2, 0, 1) : 0;
     }
   }
-  var idx = new Uint32Array((rows - 1) * (cols - 1) * 6), q = 0;
+  var idx = new Uint16Array((rows - 1) * (cols - 1) * 6), q = 0;
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
     idx[q++] = a; idx[q++] = c2; idx[q++] = b; idx[q++] = b; idx[q++] = c2; idx[q++] = d2;
@@ -230,14 +253,16 @@ function mergeGeos(list) { // [ [geometry, color], ... ] -> geometria unica con 
   return geo;
 }
 function pineGeo(v) {
-  var R = rng(91 + v * 7), parts = [], layers = 5 + v, H = 7 + v * 1.4;
+  // 0-2 abeti di varie altezze, 3 abete coperto di neve fino in fondo
+  var R = rng(91 + v * 7), parts = [], layers = 5 + Math.min(v, 2), H = 7 + Math.min(v, 2) * 1.4 + (v === 3 ? 0.6 : 0);
   var trunk = new THREE.CylinderGeometry(0.12, 0.2, H * 0.35, 6); trunk.translate(0, H * 0.17, 0); parts.push([trunk, 0x4a3426]);
   for (var i = 0; i < layers; i++) {
     var t = i / layers, rad = (1 - t * 0.82) * (1.7 + v * 0.15), y = H * (0.16 + t * 0.74), hgt = H * 0.3 * (1 - t * 0.35);
     var cone = new THREE.ConeGeometry(rad, hgt, 8, 1, true); cone.rotateY(R() * PI); cone.translate(0, y + hgt * 0.5, 0);
     var green = new THREE.Color().setHSL(0.36 + R() * 0.04, 0.32, 0.13 + R() * 0.04);
-    parts.push([cone, function (x, yy, z, ny) { return ny > 0.55 && yy > y + hgt * 0.3 ? 0xf3f7fc : green.getHex(); }]);
-    var cap = new THREE.ConeGeometry(rad * 0.86, hgt * 0.42, 8, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * 0.78, 0);
+    var snowy = v === 3 ? 0.05 : 0.35;
+    parts.push([cone, function (x, yy, z, ny) { return (ny > snowy && yy > y + hgt * 0.18) || v === 3 && yy > y + hgt * 0.05 ? 0xf3f7fc : green.getHex(); }]);
+    var cap = new THREE.ConeGeometry(rad * (v === 3 ? 1.02 : 0.9), hgt * (v === 3 ? 0.75 : 0.5), 8, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * (v === 3 ? 0.62 : 0.74), 0);
     parts.push([cap, 0xf4f8fd]);
   }
   return mergeGeos(parts);
@@ -258,13 +283,37 @@ function pineLow(v) {
   parts.push([new THREE.ConeGeometry(1.75 + v * 0.15, H * 0.9, 6, 1, true).translate(0, H * 0.58, 0), function (x, y, z, ny) { return y > H * 0.75 ? 0xe9eff6 : 0x1f3a2c; }]);
   return mergeGeos(parts);
 }
-var TREE_GEOS = [pineGeo(0), pineGeo(1), pineGeo(2)], TREE_LOW = [pineLow(0), pineLow(1), pineLow(2)], ROCK_GEOS = [rockGeo(0), rockGeo(1), rockGeo(2)];
+// abete alto e stretto, rami corti carichi di neve
+function firGeo() {
+  var R = rng(777), parts = [], H = 11;
+  parts.push([new THREE.CylinderGeometry(0.1, 0.17, H * 0.3, 6).translate(0, H * 0.15, 0), 0x47321f]);
+  for (var i = 0; i < 9; i++) {
+    var t = i / 9, rad = (1 - t * 0.85) * 1.05, y = H * (0.12 + t * 0.8), hgt = H * 0.16;
+    var cone = new THREE.ConeGeometry(rad, hgt, 7, 1, true); cone.rotateY(R() * PI); cone.translate(0, y + hgt * 0.5, 0);
+    parts.push([cone, function (x, yy, z, ny) { return ny > 0.3 ? 0xf2f6fb : 0x1a3527; }]);
+    var cap = new THREE.ConeGeometry(rad * 0.92, hgt * 0.5, 7, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * 0.72, 0);
+    parts.push([cap, 0xf5f8fc]);
+  }
+  return mergeGeos(parts);
+}
+var TREE_GEOS = [pineGeo(0), pineGeo(1), pineGeo(2), pineGeo(3), firGeo()], TREE_LOW = [pineLow(0), pineLow(1), pineLow(2), pineLow(1), pineLow(2)], ROCK_GEOS = [rockGeo(0), rockGeo(1), rockGeo(2)];
 var vegMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, envMapIntensity: 0.6 });
 var rockMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true, envMapIntensity: 0.6 });
 var _mx = new THREE.Matrix4(), _qx = new THREE.Quaternion(), _sx = new THREE.Vector3(), _px = new THREE.Vector3(), _ex = new THREE.Euler();
+// cumuli di neve fresca fuori pista
+var PILLOW_GEO = new THREE.SphereGeometry(1, 18, 10, 0, TAU, 0, PI * 0.5);
+var pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, normalMap: snowNormal, normalScale: new THREE.Vector2(0.45, 0.45), envMapIntensity: 0.7 });
 function buildScenery(k) {
   var out = [], B = blockData(k);
-  [0, 1, 2].forEach(function (v) {
+  if (B.pillows.length) {
+    var pm = new THREE.InstancedMesh(PILLOW_GEO, pillowMat, B.pillows.length);
+    B.pillows.forEach(function (p, i) {
+      _qx.setFromEuler(_ex.set(0, p.r, 0));
+      _mx.compose(_px.set(p.x, p.y - p.h * 0.18, p.z), _qx, _sx.set(p.s, p.h, p.s * p.e)); pm.setMatrixAt(i, _mx);
+    });
+    pm.receiveShadow = true; pm.castShadow = true; pm.computeBoundingSphere(); scene.add(pm); out.push(pm);
+  }
+  [0, 1, 2, 3, 4].forEach(function (v) {
     var list = B.trees.filter(function (t) { return t.v === v; });
     if (!list.length) return;
     var im = new THREE.InstancedMesh(TREE_GEOS[v], vegMat, list.length); im.userData.tree = v;
@@ -309,16 +358,16 @@ var poleMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.
 // ------------------------------------------------------------ montagne lontane (anello attorno alla camera)
 var mountains = null;
 function buildMountains() {
-  if (mountains) { scene.remove(mountains); mountains.geometry.dispose(); }
-  var AS = 240, RS = 30, pos = [], col = [], idx = [], haze = new THREE.Color(LT.haze), lit = new THREE.Color(), tmp = new THREE.Color();
+  if (mountains) { bgScene.remove(mountains); mountains.geometry.dispose(); }
+  var AS = 320, RS = 36, pos = [], col = [], idx = [], haze = new THREE.Color(LT.haze), lit = new THREE.Color(), tmp = new THREE.Color();
   var sunV = sunDir.clone();
   var Hf = function (x, z, r) {
     var ridge = ridge2(x / 1300 + 7, z / 1300 + 3, 21, 6), big = fbm2(x / 3200, z / 3200, 9, 3);
-    var amp = 260 + 1100 * sm01((r - 900) / 2200);
+    var amp = 320 + 1250 * sm01((r - 900) / 2000);
     // verso valle (z negativo) la valle si apre: montagne piu' basse e lontane
     var ahead = sm01((-z / r - 0.35) / 0.6);
-    amp *= 1 - 0.45 * ahead;
-    return -320 - 180 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
+    amp *= 1 - 0.12 * ahead;
+    return -280 - 40 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
   };
   for (var j = 0; j <= RS; j++) {
     var t = j / RS, r = 900 + Math.pow(t, 1.35) * 3400;
@@ -329,12 +378,16 @@ function buildMountains() {
       var nx = -hx, ny = 2 * e, nz = -hz, nl = Math.sqrt(nx * nx + ny * ny + nz * nz); nx /= nl; ny /= nl; nz /= nl;
       var snowy = clamp((ny - 0.42) / 0.2, 0, 1) * clamp((y + 160) / 140, 0, 1);
       var forest = clamp((-y - 150) / 80, 0, 1) * clamp((ny - 0.6) / 0.2, 0, 1);
-      tmp.set(0x5d5a5c).lerp(new THREE.Color(0xf3f6fb), snowy).lerp(new THREE.Color(0x1d2a25), forest * 0.8);
+      // roccia a strati, ghiacciai azzurrini in alto sui pendii dolci, boschi in basso
+      var strata = 0.5 + 0.5 * Math.sin(y * 0.09 + vnoise2(x / 300, z / 300, 4) * 3);
+      tmp.set(0x5d5a5c).lerp(new THREE.Color(0x3e3a3b), strata * 0.5).lerp(new THREE.Color(0xf3f6fb), snowy);
+      var glacier = clamp((y - 250) / 200, 0, 1) * clamp((ny - 0.75) / 0.15, 0, 1);
+      tmp.lerp(new THREE.Color(0xd6e6f5), glacier * 0.6).lerp(new THREE.Color(0x1d2a25), forest * 0.8);
       var l = Math.max(0, nx * sunV.x + ny * sunV.y + nz * sunV.z);
       lit.copy(tmp).multiplyScalar(0.36 + 0.95 * l * (LT.sunI / 3));
       lit.r *= 0.92; lit.b *= 1.08;
-      var f = 1 - Math.exp(-r / 1700), hf = clamp((-y + 60) / 600, 0, 1);
-      lit.lerp(haze, clamp(0.26 + f * 0.62 + hf * 0.25, 0, 0.95));
+      var f = 1 - Math.exp(-r / 2600), hf = clamp((-y + 60) / 700, 0, 1);
+      lit.lerp(haze, clamp(0.1 + f * 0.5 + hf * 0.2, 0, 0.85));
       col.push(lit.r, lit.g, lit.b);
     }
   }
@@ -348,7 +401,7 @@ function buildMountains() {
   geo.setIndex(idx);
   mountains = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide }));
   mountains.frustumCulled = false; mountains.renderOrder = -5;
-  scene.add(mountains);
+  bgScene.add(mountains);
 }
 
 // ------------------------------------------------------------ nuvole
@@ -373,7 +426,7 @@ var cloudMat = new THREE.ShaderMaterial({
 });
 var clouds = new THREE.Mesh(new THREE.CircleGeometry(6000, 48), cloudMat);
 clouds.rotation.x = PI / 2; clouds.frustumCulled = false; clouds.renderOrder = -8;
-scene.add(clouds);
+bgScene.add(clouds);
 
 // ------------------------------------------------------------ cambio di luce
 var envRT = null;
@@ -383,7 +436,7 @@ function applyLight(name) {
   sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
   sun.color.set(LT.sun); sun.intensity = LT.sunI;
   hemi.color.set(LT.hemiS); hemi.groundColor.set(LT.hemiG); hemi.intensity = LT.hemiI;
-  scene.fog.color.set(LT.haze);
+  scene.fog.color.set(LT.haze); scene.fog.near = name === 'nuvoloso' ? 80 : 130; scene.fog.far = name === 'nuvoloso' ? 520 : 640;
   skyMat.uniforms.uTop.value.set(LT.top); skyMat.uniforms.uHor.value.set(LT.hor); skyMat.uniforms.uSun.value.copy(sunDir);
   skyMat.uniforms.uSunCol.value.set(LT.sun); skyMat.uniforms.uSunI.value = name === 'nuvoloso' ? 0.15 : 1;
   cloudMat.uniforms.uAmt.value = LT.cloud;
@@ -411,6 +464,7 @@ function setQuality(level) {
   quality.level = level;
   var dpr = window.devicePixelRatio || 1;
   quality.pr = level === 2 ? Math.min(dpr, 2) : level === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1);
+  if (typeof POST !== 'undefined') POST.on = POST.ok && level >= 1;
   renderer.setPixelRatio(quality.pr);
   var sz = level === 0 ? 1024 : 2048;
   if (sz !== quality.shadow) {
@@ -423,5 +477,6 @@ function resize() {
   VW = window.innerWidth; VH = window.innerHeight;
   renderer.setSize(VW, VH, false);
   camera.aspect = VW / VH; camera.updateProjectionMatrix();
+  if (typeof resizePost === 'function') resizePost();
 }
 window.addEventListener('resize', resize);

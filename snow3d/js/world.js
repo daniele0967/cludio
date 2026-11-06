@@ -84,11 +84,14 @@ function crossH(u, d) {
   if (a <= W0) return 0;
   var e = a - W0;
   var h = 1.5 * sm01(e / 6);
-  if (e > 4) h += 0.2 * Math.pow(e - 4, 1.28);
+  // il fianco sale fino a ~110 m dalla pista, poi diventa un altopiano: oltre si vedono le montagne lontane
+  if (e > 4) { var ew = Math.min(e, 110) - 4; h += 0.2 * Math.pow(ew, 1.28) + (e > 110 ? 0.12 * (e - 110) : 0); }
+  // dune morbide di neve fresca
+  h += 0.7 * sm01((e - 1) / 5) * Math.max(0, vnoise2(u * 0.11, d * 0.09, 31) + 0.2);
   if (e > 10) {
     var m = Math.min(1, (e - 10) / 45), s = u < 0 ? 3 : 4;
     h += m * (7 * fbm2(u * 0.02, d * 0.02, s, 4) + 4);
-    if (e > 50) h += Math.min(1, (e - 50) / 60) * 26 * ridge2(u * 0.009, d * 0.009, s + 9, 4);
+    if (e > 50) h += Math.min(1, (e - 50) / 60) * 22 * ridge2(u * 0.009, d * 0.009, s + 9, 4);
   }
   return h;
 }
@@ -330,7 +333,8 @@ function blockData(bi) {
     var steep = crossH(u + 1, d) - crossH(u - 1, d);
     if (Math.abs(steep) > 2.4 && R() < 0.8) continue;
     var s = 0.75 + R() * 0.7 + (e > 30 ? 0.25 : 0);
-    trees.push({ x: x, y: y, z: -d, s: s, v: Math.floor(R() * 3), r: R() * TAU, u: u, d: d });
+    var vr = R(), tv = vr < 0.28 ? 0 : vr < 0.5 ? 1 : vr < 0.64 ? 2 : vr < 0.84 ? 3 : 4;
+    trees.push({ x: x, y: y, z: -d, s: s, v: tv, r: R() * TAU, u: u, d: d });
   }
   for (i = 0; i < 40; i++) {
     var side2 = R() < 0.5 ? -1 : 1, dd = d0 + R() * BLOCK, ee = 3 + Math.pow(R(), 0.9) * 200, uu = side2 * (halfW(dd) + ee);
@@ -339,7 +343,16 @@ function blockData(bi) {
     if (st < 0.8 && R() < 0.6) continue;
     rocks.push({ x: cx(dd) + uu, y: profY(dd) + crossH(uu, dd), z: -dd, s: 0.5 + Math.pow(R(), 2) * (ee > 40 ? 5 : 1.6), r: R() * TAU, t: R() * TAU, u: uu, d: dd });
   }
-  B = W.blocks[bi] = { trees: trees, rocks: rocks };
+  // cumuli di neve fresca: sulle sponde, tra gli alberi e intorno alle rocce
+  var pillows = [];
+  for (i = 0; i < 70; i++) {
+    var sd = R() < 0.5 ? -1 : 1, pd = d0 + R() * BLOCK, pe = 2.5 + Math.pow(R(), 1.3) * 110, pu = sd * (halfW(pd) + pe);
+    var sl = Math.abs(crossH(pu + 1, pd) - crossH(pu - 1, pd));
+    if (sl > 1.6) continue;
+    var sz = 0.7 + R() * (pe < 12 ? 1.2 : 2.6);
+    pillows.push({ x: cx(pd) + pu, y: profY(pd) + crossH(pu, pd), z: -pd, s: sz, h: sz * (0.28 + R() * 0.22), e: 0.7 + R() * 0.8, r: R() * TAU });
+  }
+  B = W.blocks[bi] = { trees: trees, rocks: rocks, pillows: pillows };
   return B;
 }
 // ostacoli solidi vicini (alberi e rocce), per gli urti

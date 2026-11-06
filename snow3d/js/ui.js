@@ -186,7 +186,8 @@ function updHud(dt) {
     lv._n = GAME.lives;
     lv.innerHTML = GAME.mode === 'free' ? [0, 1, 2].map(function (i) { return '<i class="' + (i < GAME.lives ? '' : 'off') + '"></i>'; }).join('') : '';
   }
-  $('speedfx').style.opacity = clamp((speedOf() - 17) / 10, 0, 0.8);
+  $('speedfx').style.opacity = POST.on ? 0 : clamp((speedOf() - 17) / 10, 0, 0.8);
+  $('vig').style.opacity = POST.on ? 0 : 1;
 }
 
 // ------------------------------------------------------------ menu e schede
@@ -199,6 +200,10 @@ function refreshMenu() {
 }
 document.querySelectorAll('.mode').forEach(function (b) { b.addEventListener('click', function () { ensureAudio(); sfx('click'); startRun(b.dataset.mode); }); });
 $('btnPause').addEventListener('click', function () { pauseGame(); });
+$('btnCam').addEventListener('click', function () { save.set.camMode = ((save.set.camMode || 0) + 1) % CAMS.length; toast('Camera: ' + CAMS[save.set.camMode].name); persist(); });
+$('btnReplay').addEventListener('click', function () { startReplay(); });
+$('replayBar').addEventListener('click', function () { endReplay(); });
+$('btnPReplay').addEventListener('click', function () { if (!REP.avail) { toast('Fai prima un bel trick'); return; } resumeGame(); startReplay(); });
 $('btnResume').addEventListener('click', function () { resumeGame(); });
 $('btnRestart').addEventListener('click', function () { startRun(GAME.mode); });
 $('btnQuit').addEventListener('click', function () { toMenu(); });
@@ -215,6 +220,8 @@ function syncSettings() {
     seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
   });
   $('sens').value = save.set.sens; $('sensV').textContent = Math.round(save.set.sens * 100) + '%';
+  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
+    (DIAG.errors.length ? '\nErrori:\n' + DIAG.errors.slice(-4).join('\n') : '\nNessun errore');
 }
 document.querySelectorAll('#settings .seg').forEach(function (seg) {
   seg.addEventListener('click', function (e) {
@@ -248,6 +255,7 @@ $('boards').addEventListener('click', function (e) { var b = e.target.closest('.
 function rebuildRider() { var buf = rig.buf; disposeRig(); makeRig(buf).buf = buf; PS.init = false; }
 
 var GUIDE = [
+  ['Camera e replay', 'Il tasto con la camera (in alto a destra) cambia inquadratura: Classica, Video (bassa e di lato), Lontana. Dopo un bel trick compare <em>Replay</em>: lo rivedi al rallentatore (tocca per tornare). In pausa c\'è anche "Rivedi".'],
   ['Sterzare', 'Pollice <em>sinistro</em> ovunque nella metà sinistra: lo stick appare sotto il dito. ← → curvi, ↑ vai più veloce (posizione raccolta), ↓ freni mettendo la tavola di traverso.'],
   ['Saltare', 'Pollice <em>destro</em>: tieni premuto per caricare, lascia per saltare. Sui kicker lascia proprio sul bordo (il <em>lip</em>): spinta in più e "Pop!". Se tieni premuto oltre il bordo, salta da solo.'],
   ['Spin', 'In aria stick <em>← →</em>. Più lo spingi, più giri veloce. Per atterrare lascia lo stick: con l\'aiuto attivo la rotazione si ferma sulla posizione buona più vicina. 180, 360, 540, 720, 900, 1080…'],

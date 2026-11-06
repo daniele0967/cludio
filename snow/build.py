@@ -7,7 +7,7 @@
 import base64, json, pathlib, re
 here = pathlib.Path(__file__).parent
 src3d = here.parent / 'snow3d'
-ORDER = ['core.js', 'world.js', 'tricks.js', 'physics.js', 'render.js', 'park.js', 'rider.js', 'audio.js', 'ui.js', 'main.js']
+ORDER = ['core.js', 'world.js', 'tricks.js', 'physics.js', 'render.js', 'park.js', 'post.js', 'rider.js', 'audio.js', 'ui.js', 'main.js']
 html = (src3d / 'index.html').read_text()
 three = (src3d / 'vendor' / 'three.min.js').read_text()
 # il file r160 apre con un avviso in console sul formato "build/three.min.js": non serve

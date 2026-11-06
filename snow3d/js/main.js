@@ -146,8 +146,10 @@ function handleEvents() {
       case 'grab': sfx('grab'); break;
       case 'land': {
         var imp = clamp(e.impact / 9, 0.2, 1);
+        PS.compV -= 0.7 + imp * 1.6;
+        if (e.trick && e.pts >= 600 && GAME) offerReplay();
         sfx('land', imp); camShake = Math.max(camShake, 0.04 + imp * 0.12);
-        burst(P.x, P.y, P.z, 14 + Math.round(imp * 26), 2 + imp * 3, 1.6 + imp, 0.26);
+        burst(P.x, P.y, P.z, 30 + Math.round(imp * 45), 2.2 + imp * 3.5, 1.8 + imp * 1.6, 0.4);
         if (e.trick) {
           popup(e.trick.name, '+' + fmt(e.pts) + (e.rep ? ' · ripetuto' : ''), e.q);
           sfx(e.q === 'perfect' ? 'perfect' : 'trick');
@@ -168,7 +170,7 @@ function handleEvents() {
       case 'crash':
         sfx('crash'); camShake = 0.35; flashA = 0.35;
         if (rig) startRagdoll(e.vx, e.vy, e.vz);
-        burst(P.x, P.y, P.z, 40, 3.5, 2.4, 0.3);
+        burst(P.x, P.y, P.z, 80, 3.8, 2.8, 0.45);
         if (GAME) { GAME.lives -= GAME.mode === 'free' ? 1 : 0; GAME.crashWait = 2.3; }
         popup('Caduta', CRASH_TXT[e.why] || '', '', 'lost');
         trailGap();
@@ -188,18 +190,18 @@ function updEffects(dt) {
   if (P.mode === 'ground') {
     _e1.set(1, 0, 0).applyQuaternion(P.q); _e2.set(0, 0, 1).applyQuaternion(P.q);
     var edge = Math.abs(P.steer) * 0.6 + P.brake * 1.4 + Math.abs(Math.sin(P.yawOff)) * 1.2 + (P.scrub || 0) + (P.butter ? 0.5 : 0);
-    sprayAcc += dt * sp * (0.4 + edge * 3.2);
+    sprayAcc += dt * sp * (1.1 + edge * 3.6); // neve fresca: un velo di polvere anche andando dritti
     var side = P.steer >= 0 ? -1 : 1; if (P.brake) side = -sign(P.yawOff || 1);
     while (sprayAcc > 1) {
       sprayAcc -= 1;
       var o = (Math.random() - 0.5) * 1.1, px = P.x + _e1.x * o + _e2.x * side * 0.16, pz = P.z + _e1.z * o + _e2.z * side * 0.16;
       var out = 0.5 + edge * 2.2;
-      part(px, P.y + 0.04, pz, _e2.x * side * out + P.vx * 0.25 + (Math.random() - 0.5), 0.6 + Math.random() * (0.8 + edge), _e2.z * side * out + P.vz * 0.25 + (Math.random() - 0.5), 0.45 + Math.random() * 0.5, 0.12 + edge * 0.1 + Math.random() * 0.1, 0.75);
+      part(px, P.y + 0.06, pz, _e2.x * side * out + P.vx * 0.3 + (Math.random() - 0.5), 0.7 + Math.random() * (1 + edge * 1.4), _e2.z * side * out + P.vz * 0.3 + (Math.random() - 0.5), 0.7 + Math.random() * 0.7, 0.2 + edge * 0.2 + Math.random() * 0.18, 0.45 + edge * 0.25);
     }
     trailD += sp * dt;
     if (trailD > 0.35) {
       trailD = 0;
-      var w = 0.13 + Math.abs(Math.sin(P.yawOff)) * 0.5;
+      var w = 0.2 + Math.abs(Math.sin(P.yawOff)) * 0.55;
       _e2.set(0, 0, 1).applyQuaternion(P.q);
       if (!trLast) trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, false);
       trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, true);
@@ -246,9 +248,16 @@ function updAids(dt) {
 }
 
 // ------------------------------------------------------------ camera
+// tre camere: classica alle spalle, bassa "da video" un po' di lato, lontana per vedere la linea
+var CAMS = [
+  { name: 'Classica', d: 5.0, h: 1.95, look: 4.5, ly: 0.55, fov: 58, air: 0.8, side: 0 },
+  { name: 'Video', d: 3.4, h: 0.85, look: 3.0, ly: 0.75, fov: 66, air: 0.6, side: 1.1 },
+  { name: 'Lontana', d: 8.2, h: 3.4, look: 6.0, ly: 0.2, fov: 55, air: 1.2, side: 0 }
+];
 var _cv = new THREE.Vector3(), _cw = new THREE.Vector3();
 function updCamera(dt) {
   var portrait = VH > VW;
+  if (state === 'replay') { replayCamera(dt); return; }
   if (window.__camFn) { window.__camFn(camera, P, rig); camera.updateProjectionMatrix(); return; }
   if (state === 'menu' || state === 'loading') {
     MENU_CAM.a += dt * 0.07;
@@ -270,10 +279,11 @@ function updCamera(dt) {
   if (sp > 1.2 && P.mode !== 'crash') { var hd = Math.atan2(P.vx, -P.vz); camHd += wrapA(hd - camHd) * damp(air ? 1.6 : 3.2, dt); }
   if (!camInit) { camHd = Math.atan2(P.vx, -P.vz) || 0; camY = ty; }
   camY = lerp(camY, ty, damp(air ? 3 : 7, dt));
-  var dist = (portrait ? 6.6 : 5.0) + Math.min(sp, 25) * 0.05 + (air ? 0.8 : 0) + (P.mode === 'crash' ? 1.5 : 0) + save.set.cam * 0;
-  var hgt = (portrait ? 2.5 : 1.95) + (air ? 0.5 : 0);
+  var CM = CAMS[save.set.camMode || 0];
+  var dist = (portrait ? CM.d * 1.3 : CM.d) + Math.min(sp, 25) * 0.05 + (air ? CM.air : 0) + (P.mode === 'crash' ? 1.5 : 0);
+  var hgt = (portrait ? CM.h * 1.25 : CM.h) + (air ? CM.air * 0.6 : 0);
   var fx = Math.sin(camHd), fz = -Math.cos(camHd);
-  _cw.set(tx - fx * dist, camY + hgt, tz - fz * dist);
+  _cw.set(tx - fx * dist - fz * CM.side, camY + hgt, tz - fz * dist + fx * CM.side);
   var gh = groundH(_cw.x, _cw.z) + 0.9; if (_cw.y < gh) _cw.y = gh;
   // niente camera dentro gli alberi: se un tronco o una chioma e' tra il rider e la camera, ci si avvicina
   var bestK = 1;
@@ -286,11 +296,12 @@ function updCamera(dt) {
   if (!camInit) { camPos.copy(_cw); camInit = true; }
   camPos.x = lerp(camPos.x, _cw.x, damp(7, dt)); camPos.z = lerp(camPos.z, _cw.z, damp(7, dt)); camPos.y = lerp(camPos.y, _cw.y, damp(5, dt));
   if (camPos.y < gh) camPos.y = gh;
-  camLook.set(tx + fx * 4.5, camY + 0.55, tz + fz * 4.5);
+  camLook.set(tx + fx * CM.look, camY + CM.ly, tz + fz * CM.look);
+  if (CM.side) { camLook.x += fz * CM.side * 0.4; camLook.z -= fx * CM.side * 0.4; }
   camera.position.copy(camPos);
   if (camShake > 0) { camShake = Math.max(0, camShake - dt * 1.2); camera.position.x += (Math.random() - 0.5) * camShake; camera.position.y += (Math.random() - 0.5) * camShake; }
   camera.lookAt(camLook);
-  var fov = (portrait ? 70 : 58) + clamp((sp - 8) * 0.55, 0, 13);
+  var fov = (portrait ? CM.fov + 12 : CM.fov) + clamp((sp - 8) * 0.55, 0, 13);
   camera.fov = lerp(camera.fov, fov, damp(3, dt)); camera.updateProjectionMatrix();
 }
 
@@ -328,6 +339,7 @@ function frame(now) {
     acc += dt; var n = 0;
     while (acc >= DT && n < 10) { stepPlayer(DT); acc -= DT; n++; }
     if (n >= 10) acc = 0;
+    recFrame(dt);
     handleEvents();
     if (P.mode === 'crash' && GAME.crashWait > 0) {
       GAME.crashWait -= dt;
@@ -339,7 +351,9 @@ function frame(now) {
     if (GAME && GAME.goal && GAME.goal.done) { GAME.goal.t -= dt; if (GAME.goal.t <= 0) nextGoal(); }
     if (GAME && GAME.tut) tutUpdate(dt);
     updHud(dt);
-  } else if (state === 'over' && P && P.mode === 'crash') { /* il ragdoll continua */ }
+    updLive();
+    if (REP.btnT > 0) { REP.btnT -= dt; if (REP.btnT <= 0) $('btnReplay').classList.add('hidden'); }
+  } else if (state === 'replay') { replayStep(dt); }
   if (PROF.on) { var _n = performance.now(); PROF['play'] = (PROF['play'] || 0) + _n - _pt; _pt = _n; }
   var dC = P ? dist() : 0;
   genUntil(dC + 760);
@@ -349,7 +363,7 @@ function frame(now) {
   if (PROF.on) { var _n = performance.now(); PROF['stream'] = (PROF['stream'] || 0) + _n - _pt; _pt = _n; }
   updLift(dC, gtime);
   if (PROF.on) { var _n = performance.now(); PROF['lift'] = (PROF['lift'] || 0) + _n - _pt; _pt = _n; }
-  if (rig) { rig.t += dt; if (state === 'menu') poseIdle(dt); else poseRider(dt, P.mode); }
+  if (rig) { rig.t += dt; if (state === 'menu') poseIdle(dt); else poseRider(state === 'replay' ? dt * REP.speed : dt, P.mode); }
   if (PROF.on) { var _n = performance.now(); PROF['pose'] = (PROF['pose'] || 0) + _n - _pt; _pt = _n; }
   updEffects(state === 'play' ? dt : 0);
   updParticles(dt);
@@ -361,10 +375,13 @@ function frame(now) {
   sky.position.copy(camera.position);
   if (mountains) mountains.position.set(camera.position.x, camera.position.y - 40, camera.position.z);
   clouds.position.set(camera.position.x, camera.position.y + 950, camera.position.z);
+  bgCam.position.copy(camera.position); bgCam.quaternion.copy(camera.quaternion);
+  if (bgCam.fov !== camera.fov || bgCam.aspect !== camera.aspect) { bgCam.fov = camera.fov; bgCam.aspect = camera.aspect; bgCam.updateProjectionMatrix(); }
   cloudMat.uniforms.uOff.value.x += dt * 0.0015; cloudMat.uniforms.uOff.value.y += dt * 0.0006;
   updFlakes(dt, camera.position, LT.snowfall, gtime);
   pMat.uniforms.uScale.value = VH * 0.5 / Math.tan(camera.fov * DEG / 2) * 0.9;
   if (flashA > 0) { flashA = Math.max(0, flashA - dt * 1.4); }
+  POST.speed = state === 'play' && P ? clamp((speedOf() - 15) / 13, 0, 1) * 0.85 : 0;
   flashEl.style.opacity = flashA;
   updateAudio(dt, state === 'play');
   if (AU && state !== 'loading') musicTick();
@@ -375,6 +392,103 @@ function frame(now) {
   if (PROF.on) PROF.frames = (PROF.frames || 0) + 1;
 }
 
+// ------------------------------------------------------------ replay al rallentatore dell'ultimo salto
+var REC = { buf: [], max: 720 }, REP = { frames: null, t: 0, speed: 0.33, ang: 0, real: null, avail: null, btnT: 0 };
+function snapP() {
+  var A = P.air, R = P.rail, B = P.butter;
+  return { x: P.x, y: P.y, z: P.z, vx: P.vx, vy: P.vy, vz: P.vz, q: P.q.clone(), mode: P.mode, crouch: P.crouch, lean: P.lean, steer: P.steer, landT: P.landT,
+    quality: P.quality, sw: P.sw, yawOff: P.yawOff, wobble: 0, charge: P.charge, prewind: P.prewind, brake: P.brake, tuck: P.tuck, hx: P.hx, hz: P.hz, lipD: null, scrub: 0,
+    air: A ? { grab: A.grab, grabT: A.grabT, ws: A.ws, t: A.t, tLand: A.tLand, landX: A.landX, landY: A.landY, landZ: A.landZ, landN: A.landN.clone() } : null,
+    rail: R ? { press: R.press, offY: 0, t: R.t, r: R.r, vs: R.vs } : null, butter: B ? { press: B.press } : null };
+}
+function recFrame(dt) {
+  if (!P || P.mode === 'crash') return;
+  var f = snapP(); f.dt = dt;
+  REC.buf.push(f); if (REC.buf.length > REC.max) REC.buf.shift();
+}
+// dopo un bel trick: il salto (con un secondo prima e dopo) resta disponibile per il replay
+function offerReplay() {
+  var b = REC.buf, end = b.length - 1, i = end;
+  while (i > 0 && b[i].mode !== 'air') i--;
+  while (i > 0 && (b[i].mode === 'air' || b[i].mode === 'rail')) i--;
+  var pre = 0, k = i; while (k > 0 && pre < 1.0) { pre += b[k].dt; k--; }
+  REP.avail = b.slice(k, end + 1);
+  REP.btnT = 5;
+  $('btnReplay').classList.remove('hidden');
+}
+function startReplay() {
+  if (!REP.avail || state !== 'play') return;
+  REP.frames = REP.avail; REP.t = 0; REP.idx = 0; REP.real = P; REP.ang = 0.9; REP.post = 0.9;
+  state = 'replay'; resetTouch(); sfx('whoosh');
+  $('btnReplay').classList.add('hidden'); $('replayBar').classList.remove('hidden');
+  show('controls', false); PS.init = false;
+}
+function endReplay() {
+  if (state !== 'replay') return;
+  P = REP.real; REP.frames = null; state = 'play'; PS.init = false; camInit = false; last = performance.now();
+  $('replayBar').classList.add('hidden'); show('controls', true);
+}
+function replayStep(dt) {
+  var F = REP.frames; if (!F) return;
+  REP.t += dt * REP.speed;
+  var acc = 0, i = 0;
+  while (i < F.length - 1 && acc + F[i].dt < REP.t) { acc += F[i].dt; i++; }
+  if (i >= F.length - 1) { endReplay(); return; }
+  var a = F[i], b = F[i + 1], t = clamp((REP.t - acc) / (a.dt || 1 / 60), 0, 1);
+  var f = Object.assign({}, a);
+  f.x = lerp(a.x, b.x, t); f.y = lerp(a.y, b.y, t); f.z = lerp(a.z, b.z, t);
+  f.q = a.q.clone().slerp(b.q, t);
+  if (REP.idx !== i) { if (a.mode === 'air' && b.mode === 'ground') burst(b.x, b.y, b.z, 50, 3, 2.2, 0.4); REP.idx = i; }
+  P = f;
+}
+var _rc = new THREE.Vector3();
+function replayCamera(dt) {
+  REP.ang += dt * 0.35;
+  var r = 5.2, h = 1.6;
+  _rc.set(P.x + Math.sin(REP.ang) * r, P.y + h, P.z + Math.cos(REP.ang) * r);
+  var gh = groundH(_rc.x, _rc.z) + 0.6; if (_rc.y < gh) _rc.y = gh;
+  camPos.lerp(_rc, camInit ? damp(4, dt) : 1); camInit = true;
+  camLook.lerp(_cv.set(P.x, P.y + 0.8, P.z), damp(8, dt));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  camera.fov = lerp(camera.fov, 48, damp(3, dt)); camera.updateProjectionMatrix();
+}
+// trick mostrato dal vivo mentre si e' in aria
+function updLive() {
+  var el = $('live');
+  if (state !== 'play' || P.mode !== 'air' || !P.air || P.air.t < 0.15) { el.classList.remove('on'); return; }
+  var A = P.air, sp = Math.abs(A.spin - (A.spinBase || 0)), deg = Math.floor(sp / PI + 0.35) * 180, nf = Math.floor(Math.abs(A.flip) / TAU + 0.3);
+  var parts = [];
+  if (deg) parts.push(deg);
+  if (nf) parts.push((nf > 1 ? nf + '× ' : '') + (A.flip < 0 ? 'Back' : 'Front') + 'flip');
+  if (A.grab >= 0) parts.push(GRABS[A.grab].name);
+  var txt = parts.join(' · ');
+  if (el._t !== txt) { el.textContent = txt; el._t = txt; }
+  el.classList.toggle('on', !!txt);
+}
+
+// ------------------------------------------------------------ disegno: sfondo, poi mondo vicino (e post-processing se attivo)
+function renderFrame(dt) {
+  if (typeof postRender === 'function' && postRender(dt)) return;
+  renderer.autoClear = false;
+  renderer.setRenderTarget(null);
+  renderer.clear();
+  renderer.render(bgScene, bgCam);
+  renderer.clearDepth();
+  renderer.render(scene, camera);
+}
+// se il telefono non accetta lo shader della neve, si passa a quello standard (la neve si vede comunque)
+function checkSnowShader() {
+  var bad = false;
+  [snowMat, snowMatKick].forEach(function (m) {
+    var pr = renderer.properties.get(m).currentProgram;
+    if (pr && pr.diagnostics && pr.diagnostics.runnable === false) bad = true;
+  });
+  if (bad && !SNOW_SIMPLE) {
+    SNOW_SIMPLE = true; DIAG.snow = 'riserva';
+    [snowMat, snowMatKick].forEach(function (m) { m.needsUpdate = true; });
+  }
+}
+
 // ------------------------------------------------------------ avvio
 function warmup() {
   var tmp = new THREE.Group(), w = newWorldPreview();
@@ -382,7 +496,8 @@ function warmup() {
   w.forEach(function (o) { tmp.add(o); });
   landRing.material.opacity = 0.01; railMark.material.opacity = 0.01;
   renderer.compile(scene, camera);
-  renderer.render(scene, camera);
+  renderFrame(0);
+  checkSnowShader();
   scene.remove(tmp);
   tmp.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
 }
@@ -403,6 +518,7 @@ function boot() {
   resize();
   applyLight(save.set.light);
   quality.auto = save.set.quality === 'auto';
+  initPost();
   setQuality(quality.auto ? 2 : +save.set.quality);
   newWorld(4242, 'menu'); genUntil(700); newPlayer(7, -2, 0);
   try {
@@ -422,10 +538,10 @@ function boot() {
 }
 // per i test automatici
 window.__pr = {
-  get P() { return P; }, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
+  get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
-  scene: scene, prof: PROF,
+  scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
 };

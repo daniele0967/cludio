@@ -157,6 +157,17 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 @media (orientation: portrait) { #riderPanel { place-items: end stretch; } #riderPanel .card { width: 100%; } }
 @media (orientation: landscape) { #over .stats { grid-template-columns: repeat(4, 1fr); } #over .stat.big { grid-column: 1 / -1; } #over .card { width: min(100%, 620px); } }
 @media (max-height: 430px) { .stat.big b { font-size: 34px; } .stat b { font-size: 21px; } .stat { padding: 8px 10px; } h2 { font-size: 26px; } }
+#live { position: absolute; left: 50%; top: calc(var(--st) + 84px); transform: translateX(-50%); padding: 5px 14px 6px; border-radius: 999px; background: var(--glass2);
+  font: italic 800 20px/1 var(--display); letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; opacity: 0; transition: opacity .15s; font-variant-numeric: tabular-nums; }
+#live.on { opacity: 1; }
+#btnReplay { position: absolute; pointer-events: auto; right: calc(var(--sr) + 16px); top: calc(var(--st) + 66px); min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0;
+  background: var(--gold); color: #2a1e00; font: 800 13px var(--round); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+#replayBar { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; padding-bottom: calc(var(--sb) + 22px);
+  background: linear-gradient(180deg, rgba(0,0,0,.55) 0 9%, rgba(0,0,0,0) 9% 91%, rgba(0,0,0,.55) 91%); cursor: pointer; }
+#replayBar b { font: italic 900 26px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+#replayBar span { font: 700 12px var(--round); letter-spacing: .1em; color: var(--frost); }
+.diag summary { font: 700 12px var(--round); color: var(--frost); cursor: pointer; }
+.diag pre { white-space: pre-wrap; font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--frost); margin: 6px 0 0; max-height: 120px; overflow: auto; }
 #toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); font: 700 13px var(--round); opacity: 0; transition: opacity .25s; pointer-events: none; }
 #toast.on { opacity: 1; }
 #rotate { position: fixed; left: 50%; top: calc(var(--st) + 12px); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: var(--glass); font: 700 12px var(--round); pointer-events: none; }
@@ -181,8 +192,11 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
   <div id="comboBox"><div id="comboVal">0</div><div id="comboTimer"><i id="comboT"></i></div><div id="comboList"></div></div>
   <div class="tr">
     <div class="meta"><b id="spd">0</b><span>km/h</span><span id="dst">0 m</span></div>
+    <button class="icon" id="btnCam" aria-label="Cambia camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="icon" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
   </div>
+  <div id="live"></div>
+  <button id="btnReplay" class="hidden">▶ Replay</button>
   <div id="pops"></div>
   <div id="hint"></div>
   <div id="railBal">sul rail: ← → cambia trick · trascina ↑ ↓ press · tocca per saltare</div>
@@ -220,7 +234,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <h2>Pausa</h2>
     <div class="stats"><div class="stat"><b id="pScore">0</b><span>Punti</span></div><div class="stat"><b id="pDist">0 m</b><span>Distanza</span></div></div>
     <button class="btn pri" id="btnResume">Riprendi</button>
-    <div class="btnrow"><button class="btn" id="btnRestart">Ricomincia</button><button class="btn" id="btnPSet">Impostazioni</button><button class="btn" id="btnPGuide">Comandi</button><button class="btn" id="btnQuit">Menu</button></div>
+    <div class="btnrow"><button class="btn" id="btnPReplay">Rivedi l'ultimo trick</button><button class="btn" id="btnRestart">Ricomincia</button><button class="btn" id="btnPSet">Impostazioni</button><button class="btn" id="btnPGuide">Comandi</button><button class="btn" id="btnQuit">Menu</button></div>
   </div>
 </div>
 
@@ -252,6 +266,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <div class="opt"><span>Aiuti visivi (cerchio d'atterraggio)</span><div class="seg" data-k="hud"><button data-v="true">Sì</button><button data-v="false">No</button></div></div>
       <div class="opt"><span>Audio</span><div class="seg" data-k="sound"><button data-v="true">Effetti sì</button><button data-v="false">Effetti no</button></div><div class="seg" data-k="music"><button data-v="true">Musica sì</button><button data-v="false">Musica no</button></div></div>
     </div>
+    <details class="diag"><summary>Diagnostica (se qualcosa non si vede)</summary><pre id="diagTxt"></pre></details>
     <button class="btn pri" id="btnSetClose">Fatto</button>
   </div>
 </div>
@@ -272,6 +287,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <button class="btn pri" id="btnGuideClose">Ho capito</button>
   </div>
 </div>
+<div id="replayBar" class="hidden"><b>Replay</b><span>tocca per tornare a sciare</span></div>
 <div id="toast"></div>
 <div id="rotate" class="hidden">Gira il telefono in orizzontale per giocare meglio</div>
 
@@ -349,7 +365,7 @@ function wpick(R, w) { // w: { chiave: peso }
 var SAVE_KEY = 'powderrun_freeride_v2';
 var save = {
   best: 0, bestZen: 0, bestCombo: 0, bestDist: 0, runs: 0, totalTricks: 0, tutDone: false,
-  set: { stance: 'regular', assist: 1, sens: 1, invFlip: false, quality: 'auto', sound: true, music: true, hud: true, outfit: 0, board: 0, light: 'mattina', cam: 1 }
+  set: { stance: 'regular', assist: 1, sens: 1, invFlip: false, quality: 'auto', sound: true, music: true, hud: true, outfit: 0, board: 0, light: 'mattina', camMode: 0 }
 };
 (function () {
   var raw = typeof window !== 'undefined' ? window.__INITIAL_SAVE__ : null;
@@ -461,11 +477,14 @@ function crossH(u, d) {
   if (a <= W0) return 0;
   var e = a - W0;
   var h = 1.5 * sm01(e / 6);
-  if (e > 4) h += 0.2 * Math.pow(e - 4, 1.28);
+  // il fianco sale fino a ~110 m dalla pista, poi diventa un altopiano: oltre si vedono le montagne lontane
+  if (e > 4) { var ew = Math.min(e, 110) - 4; h += 0.2 * Math.pow(ew, 1.28) + (e > 110 ? 0.12 * (e - 110) : 0); }
+  // dune morbide di neve fresca
+  h += 0.7 * sm01((e - 1) / 5) * Math.max(0, vnoise2(u * 0.11, d * 0.09, 31) + 0.2);
   if (e > 10) {
     var m = Math.min(1, (e - 10) / 45), s = u < 0 ? 3 : 4;
     h += m * (7 * fbm2(u * 0.02, d * 0.02, s, 4) + 4);
-    if (e > 50) h += Math.min(1, (e - 50) / 60) * 26 * ridge2(u * 0.009, d * 0.009, s + 9, 4);
+    if (e > 50) h += Math.min(1, (e - 50) / 60) * 22 * ridge2(u * 0.009, d * 0.009, s + 9, 4);
   }
   return h;
 }
@@ -707,7 +726,8 @@ function blockData(bi) {
     var steep = crossH(u + 1, d) - crossH(u - 1, d);
     if (Math.abs(steep) > 2.4 && R() < 0.8) continue;
     var s = 0.75 + R() * 0.7 + (e > 30 ? 0.25 : 0);
-    trees.push({ x: x, y: y, z: -d, s: s, v: Math.floor(R() * 3), r: R() * TAU, u: u, d: d });
+    var vr = R(), tv = vr < 0.28 ? 0 : vr < 0.5 ? 1 : vr < 0.64 ? 2 : vr < 0.84 ? 3 : 4;
+    trees.push({ x: x, y: y, z: -d, s: s, v: tv, r: R() * TAU, u: u, d: d });
   }
   for (i = 0; i < 40; i++) {
     var side2 = R() < 0.5 ? -1 : 1, dd = d0 + R() * BLOCK, ee = 3 + Math.pow(R(), 0.9) * 200, uu = side2 * (halfW(dd) + ee);
@@ -716,7 +736,16 @@ function blockData(bi) {
     if (st < 0.8 && R() < 0.6) continue;
     rocks.push({ x: cx(dd) + uu, y: profY(dd) + crossH(uu, dd), z: -dd, s: 0.5 + Math.pow(R(), 2) * (ee > 40 ? 5 : 1.6), r: R() * TAU, t: R() * TAU, u: uu, d: dd });
   }
-  B = W.blocks[bi] = { trees: trees, rocks: rocks };
+  // cumuli di neve fresca: sulle sponde, tra gli alberi e intorno alle rocce
+  var pillows = [];
+  for (i = 0; i < 70; i++) {
+    var sd = R() < 0.5 ? -1 : 1, pd = d0 + R() * BLOCK, pe = 2.5 + Math.pow(R(), 1.3) * 110, pu = sd * (halfW(pd) + pe);
+    var sl = Math.abs(crossH(pu + 1, pd) - crossH(pu - 1, pd));
+    if (sl > 1.6) continue;
+    var sz = 0.7 + R() * (pe < 12 ? 1.2 : 2.6);
+    pillows.push({ x: cx(pd) + pu, y: profY(pd) + crossH(pu, pd), z: -pd, s: sz, h: sz * (0.28 + R() * 0.22), e: 0.7 + R() * 0.8, r: R() * TAU });
+  }
+  B = W.blocks[bi] = { trees: trees, rocks: rocks, pillows: pillows };
   return B;
 }
 // ostacoli solidi vicini (alberi e rocce), per gli urti
@@ -1524,6 +1553,7 @@ function respawn() {
 }
 
 // ============================================================ GRAFICA: scena, luce, cielo, neve, montagne
+var DIAG = { errors: [], snow: 'ok', post: 'spento', gl: 0 };
 var canvas = $('game'), renderer;
 try {
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance', stencil: false });
@@ -1535,16 +1565,27 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+DIAG.gl = renderer.capabilities.isWebGL2 ? 2 : 1;
+renderer.debug.onShaderError = function (gl, program, vs, fs) {
+  var log = (gl.getProgramInfoLog(program) || '') + ' ' + (gl.getShaderInfoLog(fs) || '') + ' ' + (gl.getShaderInfoLog(vs) || '');
+  DIAG.errors.push(log.slice(0, 400));
+};
+window.addEventListener('error', function (e) { DIAG.errors.push(String(e.message).slice(0, 300)); });
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 7000);
+// due passaggi: prima cielo, nuvole e montagne lontane (con la loro camera), poi si pulisce la profondita'
+// e si disegna il mondo vicino con una camera che arriva a 1,2 km. Cosi' anche i telefoni con poca
+// precisione di profondita' non confondono la neve vicina con le montagne lontane.
+var camera = new THREE.PerspectiveCamera(60, 1, 0.1, 1200);
+var bgScene = new THREE.Scene(), bgCam = new THREE.PerspectiveCamera(60, 1, 20, 9000);
+
 var VW = 1, VH = 1;
 
 // ------------------------------------------------------------ luce: tre momenti della giornata
 var LIGHTS = {
-  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.1, top: 0x1f63c6, hor: 0xcfe1f3, haze: 0xd6e5f3, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.55, exp: 0.86, env: 0.75, snowfall: 0.15, cloud: 0.55 },
-  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.0, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe2dbd2, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.5, exp: 0.9, env: 0.7, snowfall: 0.1, cloud: 0.45 },
-  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 2.6, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.55, exp: 0.98, env: 0.65, snowfall: 0.08, cloud: 0.6 },
-  nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 0.9, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xd0d8e2, hemiS: 0xd8e2ee, hemiG: 0xeef1f5, hemiI: 1.4, exp: 0.95, env: 0.9, snowfall: 1, cloud: 0.95 }
+  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.7, top: 0x1a58bd, hor: 0xa9c7e6, haze: 0xbfd4ea, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.32, exp: 0.8, env: 0.42, snowfall: 0.15, cloud: 0.55 },
+  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.6, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe0d9d0, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.3, exp: 0.82, env: 0.42, snowfall: 0.1, cloud: 0.45 },
+  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 3.0, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.35, exp: 0.95, env: 0.45, snowfall: 0.08, cloud: 0.6 },
+  nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 1.3, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xcdd6e1, hemiS: 0xd8e2ee, hemiG: 0xe6eaf0, hemiI: 1.05, exp: 0.92, env: 0.6, snowfall: 1, cloud: 0.95 }
 };
 var LT = null;
 var sunDir = new THREE.Vector3();
@@ -1558,7 +1599,7 @@ sun.shadow.bias = -0.00025; sun.shadow.normalBias = 0.03;
 scene.add(sun); scene.add(sun.target);
 var hemi = new THREE.HemisphereLight(0xbfd8ff, 0xffffff, 0.6);
 scene.add(hemi);
-scene.fog = new THREE.Fog(0xd6e5f3, 70, 560);
+scene.fog = new THREE.Fog(0xd6e5f3, 130, 640);
 
 // ------------------------------------------------------------ cielo
 var skyMat = new THREE.ShaderMaterial({
@@ -1582,7 +1623,7 @@ var skyMat = new THREE.ShaderMaterial({
 });
 var sky = new THREE.Mesh(new THREE.SphereGeometry(5000, 48, 24), skyMat);
 sky.frustumCulled = false; sky.renderOrder = -10;
-scene.add(sky);
+bgScene.add(sky);
 
 // ------------------------------------------------------------ texture procedurali
 function canvasTex(w, h, draw, repeat) {
@@ -1622,13 +1663,21 @@ function tileNoise(N, scale, oct, seed) {
   }
   return hf;
 }
-var snowNormal = heightToNormal(tileNoise(256, 1.6, 5, 3), 256, 3.2);
+// neve fresca: grandi ondulazioni morbide (accumuli del vento) piu' una grana fine di cristalli
+var snowNormal = (function () {
+  var a = tileNoise(256, 1.0, 4, 3), b = tileNoise(256, 5.5, 3, 11), hf = new Float32Array(a.length);
+  for (var i = 0; i < a.length; i++) hf[i] = a[i] + b[i] * 0.22;
+  return heightToNormal(hf, 256, 3.4);
+})();
 
 // ------------------------------------------------------------ materiale neve (battitura, brillantini)
-var snowUniforms = { uCordFade: { value: 1 }, uSparkle: { value: 1 } };
+var snowUniforms = { uCordFade: { value: 0 }, uSparkle: { value: 1 } }; // niente righe di pista battuta: e' tutta neve fresca
+var SNOW_SIMPLE = false; // diventa vero se il telefono rifiuta lo shader della neve: si usa quello standard
 function makeSnowMat(opts) {
-  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.5, 0.5), envMapIntensity: 0.7 }, opts || {}));
+  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.75, 0.75), envMapIntensity: 0.7 }, opts || {}));
+  m.customProgramCacheKey = function () { return SNOW_SIMPLE ? 'snow-simple' : 'snow-full-2'; };
   m.onBeforeCompile = function (sh) {
+    if (SNOW_SIMPLE) return;
     sh.uniforms.uCordFade = snowUniforms.uCordFade; sh.uniforms.uSparkle = snowUniforms.uSparkle;
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 aCord;\nvarying vec3 vCord;')
       .replace('#include <uv_vertex>', '#include <uv_vertex>\nvCord = aCord;');
@@ -1695,13 +1744,16 @@ function terrainGrid(d0, len, rowStep, us, inner, sink) {
       var steep = clamp((0.78 - ny) / 0.22, 0, 1), rn = 0.5 + 0.5 * vnoise2((c0 + u) * 0.08, d * 0.08, 5);
       var rock = au > hw + 20 ? clamp(steep * 1.4 - 0.2 + (rn - 0.5) * 0.9, 0, 1) : 0;
       cc.copy(SNOW).lerp(SNOWB, au > hw + 3 ? 0.6 : 0.15);
+      var lap = (hl + hr + hu + hd - 4 * h) / Math.max(1, dx * 0.5 * rowStep);
+      var ao = clamp(1 - lap * 0.9, 0.78, 1.04);
+      cc.multiplyScalar(0.94 * ao); cc.b = Math.min(1, cc.b + (1 - ao) * 0.25);
       if (rock > 0) cc.lerp(rn > 0.5 ? ROCK : ROCKD, rock * 0.92);
       col[i * 3] = cc.r; col[i * 3 + 1] = cc.g; col[i * 3 + 2] = cc.b;
       uv[i * 2] = (c0 + u) / 3.2; uv[i * 2 + 1] = (base + r * rowStep) / 3.2;
       cord[i * 3] = u; cord[i * 3 + 1] = d % 512; cord[i * 3 + 2] = inner ? clamp((hw - 0.6 - au) / 1.2, 0, 1) : 0;
     }
   }
-  var idx = new Uint32Array((rows - 1) * (cols - 1) * 6), q = 0;
+  var idx = new Uint16Array((rows - 1) * (cols - 1) * 6), q = 0;
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
     idx[q++] = a; idx[q++] = c2; idx[q++] = b; idx[q++] = b; idx[q++] = c2; idx[q++] = d2;
@@ -1755,14 +1807,16 @@ function mergeGeos(list) { // [ [geometry, color], ... ] -> geometria unica con 
   return geo;
 }
 function pineGeo(v) {
-  var R = rng(91 + v * 7), parts = [], layers = 5 + v, H = 7 + v * 1.4;
+  // 0-2 abeti di varie altezze, 3 abete coperto di neve fino in fondo
+  var R = rng(91 + v * 7), parts = [], layers = 5 + Math.min(v, 2), H = 7 + Math.min(v, 2) * 1.4 + (v === 3 ? 0.6 : 0);
   var trunk = new THREE.CylinderGeometry(0.12, 0.2, H * 0.35, 6); trunk.translate(0, H * 0.17, 0); parts.push([trunk, 0x4a3426]);
   for (var i = 0; i < layers; i++) {
     var t = i / layers, rad = (1 - t * 0.82) * (1.7 + v * 0.15), y = H * (0.16 + t * 0.74), hgt = H * 0.3 * (1 - t * 0.35);
     var cone = new THREE.ConeGeometry(rad, hgt, 8, 1, true); cone.rotateY(R() * PI); cone.translate(0, y + hgt * 0.5, 0);
     var green = new THREE.Color().setHSL(0.36 + R() * 0.04, 0.32, 0.13 + R() * 0.04);
-    parts.push([cone, function (x, yy, z, ny) { return ny > 0.55 && yy > y + hgt * 0.3 ? 0xf3f7fc : green.getHex(); }]);
-    var cap = new THREE.ConeGeometry(rad * 0.86, hgt * 0.42, 8, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * 0.78, 0);
+    var snowy = v === 3 ? 0.05 : 0.35;
+    parts.push([cone, function (x, yy, z, ny) { return (ny > snowy && yy > y + hgt * 0.18) || v === 3 && yy > y + hgt * 0.05 ? 0xf3f7fc : green.getHex(); }]);
+    var cap = new THREE.ConeGeometry(rad * (v === 3 ? 1.02 : 0.9), hgt * (v === 3 ? 0.75 : 0.5), 8, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * (v === 3 ? 0.62 : 0.74), 0);
     parts.push([cap, 0xf4f8fd]);
   }
   return mergeGeos(parts);
@@ -1783,13 +1837,37 @@ function pineLow(v) {
   parts.push([new THREE.ConeGeometry(1.75 + v * 0.15, H * 0.9, 6, 1, true).translate(0, H * 0.58, 0), function (x, y, z, ny) { return y > H * 0.75 ? 0xe9eff6 : 0x1f3a2c; }]);
   return mergeGeos(parts);
 }
-var TREE_GEOS = [pineGeo(0), pineGeo(1), pineGeo(2)], TREE_LOW = [pineLow(0), pineLow(1), pineLow(2)], ROCK_GEOS = [rockGeo(0), rockGeo(1), rockGeo(2)];
+// abete alto e stretto, rami corti carichi di neve
+function firGeo() {
+  var R = rng(777), parts = [], H = 11;
+  parts.push([new THREE.CylinderGeometry(0.1, 0.17, H * 0.3, 6).translate(0, H * 0.15, 0), 0x47321f]);
+  for (var i = 0; i < 9; i++) {
+    var t = i / 9, rad = (1 - t * 0.85) * 1.05, y = H * (0.12 + t * 0.8), hgt = H * 0.16;
+    var cone = new THREE.ConeGeometry(rad, hgt, 7, 1, true); cone.rotateY(R() * PI); cone.translate(0, y + hgt * 0.5, 0);
+    parts.push([cone, function (x, yy, z, ny) { return ny > 0.3 ? 0xf2f6fb : 0x1a3527; }]);
+    var cap = new THREE.ConeGeometry(rad * 0.92, hgt * 0.5, 7, 1, true); cap.rotateY(R() * PI); cap.translate(0, y + hgt * 0.72, 0);
+    parts.push([cap, 0xf5f8fc]);
+  }
+  return mergeGeos(parts);
+}
+var TREE_GEOS = [pineGeo(0), pineGeo(1), pineGeo(2), pineGeo(3), firGeo()], TREE_LOW = [pineLow(0), pineLow(1), pineLow(2), pineLow(1), pineLow(2)], ROCK_GEOS = [rockGeo(0), rockGeo(1), rockGeo(2)];
 var vegMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, envMapIntensity: 0.6 });
 var rockMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: true, envMapIntensity: 0.6 });
 var _mx = new THREE.Matrix4(), _qx = new THREE.Quaternion(), _sx = new THREE.Vector3(), _px = new THREE.Vector3(), _ex = new THREE.Euler();
+// cumuli di neve fresca fuori pista
+var PILLOW_GEO = new THREE.SphereGeometry(1, 18, 10, 0, TAU, 0, PI * 0.5);
+var pillowMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.88, normalMap: snowNormal, normalScale: new THREE.Vector2(0.45, 0.45), envMapIntensity: 0.7 });
 function buildScenery(k) {
   var out = [], B = blockData(k);
-  [0, 1, 2].forEach(function (v) {
+  if (B.pillows.length) {
+    var pm = new THREE.InstancedMesh(PILLOW_GEO, pillowMat, B.pillows.length);
+    B.pillows.forEach(function (p, i) {
+      _qx.setFromEuler(_ex.set(0, p.r, 0));
+      _mx.compose(_px.set(p.x, p.y - p.h * 0.18, p.z), _qx, _sx.set(p.s, p.h, p.s * p.e)); pm.setMatrixAt(i, _mx);
+    });
+    pm.receiveShadow = true; pm.castShadow = true; pm.computeBoundingSphere(); scene.add(pm); out.push(pm);
+  }
+  [0, 1, 2, 3, 4].forEach(function (v) {
     var list = B.trees.filter(function (t) { return t.v === v; });
     if (!list.length) return;
     var im = new THREE.InstancedMesh(TREE_GEOS[v], vegMat, list.length); im.userData.tree = v;
@@ -1834,16 +1912,16 @@ var poleMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.
 // ------------------------------------------------------------ montagne lontane (anello attorno alla camera)
 var mountains = null;
 function buildMountains() {
-  if (mountains) { scene.remove(mountains); mountains.geometry.dispose(); }
-  var AS = 240, RS = 30, pos = [], col = [], idx = [], haze = new THREE.Color(LT.haze), lit = new THREE.Color(), tmp = new THREE.Color();
+  if (mountains) { bgScene.remove(mountains); mountains.geometry.dispose(); }
+  var AS = 320, RS = 36, pos = [], col = [], idx = [], haze = new THREE.Color(LT.haze), lit = new THREE.Color(), tmp = new THREE.Color();
   var sunV = sunDir.clone();
   var Hf = function (x, z, r) {
     var ridge = ridge2(x / 1300 + 7, z / 1300 + 3, 21, 6), big = fbm2(x / 3200, z / 3200, 9, 3);
-    var amp = 260 + 1100 * sm01((r - 900) / 2200);
+    var amp = 320 + 1250 * sm01((r - 900) / 2000);
     // verso valle (z negativo) la valle si apre: montagne piu' basse e lontane
     var ahead = sm01((-z / r - 0.35) / 0.6);
-    amp *= 1 - 0.45 * ahead;
-    return -320 - 180 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
+    amp *= 1 - 0.12 * ahead;
+    return -280 - 40 * ahead + (ridge * 1.05 + big * 0.55 + 0.25) * amp;
   };
   for (var j = 0; j <= RS; j++) {
     var t = j / RS, r = 900 + Math.pow(t, 1.35) * 3400;
@@ -1854,12 +1932,16 @@ function buildMountains() {
       var nx = -hx, ny = 2 * e, nz = -hz, nl = Math.sqrt(nx * nx + ny * ny + nz * nz); nx /= nl; ny /= nl; nz /= nl;
       var snowy = clamp((ny - 0.42) / 0.2, 0, 1) * clamp((y + 160) / 140, 0, 1);
       var forest = clamp((-y - 150) / 80, 0, 1) * clamp((ny - 0.6) / 0.2, 0, 1);
-      tmp.set(0x5d5a5c).lerp(new THREE.Color(0xf3f6fb), snowy).lerp(new THREE.Color(0x1d2a25), forest * 0.8);
+      // roccia a strati, ghiacciai azzurrini in alto sui pendii dolci, boschi in basso
+      var strata = 0.5 + 0.5 * Math.sin(y * 0.09 + vnoise2(x / 300, z / 300, 4) * 3);
+      tmp.set(0x5d5a5c).lerp(new THREE.Color(0x3e3a3b), strata * 0.5).lerp(new THREE.Color(0xf3f6fb), snowy);
+      var glacier = clamp((y - 250) / 200, 0, 1) * clamp((ny - 0.75) / 0.15, 0, 1);
+      tmp.lerp(new THREE.Color(0xd6e6f5), glacier * 0.6).lerp(new THREE.Color(0x1d2a25), forest * 0.8);
       var l = Math.max(0, nx * sunV.x + ny * sunV.y + nz * sunV.z);
       lit.copy(tmp).multiplyScalar(0.36 + 0.95 * l * (LT.sunI / 3));
       lit.r *= 0.92; lit.b *= 1.08;
-      var f = 1 - Math.exp(-r / 1700), hf = clamp((-y + 60) / 600, 0, 1);
-      lit.lerp(haze, clamp(0.26 + f * 0.62 + hf * 0.25, 0, 0.95));
+      var f = 1 - Math.exp(-r / 2600), hf = clamp((-y + 60) / 700, 0, 1);
+      lit.lerp(haze, clamp(0.1 + f * 0.5 + hf * 0.2, 0, 0.85));
       col.push(lit.r, lit.g, lit.b);
     }
   }
@@ -1873,7 +1955,7 @@ function buildMountains() {
   geo.setIndex(idx);
   mountains = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide }));
   mountains.frustumCulled = false; mountains.renderOrder = -5;
-  scene.add(mountains);
+  bgScene.add(mountains);
 }
 
 // ------------------------------------------------------------ nuvole
@@ -1898,7 +1980,7 @@ var cloudMat = new THREE.ShaderMaterial({
 });
 var clouds = new THREE.Mesh(new THREE.CircleGeometry(6000, 48), cloudMat);
 clouds.rotation.x = PI / 2; clouds.frustumCulled = false; clouds.renderOrder = -8;
-scene.add(clouds);
+bgScene.add(clouds);
 
 // ------------------------------------------------------------ cambio di luce
 var envRT = null;
@@ -1908,7 +1990,7 @@ function applyLight(name) {
   sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
   sun.color.set(LT.sun); sun.intensity = LT.sunI;
   hemi.color.set(LT.hemiS); hemi.groundColor.set(LT.hemiG); hemi.intensity = LT.hemiI;
-  scene.fog.color.set(LT.haze);
+  scene.fog.color.set(LT.haze); scene.fog.near = name === 'nuvoloso' ? 80 : 130; scene.fog.far = name === 'nuvoloso' ? 520 : 640;
   skyMat.uniforms.uTop.value.set(LT.top); skyMat.uniforms.uHor.value.set(LT.hor); skyMat.uniforms.uSun.value.copy(sunDir);
   skyMat.uniforms.uSunCol.value.set(LT.sun); skyMat.uniforms.uSunI.value = name === 'nuvoloso' ? 0.15 : 1;
   cloudMat.uniforms.uAmt.value = LT.cloud;
@@ -1936,6 +2018,7 @@ function setQuality(level) {
   quality.level = level;
   var dpr = window.devicePixelRatio || 1;
   quality.pr = level === 2 ? Math.min(dpr, 2) : level === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1);
+  if (typeof POST !== 'undefined') POST.on = POST.ok && level >= 1;
   renderer.setPixelRatio(quality.pr);
   var sz = level === 0 ? 1024 : 2048;
   if (sz !== quality.shadow) {
@@ -1948,6 +2031,7 @@ function resize() {
   VW = window.innerWidth; VH = window.innerHeight;
   renderer.setSize(VW, VH, false);
   camera.aspect = VW / VH; camera.updateProjectionMatrix();
+  if (typeof resizePost === 'function') resizePost();
 }
 window.addEventListener('resize', resize);
 
@@ -2041,7 +2125,7 @@ function snowGrid(f, sEnd, wExt, lines) {
   geo.setAttribute('aCord', new THREE.BufferAttribute(cord, 3));
   geo.setIndex(idx); geo.computeVertexNormals(); geo.computeBoundingSphere();
   var m = new THREE.Mesh(geo, snowMatKick);
-  m.position.set(0, yRef, zRef); m.receiveShadow = true; m.castShadow = true;
+  m.position.set(0, yRef, zRef); m.receiveShadow = true; m.castShadow = false;
   return m;
 }
 function buildKick(f) {
@@ -2247,7 +2331,7 @@ function clearPark() {
   for (k in chunks) dropChunk(+k);
   for (k in towers) { liftGroup.remove(towers[k]); delete towers[k]; }
 }
-var VIEW_AHEAD = 470;
+var VIEW_AHEAD = 540;
 function syncChunks(dCenter, budget) {
   var k0 = Math.floor((dCenter - 70) / CHUNK), k1 = Math.floor((dCenter + VIEW_AHEAD) / CHUNK), built = 0, kc = Math.floor(dCenter / CHUNK);
   for (var k in chunks) if (+k < k0 || +k > k1) dropChunk(+k);
@@ -2270,7 +2354,8 @@ function syncChunks(dCenter, budget) {
 }
 
 // ------------------------------------------------------------ neve sollevata (particelle)
-var PN = 1400, pPos = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN), pMax = new Float32Array(PN), pSize = new Float32Array(PN), pAlpha = new Float32Array(PN), pHead = 0;
+var pBase = new Float32Array(2600);
+var PN = 2600, pPos = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN), pMax = new Float32Array(PN), pSize = new Float32Array(PN), pAlpha = new Float32Array(PN), pHead = 0;
 var pGeo = new THREE.BufferGeometry();
 pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 pGeo.setAttribute('aSize', new THREE.BufferAttribute(pSize, 1));
@@ -2279,33 +2364,32 @@ var pMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
   uniforms: { uScale: { value: 300 }, uCol: { value: new THREE.Color(0xffffff) }, uShade: { value: new THREE.Color(0xc4d4e8) } },
   vertexShader: 'attribute float aSize; attribute float aAlpha; varying float vA; uniform float uScale; void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = aSize * uScale / max(0.5, -mv.z); gl_Position = projectionMatrix * mv; }',
-  fragmentShader: 'uniform vec3 uCol, uShade; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c,c) * 4.0; if (r > 1.0) discard; float a = (1.0 - r) * vA; gl_FragColor = vec4(mix(uCol, uShade, gl_PointCoord.y * 0.8), a);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
+  fragmentShader: 'uniform vec3 uCol, uShade; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c,c) * 4.0; if (r > 1.0) discard; float a = exp(-r * 2.6) * vA; gl_FragColor = vec4(mix(uCol, uShade, smoothstep(0.1, 0.9, gl_PointCoord.y) * 0.75), a);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
 });
 var pts = new THREE.Points(pGeo, pMat); pts.frustumCulled = false; pts.renderOrder = 3; scene.add(pts);
 function part(x, y, z, vx, vy, vz, life, size, a) {
   var i = pHead; pHead = (pHead + 1) % PN;
   pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
   pVel[i * 3] = vx; pVel[i * 3 + 1] = vy; pVel[i * 3 + 2] = vz;
-  pLife[i] = pMax[i] = life; pSize[i] = size; pAlpha[i] = a === undefined ? 0.9 : a;
+  pLife[i] = pMax[i] = life; pSize[i] = size; pAlpha[i] = pBase[i] = a === undefined ? 0.85 : a;
 }
 function burst(x, y, z, n, spd, up, size) {
   for (var i = 0; i < n; i++) {
     var a = Math.random() * TAU, s = spd * (0.3 + Math.random());
-    part(x, y + 0.05, z, Math.cos(a) * s, up * (0.4 + Math.random()), Math.sin(a) * s, 0.5 + Math.random() * 0.7, (size || 0.22) * (0.6 + Math.random()), 0.85);
+    part(x, y + 0.05, z, Math.cos(a) * s, up * (0.4 + Math.random()), Math.sin(a) * s, 0.8 + Math.random() * 0.9, (size || 0.3) * (0.7 + Math.random()), 0.75);
   }
 }
-var pBase = new Float32Array(PN);
 function updParticles(dt) {
   for (var i = 0; i < PN; i++) {
     if (pLife[i] <= 0) { if (pAlpha[i]) { pAlpha[i] = 0; } continue; }
     pLife[i] -= dt;
     var k = i * 3;
-    pVel[k + 1] -= 4.5 * dt;
-    var dr = 1 - damp(2.2, dt); pVel[k] *= dr; pVel[k + 1] *= dr; pVel[k + 2] *= dr;
+    pVel[k + 1] -= 2.6 * dt;
+    var dr = 1 - damp(1.7, dt); pVel[k] *= dr; pVel[k + 1] *= dr; pVel[k + 2] *= dr;
     pPos[k] += pVel[k] * dt; pPos[k + 1] += pVel[k + 1] * dt; pPos[k + 2] += pVel[k + 2] * dt;
     var t = pLife[i] / pMax[i];
-    pAlpha[i] = Math.max(0, t) * 0.85;
-    pSize[i] *= 1 + dt * 0.9;
+    pAlpha[i] = Math.max(0, t) * pBase[i];
+    pSize[i] *= 1 + dt * 1.5;
   }
   pGeo.attributes.position.needsUpdate = true; pGeo.attributes.aSize.needsUpdate = true; pGeo.attributes.aAlpha.needsUpdate = true;
 }
@@ -2333,16 +2417,19 @@ function updFlakes(dt, cam, amount, time) {
 }
 
 // ------------------------------------------------------------ tracce della tavola sulla neve
-var TRN = 900, trPos = new Float32Array(TRN * 2 * 3), trA = new Float32Array(TRN * 2), trN = 0;
+var TRN = 900, trPos = new Float32Array(TRN * 2 * 3), trA = new Float32Array(TRN * 2), trV = new Float32Array(TRN * 2), trN = 0;
+for (var tvi = 0; tvi < TRN; tvi++) { trV[tvi * 2] = 0; trV[tvi * 2 + 1] = 1; }
 var trGeo = new THREE.BufferGeometry();
 trGeo.setAttribute('position', new THREE.BufferAttribute(trPos, 3));
 trGeo.setAttribute('aA', new THREE.BufferAttribute(trA, 1));
+trGeo.setAttribute('aV', new THREE.BufferAttribute(trV, 1));
 (function () { var idx = []; for (var i = 0; i < TRN - 1; i++) { var a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trGeo.setIndex(idx); })();
 var trMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, fog: true,
-  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uCol: { value: new THREE.Color(0x6f86a6) } }]),
-  vertexShader: '#include <fog_pars_vertex>\nattribute float aA; varying float vA; void main(){ vA = aA; vec4 mvPosition = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
-  fragmentShader: '#include <fog_pars_fragment>\nuniform vec3 uCol; varying float vA; void main(){ gl_FragColor = vec4(uCol, vA * 0.3);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
+  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uCol: { value: new THREE.Color(0x7d93b4) }, uRim: { value: new THREE.Color(0xffffff) } }]),
+  vertexShader: '#include <fog_pars_vertex>\nattribute float aA; attribute float aV; varying float vA; varying float vV; void main(){ vA = aA; vV = aV; vec4 mvPosition = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
+  // solco nella neve fresca: fondo in ombra, bordi sollevati e illuminati
+  fragmentShader: '#include <fog_pars_fragment>\nuniform vec3 uCol, uRim; varying float vA; varying float vV; void main(){ float c = abs(vV * 2.0 - 1.0); float groove = smoothstep(0.9, 0.35, c); float rim = smoothstep(0.62, 0.9, c) * smoothstep(1.0, 0.92, c); vec3 col = mix(uRim, uCol, groove); float a = vA * (groove * 0.5 + rim * 0.45); gl_FragColor = vec4(col, a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
 });
 var trail = new THREE.Mesh(trGeo, trMat); trail.frustumCulled = false; trail.renderOrder = 1; scene.add(trail);
 var trLast = null;
@@ -2364,6 +2451,120 @@ var landRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.72, 40).rotateX(-PI
 landRing.renderOrder = 4; scene.add(landRing);
 var railMark = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshBasicMaterial({ color: 0x5cf0b5, transparent: true, opacity: 0, depthTest: false }));
 railMark.renderOrder = 6; scene.add(railMark);
+
+// ============================================================ EFFETTI DI CAMERA (post-processing)
+// La scena si disegna in un'immagine ad alta gamma; poi: bagliore delle luci forti (sole, neve al sole),
+// sfocatura radiale in velocita', vignetta e un filo di contrasto. Se il telefono non regge o non
+// supporta le immagini intermedie, si spegne da solo e il gioco si disegna come prima.
+var POST = { ok: false, on: false, rt: null, bA: null, bB: null, hdr: false, speed: 0 };
+var postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+var postQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2)); postQuad.frustumCulled = false; postScene.add(postQuad);
+var QUAD_VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }';
+var brightMat = new THREE.ShaderMaterial({
+  toneMapped: false, depthTest: false, depthWrite: false,
+  uniforms: { tDiffuse: { value: null }, uThr: { value: 1.0 } },
+  vertexShader: QUAD_VS,
+  fragmentShader: 'uniform sampler2D tDiffuse; uniform float uThr; varying vec2 vUv; void main(){ vec3 c = texture2D(tDiffuse, vUv).rgb; float l = max(c.r, max(c.g, c.b)); float k = smoothstep(uThr, uThr * 1.8, l); gl_FragColor = vec4(c * k, 1.0); }'
+});
+function blurMat(dir) {
+  return new THREE.ShaderMaterial({
+    toneMapped: false, depthTest: false, depthWrite: false,
+    uniforms: { tDiffuse: { value: null }, uDir: { value: new THREE.Vector2() } },
+    vertexShader: QUAD_VS,
+    fragmentShader: 'uniform sampler2D tDiffuse; uniform vec2 uDir; varying vec2 vUv; void main(){ vec3 c = texture2D(tDiffuse, vUv).rgb * 0.227;' +
+      ' c += (texture2D(tDiffuse, vUv + uDir * 1.385).rgb + texture2D(tDiffuse, vUv - uDir * 1.385).rgb) * 0.316;' +
+      ' c += (texture2D(tDiffuse, vUv + uDir * 3.231).rgb + texture2D(tDiffuse, vUv - uDir * 3.231).rgb) * 0.070; gl_FragColor = vec4(c, 1.0); }'
+  });
+}
+var blurH = blurMat(), blurV = blurMat();
+var compMat = new THREE.ShaderMaterial({
+  depthTest: false, depthWrite: false,
+  uniforms: { tDiffuse: { value: null }, tBloom: { value: null }, uBloom: { value: 0.55 }, uSpeed: { value: 0 }, uVig: { value: 0.32 }, uFlash: { value: 0 }, uPx: { value: new THREE.Vector2(1 / 1000, 1 / 500) } },
+  vertexShader: QUAD_VS,
+  fragmentShader: [
+    'uniform sampler2D tDiffuse, tBloom; uniform float uBloom, uSpeed, uVig, uFlash; uniform vec2 uPx; varying vec2 vUv;',
+    'float lu(vec3 c){ float l = dot(c, vec3(0.299, 0.587, 0.114)); return l / (1.0 + l); }',
+    'vec3 fxaa(vec2 uv){',
+    '  vec3 nw = texture2D(tDiffuse, uv + vec2(-1.0, -1.0) * uPx).rgb, ne = texture2D(tDiffuse, uv + vec2(1.0, -1.0) * uPx).rgb;',
+    '  vec3 sw = texture2D(tDiffuse, uv + vec2(-1.0, 1.0) * uPx).rgb, se = texture2D(tDiffuse, uv + vec2(1.0, 1.0) * uPx).rgb, m = texture2D(tDiffuse, uv).rgb;',
+    '  float a = lu(nw), b = lu(ne), c = lu(sw), d = lu(se), e = lu(m);',
+    '  float mn = min(e, min(min(a, b), min(c, d))), mx = max(e, max(max(a, b), max(c, d)));',
+    '  if (mx - mn < 0.04) return m;',
+    '  vec2 dir = vec2(-((a + b) - (c + d)), (a + c) - (b + d));',
+    '  float red = max((a + b + c + d) * 0.03125, 1.0 / 128.0), rcp = 1.0 / (min(abs(dir.x), abs(dir.y)) + red);',
+    '  dir = clamp(dir * rcp, -8.0, 8.0) * uPx;',
+    '  vec3 A = 0.5 * (texture2D(tDiffuse, uv + dir * (1.0 / 3.0 - 0.5)).rgb + texture2D(tDiffuse, uv + dir * (2.0 / 3.0 - 0.5)).rgb);',
+    '  vec3 B = A * 0.5 + 0.25 * (texture2D(tDiffuse, uv - dir * 0.5).rgb + texture2D(tDiffuse, uv + dir * 0.5).rgb);',
+    '  float lb = lu(B); return (lb < mn || lb > mx) ? A : B;',
+    '}',
+    'void main(){',
+    '  vec2 d = vUv - vec2(0.5, 0.46);',
+    '  vec3 c = fxaa(vUv);',
+    '  if (uSpeed > 0.01) {',   // sfocatura radiale: solo ai bordi, al centro il rider resta nitido
+    '    float m = smoothstep(0.12, 0.55, length(d)) * uSpeed;',
+    '    vec3 acc = c; for (int i = 1; i < 6; i++) acc += texture2D(tDiffuse, vUv - d * float(i) * 0.012 * m).rgb;',
+    '    c = acc / 6.0;',
+    '  }',
+    '  c += texture2D(tBloom, vUv).rgb * uBloom;',
+    '  float v = smoothstep(0.95, 0.25, length(d * vec2(1.25, 1.0)));',
+    '  c *= mix(1.0 - uVig, 1.0, v);',
+    '  c = mix(c, vec3(1.0), uFlash);',
+    '  gl_FragColor = vec4(c, 1.0);',
+    '  #include <tonemapping_fragment>',
+    '  #include <colorspace_fragment>',
+    '  gl_FragColor.rgb = clamp((gl_FragColor.rgb - 0.5) * 1.05 + 0.5, 0.0, 1.0);',
+    '}'].join('\n')
+});
+function makeRT(w, h, samples, depth) {
+  return new THREE.WebGLRenderTarget(w, h, { type: POST.hdr ? THREE.HalfFloatType : THREE.UnsignedByteType, samples: samples || 0, depthBuffer: !!depth, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter });
+}
+var _dbs = new THREE.Vector2();
+function initPost() {
+  try {
+    var ext = renderer.extensions, gl2 = renderer.capabilities.isWebGL2;
+    if (!gl2) { DIAG.post = 'non supportato (WebGL1)'; return; }
+    POST.hdr = ext.has('EXT_color_buffer_float') || ext.has('EXT_color_buffer_half_float');
+    // senza immagini ad alta gamma il bagliore schiarirebbe tutta la neve: meglio niente effetti
+    if (!POST.hdr) { DIAG.post = 'non supportato su questo telefono'; return; }
+    renderer.getDrawingBufferSize(_dbs);
+    // niente MSAA: questa versione di Three.js scarta l'immagine multicampionata dopo ogni passaggio
+    // (si perderebbe lo sfondo). L'antialiasing lo fa il passaggio finale (FXAA).
+    POST.rt = makeRT(_dbs.x, _dbs.y, 0, true);
+    POST.bA = makeRT(Math.max(1, _dbs.x >> 2), Math.max(1, _dbs.y >> 2), 0, false);
+    POST.bB = makeRT(Math.max(1, _dbs.x >> 2), Math.max(1, _dbs.y >> 2), 0, false);
+    // prova: l'immagine intermedia deve essere utilizzabile
+    renderer.setRenderTarget(POST.rt); renderer.clear();
+    var gl = renderer.getContext(), st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    renderer.setRenderTarget(null);
+    if (st !== gl.FRAMEBUFFER_COMPLETE) { disposePost(); DIAG.post = 'non supportato'; return; }
+    brightMat.uniforms.uThr.value = POST.hdr ? 1.05 : 0.86;
+    POST.ok = true; DIAG.post = POST.hdr ? 'attivo (HDR)' : 'attivo';
+  } catch (e) { disposePost(); DIAG.post = 'errore: ' + e.message; }
+}
+function disposePost() { ['rt', 'bA', 'bB'].forEach(function (k) { if (POST[k]) { POST[k].dispose(); POST[k] = null; } }); POST.ok = false; POST.on = false; }
+function resizePost() {
+  if (!POST.ok) return;
+  renderer.getDrawingBufferSize(_dbs);
+  POST.rt.setSize(_dbs.x, _dbs.y);
+  POST.bA.setSize(Math.max(1, _dbs.x >> 2), Math.max(1, _dbs.y >> 2)); POST.bB.setSize(Math.max(1, _dbs.x >> 2), Math.max(1, _dbs.y >> 2));
+}
+function postPass(mat, target) { postQuad.material = mat; renderer.setRenderTarget(target); renderer.render(postScene, postCam); }
+function postRender(dt) {
+  if (!POST.ok || !POST.on) return false;
+  renderer.autoClear = false;
+  renderer.setRenderTarget(POST.rt); renderer.clear();
+  renderer.render(bgScene, bgCam); renderer.clearDepth(); renderer.render(scene, camera);
+  brightMat.uniforms.tDiffuse.value = POST.rt.texture; postPass(brightMat, POST.bA);
+  var w = POST.bA.width, h = POST.bA.height;
+  blurH.uniforms.tDiffuse.value = POST.bA.texture; blurH.uniforms.uDir.value.set(1 / w, 0); postPass(blurH, POST.bB);
+  blurV.uniforms.tDiffuse.value = POST.bB.texture; blurV.uniforms.uDir.value.set(0, 1 / h); postPass(blurV, POST.bA);
+  blurH.uniforms.tDiffuse.value = POST.bA.texture; blurH.uniforms.uDir.value.set(2 / w, 0); postPass(blurH, POST.bB);
+  blurV.uniforms.tDiffuse.value = POST.bB.texture; blurV.uniforms.uDir.value.set(0, 2 / h); postPass(blurV, POST.bA);
+  compMat.uniforms.tDiffuse.value = POST.rt.texture; compMat.uniforms.tBloom.value = POST.bA.texture;
+  compMat.uniforms.uSpeed.value = POST.speed; compMat.uniforms.uPx.value.set(1 / POST.rt.width, 1 / POST.rt.height);
+  postPass(compMat, null);
+  return true;
+}
 
 // ============================================================ RIDER: modello con scheletro, vestiti, tavola, pose procedurali, ragdoll
 // Il modello (mesh e scheletro) viene dal file rider.bin, estratto da Xbot (esempi di Three.js, origine Mixamo).
@@ -2678,7 +2879,7 @@ function curlFingers(amount, side) {
 }
 
 // ------------------------------------------------------------ pose del rider (ogni fotogramma)
-var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false };
+var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false, comp: 0, compV: 0 };
 var _bq = new THREE.Quaternion(), _bx = new THREE.Vector3(), _by = new THREE.Vector3(), _bz = new THREE.Vector3(), _c = new THREE.Vector3(), _U = new THREE.Vector3(), _F = new THREE.Vector3();
 var _hipP = new THREE.Vector3(), _tg = new THREE.Vector3(), _tg2 = new THREE.Vector3(), _pl = new THREE.Vector3(), _sh = new THREE.Vector3(), _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _qc = new THREE.Quaternion();
 var _bpos = new THREE.Vector3();
@@ -2741,7 +2942,9 @@ function poseRider(dt, mode) {
   PS.twist = lerp(PS.twist, twist, damp(8, dt));
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
   // ---- bacino
-  var hipH = lerp(0.93, 0.58, PS.crouch);
+  // atterraggio: le gambe assorbono come una molla
+  PS.compV += (-70 * PS.comp - 11 * PS.compV) * dt; PS.comp = clamp(PS.comp + PS.compV * dt, -0.32, 0.08);
+  var hipH = lerp(0.93, 0.58, PS.crouch) + PS.comp;
   // nei grab le ginocchia salgono al petto: il bacino scende verso la tavola
   if (G0 && PS.grab > 0.01) {
     hipH = lerp(hipH, G0.at === 'heel' ? 0.47 : G0.at === 'toe' ? 0.43 : 0.5, PS.grab);
@@ -3208,7 +3411,8 @@ function updHud(dt) {
     lv._n = GAME.lives;
     lv.innerHTML = GAME.mode === 'free' ? [0, 1, 2].map(function (i) { return '<i class="' + (i < GAME.lives ? '' : 'off') + '"></i>'; }).join('') : '';
   }
-  $('speedfx').style.opacity = clamp((speedOf() - 17) / 10, 0, 0.8);
+  $('speedfx').style.opacity = POST.on ? 0 : clamp((speedOf() - 17) / 10, 0, 0.8);
+  $('vig').style.opacity = POST.on ? 0 : 1;
 }
 
 // ------------------------------------------------------------ menu e schede
@@ -3221,6 +3425,10 @@ function refreshMenu() {
 }
 document.querySelectorAll('.mode').forEach(function (b) { b.addEventListener('click', function () { ensureAudio(); sfx('click'); startRun(b.dataset.mode); }); });
 $('btnPause').addEventListener('click', function () { pauseGame(); });
+$('btnCam').addEventListener('click', function () { save.set.camMode = ((save.set.camMode || 0) + 1) % CAMS.length; toast('Camera: ' + CAMS[save.set.camMode].name); persist(); });
+$('btnReplay').addEventListener('click', function () { startReplay(); });
+$('replayBar').addEventListener('click', function () { endReplay(); });
+$('btnPReplay').addEventListener('click', function () { if (!REP.avail) { toast('Fai prima un bel trick'); return; } resumeGame(); startReplay(); });
 $('btnResume').addEventListener('click', function () { resumeGame(); });
 $('btnRestart').addEventListener('click', function () { startRun(GAME.mode); });
 $('btnQuit').addEventListener('click', function () { toMenu(); });
@@ -3237,6 +3445,8 @@ function syncSettings() {
     seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
   });
   $('sens').value = save.set.sens; $('sensV').textContent = Math.round(save.set.sens * 100) + '%';
+  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
+    (DIAG.errors.length ? '\nErrori:\n' + DIAG.errors.slice(-4).join('\n') : '\nNessun errore');
 }
 document.querySelectorAll('#settings .seg').forEach(function (seg) {
   seg.addEventListener('click', function (e) {
@@ -3270,6 +3480,7 @@ $('boards').addEventListener('click', function (e) { var b = e.target.closest('.
 function rebuildRider() { var buf = rig.buf; disposeRig(); makeRig(buf).buf = buf; PS.init = false; }
 
 var GUIDE = [
+  ['Camera e replay', 'Il tasto con la camera (in alto a destra) cambia inquadratura: Classica, Video (bassa e di lato), Lontana. Dopo un bel trick compare <em>Replay</em>: lo rivedi al rallentatore (tocca per tornare). In pausa c\'è anche "Rivedi".'],
   ['Sterzare', 'Pollice <em>sinistro</em> ovunque nella metà sinistra: lo stick appare sotto il dito. ← → curvi, ↑ vai più veloce (posizione raccolta), ↓ freni mettendo la tavola di traverso.'],
   ['Saltare', 'Pollice <em>destro</em>: tieni premuto per caricare, lascia per saltare. Sui kicker lascia proprio sul bordo (il <em>lip</em>): spinta in più e "Pop!". Se tieni premuto oltre il bordo, salta da solo.'],
   ['Spin', 'In aria stick <em>← →</em>. Più lo spingi, più giri veloce. Per atterrare lascia lo stick: con l\'aiuto attivo la rotazione si ferma sulla posizione buona più vicina. 180, 360, 540, 720, 900, 1080…'],
@@ -3439,8 +3650,10 @@ function handleEvents() {
       case 'grab': sfx('grab'); break;
       case 'land': {
         var imp = clamp(e.impact / 9, 0.2, 1);
+        PS.compV -= 0.7 + imp * 1.6;
+        if (e.trick && e.pts >= 600 && GAME) offerReplay();
         sfx('land', imp); camShake = Math.max(camShake, 0.04 + imp * 0.12);
-        burst(P.x, P.y, P.z, 14 + Math.round(imp * 26), 2 + imp * 3, 1.6 + imp, 0.26);
+        burst(P.x, P.y, P.z, 30 + Math.round(imp * 45), 2.2 + imp * 3.5, 1.8 + imp * 1.6, 0.4);
         if (e.trick) {
           popup(e.trick.name, '+' + fmt(e.pts) + (e.rep ? ' · ripetuto' : ''), e.q);
           sfx(e.q === 'perfect' ? 'perfect' : 'trick');
@@ -3461,7 +3674,7 @@ function handleEvents() {
       case 'crash':
         sfx('crash'); camShake = 0.35; flashA = 0.35;
         if (rig) startRagdoll(e.vx, e.vy, e.vz);
-        burst(P.x, P.y, P.z, 40, 3.5, 2.4, 0.3);
+        burst(P.x, P.y, P.z, 80, 3.8, 2.8, 0.45);
         if (GAME) { GAME.lives -= GAME.mode === 'free' ? 1 : 0; GAME.crashWait = 2.3; }
         popup('Caduta', CRASH_TXT[e.why] || '', '', 'lost');
         trailGap();
@@ -3481,18 +3694,18 @@ function updEffects(dt) {
   if (P.mode === 'ground') {
     _e1.set(1, 0, 0).applyQuaternion(P.q); _e2.set(0, 0, 1).applyQuaternion(P.q);
     var edge = Math.abs(P.steer) * 0.6 + P.brake * 1.4 + Math.abs(Math.sin(P.yawOff)) * 1.2 + (P.scrub || 0) + (P.butter ? 0.5 : 0);
-    sprayAcc += dt * sp * (0.4 + edge * 3.2);
+    sprayAcc += dt * sp * (1.1 + edge * 3.6); // neve fresca: un velo di polvere anche andando dritti
     var side = P.steer >= 0 ? -1 : 1; if (P.brake) side = -sign(P.yawOff || 1);
     while (sprayAcc > 1) {
       sprayAcc -= 1;
       var o = (Math.random() - 0.5) * 1.1, px = P.x + _e1.x * o + _e2.x * side * 0.16, pz = P.z + _e1.z * o + _e2.z * side * 0.16;
       var out = 0.5 + edge * 2.2;
-      part(px, P.y + 0.04, pz, _e2.x * side * out + P.vx * 0.25 + (Math.random() - 0.5), 0.6 + Math.random() * (0.8 + edge), _e2.z * side * out + P.vz * 0.25 + (Math.random() - 0.5), 0.45 + Math.random() * 0.5, 0.12 + edge * 0.1 + Math.random() * 0.1, 0.75);
+      part(px, P.y + 0.06, pz, _e2.x * side * out + P.vx * 0.3 + (Math.random() - 0.5), 0.7 + Math.random() * (1 + edge * 1.4), _e2.z * side * out + P.vz * 0.3 + (Math.random() - 0.5), 0.7 + Math.random() * 0.7, 0.2 + edge * 0.2 + Math.random() * 0.18, 0.45 + edge * 0.25);
     }
     trailD += sp * dt;
     if (trailD > 0.35) {
       trailD = 0;
-      var w = 0.13 + Math.abs(Math.sin(P.yawOff)) * 0.5;
+      var w = 0.2 + Math.abs(Math.sin(P.yawOff)) * 0.55;
       _e2.set(0, 0, 1).applyQuaternion(P.q);
       if (!trLast) trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, false);
       trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, true);
@@ -3539,9 +3752,16 @@ function updAids(dt) {
 }
 
 // ------------------------------------------------------------ camera
+// tre camere: classica alle spalle, bassa "da video" un po' di lato, lontana per vedere la linea
+var CAMS = [
+  { name: 'Classica', d: 5.0, h: 1.95, look: 4.5, ly: 0.55, fov: 58, air: 0.8, side: 0 },
+  { name: 'Video', d: 3.4, h: 0.85, look: 3.0, ly: 0.75, fov: 66, air: 0.6, side: 1.1 },
+  { name: 'Lontana', d: 8.2, h: 3.4, look: 6.0, ly: 0.2, fov: 55, air: 1.2, side: 0 }
+];
 var _cv = new THREE.Vector3(), _cw = new THREE.Vector3();
 function updCamera(dt) {
   var portrait = VH > VW;
+  if (state === 'replay') { replayCamera(dt); return; }
   if (window.__camFn) { window.__camFn(camera, P, rig); camera.updateProjectionMatrix(); return; }
   if (state === 'menu' || state === 'loading') {
     MENU_CAM.a += dt * 0.07;
@@ -3563,10 +3783,11 @@ function updCamera(dt) {
   if (sp > 1.2 && P.mode !== 'crash') { var hd = Math.atan2(P.vx, -P.vz); camHd += wrapA(hd - camHd) * damp(air ? 1.6 : 3.2, dt); }
   if (!camInit) { camHd = Math.atan2(P.vx, -P.vz) || 0; camY = ty; }
   camY = lerp(camY, ty, damp(air ? 3 : 7, dt));
-  var dist = (portrait ? 6.6 : 5.0) + Math.min(sp, 25) * 0.05 + (air ? 0.8 : 0) + (P.mode === 'crash' ? 1.5 : 0) + save.set.cam * 0;
-  var hgt = (portrait ? 2.5 : 1.95) + (air ? 0.5 : 0);
+  var CM = CAMS[save.set.camMode || 0];
+  var dist = (portrait ? CM.d * 1.3 : CM.d) + Math.min(sp, 25) * 0.05 + (air ? CM.air : 0) + (P.mode === 'crash' ? 1.5 : 0);
+  var hgt = (portrait ? CM.h * 1.25 : CM.h) + (air ? CM.air * 0.6 : 0);
   var fx = Math.sin(camHd), fz = -Math.cos(camHd);
-  _cw.set(tx - fx * dist, camY + hgt, tz - fz * dist);
+  _cw.set(tx - fx * dist - fz * CM.side, camY + hgt, tz - fz * dist + fx * CM.side);
   var gh = groundH(_cw.x, _cw.z) + 0.9; if (_cw.y < gh) _cw.y = gh;
   // niente camera dentro gli alberi: se un tronco o una chioma e' tra il rider e la camera, ci si avvicina
   var bestK = 1;
@@ -3579,11 +3800,12 @@ function updCamera(dt) {
   if (!camInit) { camPos.copy(_cw); camInit = true; }
   camPos.x = lerp(camPos.x, _cw.x, damp(7, dt)); camPos.z = lerp(camPos.z, _cw.z, damp(7, dt)); camPos.y = lerp(camPos.y, _cw.y, damp(5, dt));
   if (camPos.y < gh) camPos.y = gh;
-  camLook.set(tx + fx * 4.5, camY + 0.55, tz + fz * 4.5);
+  camLook.set(tx + fx * CM.look, camY + CM.ly, tz + fz * CM.look);
+  if (CM.side) { camLook.x += fz * CM.side * 0.4; camLook.z -= fx * CM.side * 0.4; }
   camera.position.copy(camPos);
   if (camShake > 0) { camShake = Math.max(0, camShake - dt * 1.2); camera.position.x += (Math.random() - 0.5) * camShake; camera.position.y += (Math.random() - 0.5) * camShake; }
   camera.lookAt(camLook);
-  var fov = (portrait ? 70 : 58) + clamp((sp - 8) * 0.55, 0, 13);
+  var fov = (portrait ? CM.fov + 12 : CM.fov) + clamp((sp - 8) * 0.55, 0, 13);
   camera.fov = lerp(camera.fov, fov, damp(3, dt)); camera.updateProjectionMatrix();
 }
 
@@ -3621,6 +3843,7 @@ function frame(now) {
     acc += dt; var n = 0;
     while (acc >= DT && n < 10) { stepPlayer(DT); acc -= DT; n++; }
     if (n >= 10) acc = 0;
+    recFrame(dt);
     handleEvents();
     if (P.mode === 'crash' && GAME.crashWait > 0) {
       GAME.crashWait -= dt;
@@ -3632,7 +3855,9 @@ function frame(now) {
     if (GAME && GAME.goal && GAME.goal.done) { GAME.goal.t -= dt; if (GAME.goal.t <= 0) nextGoal(); }
     if (GAME && GAME.tut) tutUpdate(dt);
     updHud(dt);
-  } else if (state === 'over' && P && P.mode === 'crash') { /* il ragdoll continua */ }
+    updLive();
+    if (REP.btnT > 0) { REP.btnT -= dt; if (REP.btnT <= 0) $('btnReplay').classList.add('hidden'); }
+  } else if (state === 'replay') { replayStep(dt); }
   if (PROF.on) { var _n = performance.now(); PROF['play'] = (PROF['play'] || 0) + _n - _pt; _pt = _n; }
   var dC = P ? dist() : 0;
   genUntil(dC + 760);
@@ -3642,7 +3867,7 @@ function frame(now) {
   if (PROF.on) { var _n = performance.now(); PROF['stream'] = (PROF['stream'] || 0) + _n - _pt; _pt = _n; }
   updLift(dC, gtime);
   if (PROF.on) { var _n = performance.now(); PROF['lift'] = (PROF['lift'] || 0) + _n - _pt; _pt = _n; }
-  if (rig) { rig.t += dt; if (state === 'menu') poseIdle(dt); else poseRider(dt, P.mode); }
+  if (rig) { rig.t += dt; if (state === 'menu') poseIdle(dt); else poseRider(state === 'replay' ? dt * REP.speed : dt, P.mode); }
   if (PROF.on) { var _n = performance.now(); PROF['pose'] = (PROF['pose'] || 0) + _n - _pt; _pt = _n; }
   updEffects(state === 'play' ? dt : 0);
   updParticles(dt);
@@ -3654,10 +3879,13 @@ function frame(now) {
   sky.position.copy(camera.position);
   if (mountains) mountains.position.set(camera.position.x, camera.position.y - 40, camera.position.z);
   clouds.position.set(camera.position.x, camera.position.y + 950, camera.position.z);
+  bgCam.position.copy(camera.position); bgCam.quaternion.copy(camera.quaternion);
+  if (bgCam.fov !== camera.fov || bgCam.aspect !== camera.aspect) { bgCam.fov = camera.fov; bgCam.aspect = camera.aspect; bgCam.updateProjectionMatrix(); }
   cloudMat.uniforms.uOff.value.x += dt * 0.0015; cloudMat.uniforms.uOff.value.y += dt * 0.0006;
   updFlakes(dt, camera.position, LT.snowfall, gtime);
   pMat.uniforms.uScale.value = VH * 0.5 / Math.tan(camera.fov * DEG / 2) * 0.9;
   if (flashA > 0) { flashA = Math.max(0, flashA - dt * 1.4); }
+  POST.speed = state === 'play' && P ? clamp((speedOf() - 15) / 13, 0, 1) * 0.85 : 0;
   flashEl.style.opacity = flashA;
   updateAudio(dt, state === 'play');
   if (AU && state !== 'loading') musicTick();
@@ -3668,6 +3896,103 @@ function frame(now) {
   if (PROF.on) PROF.frames = (PROF.frames || 0) + 1;
 }
 
+// ------------------------------------------------------------ replay al rallentatore dell'ultimo salto
+var REC = { buf: [], max: 720 }, REP = { frames: null, t: 0, speed: 0.33, ang: 0, real: null, avail: null, btnT: 0 };
+function snapP() {
+  var A = P.air, R = P.rail, B = P.butter;
+  return { x: P.x, y: P.y, z: P.z, vx: P.vx, vy: P.vy, vz: P.vz, q: P.q.clone(), mode: P.mode, crouch: P.crouch, lean: P.lean, steer: P.steer, landT: P.landT,
+    quality: P.quality, sw: P.sw, yawOff: P.yawOff, wobble: 0, charge: P.charge, prewind: P.prewind, brake: P.brake, tuck: P.tuck, hx: P.hx, hz: P.hz, lipD: null, scrub: 0,
+    air: A ? { grab: A.grab, grabT: A.grabT, ws: A.ws, t: A.t, tLand: A.tLand, landX: A.landX, landY: A.landY, landZ: A.landZ, landN: A.landN.clone() } : null,
+    rail: R ? { press: R.press, offY: 0, t: R.t, r: R.r, vs: R.vs } : null, butter: B ? { press: B.press } : null };
+}
+function recFrame(dt) {
+  if (!P || P.mode === 'crash') return;
+  var f = snapP(); f.dt = dt;
+  REC.buf.push(f); if (REC.buf.length > REC.max) REC.buf.shift();
+}
+// dopo un bel trick: il salto (con un secondo prima e dopo) resta disponibile per il replay
+function offerReplay() {
+  var b = REC.buf, end = b.length - 1, i = end;
+  while (i > 0 && b[i].mode !== 'air') i--;
+  while (i > 0 && (b[i].mode === 'air' || b[i].mode === 'rail')) i--;
+  var pre = 0, k = i; while (k > 0 && pre < 1.0) { pre += b[k].dt; k--; }
+  REP.avail = b.slice(k, end + 1);
+  REP.btnT = 5;
+  $('btnReplay').classList.remove('hidden');
+}
+function startReplay() {
+  if (!REP.avail || state !== 'play') return;
+  REP.frames = REP.avail; REP.t = 0; REP.idx = 0; REP.real = P; REP.ang = 0.9; REP.post = 0.9;
+  state = 'replay'; resetTouch(); sfx('whoosh');
+  $('btnReplay').classList.add('hidden'); $('replayBar').classList.remove('hidden');
+  show('controls', false); PS.init = false;
+}
+function endReplay() {
+  if (state !== 'replay') return;
+  P = REP.real; REP.frames = null; state = 'play'; PS.init = false; camInit = false; last = performance.now();
+  $('replayBar').classList.add('hidden'); show('controls', true);
+}
+function replayStep(dt) {
+  var F = REP.frames; if (!F) return;
+  REP.t += dt * REP.speed;
+  var acc = 0, i = 0;
+  while (i < F.length - 1 && acc + F[i].dt < REP.t) { acc += F[i].dt; i++; }
+  if (i >= F.length - 1) { endReplay(); return; }
+  var a = F[i], b = F[i + 1], t = clamp((REP.t - acc) / (a.dt || 1 / 60), 0, 1);
+  var f = Object.assign({}, a);
+  f.x = lerp(a.x, b.x, t); f.y = lerp(a.y, b.y, t); f.z = lerp(a.z, b.z, t);
+  f.q = a.q.clone().slerp(b.q, t);
+  if (REP.idx !== i) { if (a.mode === 'air' && b.mode === 'ground') burst(b.x, b.y, b.z, 50, 3, 2.2, 0.4); REP.idx = i; }
+  P = f;
+}
+var _rc = new THREE.Vector3();
+function replayCamera(dt) {
+  REP.ang += dt * 0.35;
+  var r = 5.2, h = 1.6;
+  _rc.set(P.x + Math.sin(REP.ang) * r, P.y + h, P.z + Math.cos(REP.ang) * r);
+  var gh = groundH(_rc.x, _rc.z) + 0.6; if (_rc.y < gh) _rc.y = gh;
+  camPos.lerp(_rc, camInit ? damp(4, dt) : 1); camInit = true;
+  camLook.lerp(_cv.set(P.x, P.y + 0.8, P.z), damp(8, dt));
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  camera.fov = lerp(camera.fov, 48, damp(3, dt)); camera.updateProjectionMatrix();
+}
+// trick mostrato dal vivo mentre si e' in aria
+function updLive() {
+  var el = $('live');
+  if (state !== 'play' || P.mode !== 'air' || !P.air || P.air.t < 0.15) { el.classList.remove('on'); return; }
+  var A = P.air, sp = Math.abs(A.spin - (A.spinBase || 0)), deg = Math.floor(sp / PI + 0.35) * 180, nf = Math.floor(Math.abs(A.flip) / TAU + 0.3);
+  var parts = [];
+  if (deg) parts.push(deg);
+  if (nf) parts.push((nf > 1 ? nf + '× ' : '') + (A.flip < 0 ? 'Back' : 'Front') + 'flip');
+  if (A.grab >= 0) parts.push(GRABS[A.grab].name);
+  var txt = parts.join(' · ');
+  if (el._t !== txt) { el.textContent = txt; el._t = txt; }
+  el.classList.toggle('on', !!txt);
+}
+
+// ------------------------------------------------------------ disegno: sfondo, poi mondo vicino (e post-processing se attivo)
+function renderFrame(dt) {
+  if (typeof postRender === 'function' && postRender(dt)) return;
+  renderer.autoClear = false;
+  renderer.setRenderTarget(null);
+  renderer.clear();
+  renderer.render(bgScene, bgCam);
+  renderer.clearDepth();
+  renderer.render(scene, camera);
+}
+// se il telefono non accetta lo shader della neve, si passa a quello standard (la neve si vede comunque)
+function checkSnowShader() {
+  var bad = false;
+  [snowMat, snowMatKick].forEach(function (m) {
+    var pr = renderer.properties.get(m).currentProgram;
+    if (pr && pr.diagnostics && pr.diagnostics.runnable === false) bad = true;
+  });
+  if (bad && !SNOW_SIMPLE) {
+    SNOW_SIMPLE = true; DIAG.snow = 'riserva';
+    [snowMat, snowMatKick].forEach(function (m) { m.needsUpdate = true; });
+  }
+}
+
 // ------------------------------------------------------------ avvio
 function warmup() {
   var tmp = new THREE.Group(), w = newWorldPreview();
@@ -3675,7 +4000,8 @@ function warmup() {
   w.forEach(function (o) { tmp.add(o); });
   landRing.material.opacity = 0.01; railMark.material.opacity = 0.01;
   renderer.compile(scene, camera);
-  renderer.render(scene, camera);
+  renderFrame(0);
+  checkSnowShader();
   scene.remove(tmp);
   tmp.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
 }
@@ -3696,6 +4022,7 @@ function boot() {
   resize();
   applyLight(save.set.light);
   quality.auto = save.set.quality === 'auto';
+  initPost();
   setQuality(quality.auto ? 2 : +save.set.quality);
   newWorld(4242, 'menu'); genUntil(700); newPlayer(7, -2, 0);
   try {
@@ -3715,10 +4042,10 @@ function boot() {
 }
 // per i test automatici
 window.__pr = {
-  get P() { return P; }, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
+  get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
-  scene: scene, prof: PROF,
+  scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
 };

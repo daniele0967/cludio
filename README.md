@@ -33,6 +33,13 @@ python3 build.py
 
 Gioco di snowboard originale in **3D** (Three.js) per **Scriptable** e browser, rifatto da zero: valle alpina con montagne lontane, foschia, sole basso e ombre, neve battuta con le righe del gatto e i brillantini, boschi innevati, seggiovia che gira, park con kicker, rail e box generati all'infinito. Il rider ha uno scheletro vero (modello Xbot degli esempi di Three.js, di origine Mixamo) vestito con giacca, pantaloni larghi, casco e maschera; le pose sono calcolate in tempo reale (IK di gambe e braccia, grab con la mano sulla tavola, caduta con ragdoll).
 
+## Novità
+- **Neve fresca ovunque**: superficie polverosa con dune e cumuli, solchi profondi della tavola, nuvole di polvere in curva e negli atterraggi, abeti carichi di neve.
+- **Effetti di camera** (sui telefoni che li reggono): bagliore della neve al sole, sfocatura ai bordi in velocità, vignetta, antialiasing. Si spengono da soli se il telefono fatica.
+- **Tre camere** (tasto in alto a destra): Classica, Video (bassa e di lato), Lontana. **Replay al rallentatore** dopo un bel trick, e in pausa "Rivedi l'ultimo trick".
+- **Trick dal vivo**: mentre sei in aria vedi rotazione, flip e grab che stai facendo.
+- **Terreno**: cielo e montagne lontane si disegnano in un passaggio separato (niente terreno che sparisce sui telefoni con poca precisione di profondità); se il telefono rifiuta lo shader della neve si usa quello standard. In Impostazioni c'è una voce **Diagnostica** da mandare se qualcosa non si vede.
+
 ## Modalità
 - **Free Run**: salti e rail all'infinito, si fanno trick e combo; 3 cadute e la corsa finisce. Sempre una **sfida** attiva (es. "Atterra un 540", "Grinda 14 m"): completarla dà punti e una vita.
 - **Zen**: stessa montagna, senza limite di cadute.
@@ -55,7 +62,7 @@ Gioco di snowboard originale in **3D** (Three.js) per **Scriptable** e browser, 
 3. Record e impostazioni: `Scriptable/PowderRun/record.json`.
 
 ## Sviluppo
-Sorgenti in `snow3d/`: `js/core.js` (servizi, salvataggio), `js/world.js` (pista, kicker progettati sulle traiettorie, rail, alberi), `js/tricks.js` (nomi e punti), `js/physics.js` (fisica a 120 Hz, salti, rotazioni, rail, butter, cadute), `js/render.js` e `js/park.js` (grafica), `js/rider.js` (modello, vestiti, pose, ragdoll), `js/audio.js` (suoni e musica sintetizzati), `js/ui.js` e `js/main.js` (comandi, HUD, menu, camera), `index.html`. `assets/rider.bin` si rigenera con `python3 snow3d/tools/extract_rider.py`.
+Sorgenti in `snow3d/`: `js/core.js` (servizi, salvataggio), `js/world.js` (pista, kicker progettati sulle traiettorie, rail, alberi), `js/tricks.js` (nomi e punti), `js/physics.js` (fisica a 120 Hz, salti, rotazioni, rail, butter, cadute), `js/render.js`, `js/park.js` e `js/post.js` (grafica ed effetti), `js/rider.js` (modello, vestiti, pose, ragdoll), `js/audio.js` (suoni e musica sintetizzati), `js/ui.js` e `js/main.js` (comandi, HUD, menu, camera), `index.html`. `assets/rider.bin` si rigenera con `python3 snow3d/tools/extract_rider.py`.
 Dopo ogni modifica: `python3 snow/build.py`. Test senza grafica: `node snow3d/test/ride.js`, `tricks.js`, `rails.js`, `butter.js`; nel browser: `snow3d/test/scenes.js`, `touch.js`, `tut.js`.
 La prima versione 2D è ancora in `snow/powder2d.html`.
 

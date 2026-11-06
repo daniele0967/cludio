@@ -311,7 +311,7 @@ function curlFingers(amount, side) {
 }
 
 // ------------------------------------------------------------ pose del rider (ogni fotogramma)
-var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false };
+var PS = { crouch: 0.3, lean: 0, open: 0.3, twist: 0.35, bend: 0.2, side: 0, xOff: 0, grab: 0, gi: -1, fh: new THREE.Vector3(), rh: new THREE.Vector3(), look: new THREE.Vector3(0, 0, -1), roll: 0, tw: new THREE.Quaternion(), press: 0, init: false, comp: 0, compV: 0 };
 var _bq = new THREE.Quaternion(), _bx = new THREE.Vector3(), _by = new THREE.Vector3(), _bz = new THREE.Vector3(), _c = new THREE.Vector3(), _U = new THREE.Vector3(), _F = new THREE.Vector3();
 var _hipP = new THREE.Vector3(), _tg = new THREE.Vector3(), _tg2 = new THREE.Vector3(), _pl = new THREE.Vector3(), _sh = new THREE.Vector3(), _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion(), _qc = new THREE.Quaternion();
 var _bpos = new THREE.Vector3();
@@ -374,7 +374,9 @@ function poseRider(dt, mode) {
   PS.twist = lerp(PS.twist, twist, damp(8, dt));
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
   // ---- bacino
-  var hipH = lerp(0.93, 0.58, PS.crouch);
+  // atterraggio: le gambe assorbono come una molla
+  PS.compV += (-70 * PS.comp - 11 * PS.compV) * dt; PS.comp = clamp(PS.comp + PS.compV * dt, -0.32, 0.08);
+  var hipH = lerp(0.93, 0.58, PS.crouch) + PS.comp;
   // nei grab le ginocchia salgono al petto: il bacino scende verso la tavola
   if (G0 && PS.grab > 0.01) {
     hipH = lerp(hipH, G0.at === 'heel' ? 0.47 : G0.at === 'toe' ? 0.43 : 0.5, PS.grab);

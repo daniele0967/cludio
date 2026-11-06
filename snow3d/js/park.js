@@ -88,7 +88,7 @@ function snowGrid(f, sEnd, wExt, lines) {
   geo.setAttribute('aCord', new THREE.BufferAttribute(cord, 3));
   geo.setIndex(idx); geo.computeVertexNormals(); geo.computeBoundingSphere();
   var m = new THREE.Mesh(geo, snowMatKick);
-  m.position.set(0, yRef, zRef); m.receiveShadow = true; m.castShadow = true;
+  m.position.set(0, yRef, zRef); m.receiveShadow = true; m.castShadow = false;
   return m;
 }
 function buildKick(f) {
@@ -294,7 +294,7 @@ function clearPark() {
   for (k in chunks) dropChunk(+k);
   for (k in towers) { liftGroup.remove(towers[k]); delete towers[k]; }
 }
-var VIEW_AHEAD = 470;
+var VIEW_AHEAD = 540;
 function syncChunks(dCenter, budget) {
   var k0 = Math.floor((dCenter - 70) / CHUNK), k1 = Math.floor((dCenter + VIEW_AHEAD) / CHUNK), built = 0, kc = Math.floor(dCenter / CHUNK);
   for (var k in chunks) if (+k < k0 || +k > k1) dropChunk(+k);
@@ -317,7 +317,8 @@ function syncChunks(dCenter, budget) {
 }
 
 // ------------------------------------------------------------ neve sollevata (particelle)
-var PN = 1400, pPos = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN), pMax = new Float32Array(PN), pSize = new Float32Array(PN), pAlpha = new Float32Array(PN), pHead = 0;
+var pBase = new Float32Array(2600);
+var PN = 2600, pPos = new Float32Array(PN * 3), pVel = new Float32Array(PN * 3), pLife = new Float32Array(PN), pMax = new Float32Array(PN), pSize = new Float32Array(PN), pAlpha = new Float32Array(PN), pHead = 0;
 var pGeo = new THREE.BufferGeometry();
 pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
 pGeo.setAttribute('aSize', new THREE.BufferAttribute(pSize, 1));
@@ -326,33 +327,32 @@ var pMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false,
   uniforms: { uScale: { value: 300 }, uCol: { value: new THREE.Color(0xffffff) }, uShade: { value: new THREE.Color(0xc4d4e8) } },
   vertexShader: 'attribute float aSize; attribute float aAlpha; varying float vA; uniform float uScale; void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position,1.0); gl_PointSize = aSize * uScale / max(0.5, -mv.z); gl_Position = projectionMatrix * mv; }',
-  fragmentShader: 'uniform vec3 uCol, uShade; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c,c) * 4.0; if (r > 1.0) discard; float a = (1.0 - r) * vA; gl_FragColor = vec4(mix(uCol, uShade, gl_PointCoord.y * 0.8), a);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
+  fragmentShader: 'uniform vec3 uCol, uShade; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c,c) * 4.0; if (r > 1.0) discard; float a = exp(-r * 2.6) * vA; gl_FragColor = vec4(mix(uCol, uShade, smoothstep(0.1, 0.9, gl_PointCoord.y) * 0.75), a);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
 });
 var pts = new THREE.Points(pGeo, pMat); pts.frustumCulled = false; pts.renderOrder = 3; scene.add(pts);
 function part(x, y, z, vx, vy, vz, life, size, a) {
   var i = pHead; pHead = (pHead + 1) % PN;
   pPos[i * 3] = x; pPos[i * 3 + 1] = y; pPos[i * 3 + 2] = z;
   pVel[i * 3] = vx; pVel[i * 3 + 1] = vy; pVel[i * 3 + 2] = vz;
-  pLife[i] = pMax[i] = life; pSize[i] = size; pAlpha[i] = a === undefined ? 0.9 : a;
+  pLife[i] = pMax[i] = life; pSize[i] = size; pAlpha[i] = pBase[i] = a === undefined ? 0.85 : a;
 }
 function burst(x, y, z, n, spd, up, size) {
   for (var i = 0; i < n; i++) {
     var a = Math.random() * TAU, s = spd * (0.3 + Math.random());
-    part(x, y + 0.05, z, Math.cos(a) * s, up * (0.4 + Math.random()), Math.sin(a) * s, 0.5 + Math.random() * 0.7, (size || 0.22) * (0.6 + Math.random()), 0.85);
+    part(x, y + 0.05, z, Math.cos(a) * s, up * (0.4 + Math.random()), Math.sin(a) * s, 0.8 + Math.random() * 0.9, (size || 0.3) * (0.7 + Math.random()), 0.75);
   }
 }
-var pBase = new Float32Array(PN);
 function updParticles(dt) {
   for (var i = 0; i < PN; i++) {
     if (pLife[i] <= 0) { if (pAlpha[i]) { pAlpha[i] = 0; } continue; }
     pLife[i] -= dt;
     var k = i * 3;
-    pVel[k + 1] -= 4.5 * dt;
-    var dr = 1 - damp(2.2, dt); pVel[k] *= dr; pVel[k + 1] *= dr; pVel[k + 2] *= dr;
+    pVel[k + 1] -= 2.6 * dt;
+    var dr = 1 - damp(1.7, dt); pVel[k] *= dr; pVel[k + 1] *= dr; pVel[k + 2] *= dr;
     pPos[k] += pVel[k] * dt; pPos[k + 1] += pVel[k + 1] * dt; pPos[k + 2] += pVel[k + 2] * dt;
     var t = pLife[i] / pMax[i];
-    pAlpha[i] = Math.max(0, t) * 0.85;
-    pSize[i] *= 1 + dt * 0.9;
+    pAlpha[i] = Math.max(0, t) * pBase[i];
+    pSize[i] *= 1 + dt * 1.5;
   }
   pGeo.attributes.position.needsUpdate = true; pGeo.attributes.aSize.needsUpdate = true; pGeo.attributes.aAlpha.needsUpdate = true;
 }
@@ -380,16 +380,19 @@ function updFlakes(dt, cam, amount, time) {
 }
 
 // ------------------------------------------------------------ tracce della tavola sulla neve
-var TRN = 900, trPos = new Float32Array(TRN * 2 * 3), trA = new Float32Array(TRN * 2), trN = 0;
+var TRN = 900, trPos = new Float32Array(TRN * 2 * 3), trA = new Float32Array(TRN * 2), trV = new Float32Array(TRN * 2), trN = 0;
+for (var tvi = 0; tvi < TRN; tvi++) { trV[tvi * 2] = 0; trV[tvi * 2 + 1] = 1; }
 var trGeo = new THREE.BufferGeometry();
 trGeo.setAttribute('position', new THREE.BufferAttribute(trPos, 3));
 trGeo.setAttribute('aA', new THREE.BufferAttribute(trA, 1));
+trGeo.setAttribute('aV', new THREE.BufferAttribute(trV, 1));
 (function () { var idx = []; for (var i = 0; i < TRN - 1; i++) { var a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trGeo.setIndex(idx); })();
 var trMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, fog: true,
-  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uCol: { value: new THREE.Color(0x6f86a6) } }]),
-  vertexShader: '#include <fog_pars_vertex>\nattribute float aA; varying float vA; void main(){ vA = aA; vec4 mvPosition = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
-  fragmentShader: '#include <fog_pars_fragment>\nuniform vec3 uCol; varying float vA; void main(){ gl_FragColor = vec4(uCol, vA * 0.3);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
+  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uCol: { value: new THREE.Color(0x7d93b4) }, uRim: { value: new THREE.Color(0xffffff) } }]),
+  vertexShader: '#include <fog_pars_vertex>\nattribute float aA; attribute float aV; varying float vA; varying float vV; void main(){ vA = aA; vV = aV; vec4 mvPosition = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
+  // solco nella neve fresca: fondo in ombra, bordi sollevati e illuminati
+  fragmentShader: '#include <fog_pars_fragment>\nuniform vec3 uCol, uRim; varying float vA; varying float vV; void main(){ float c = abs(vV * 2.0 - 1.0); float groove = smoothstep(0.9, 0.35, c); float rim = smoothstep(0.62, 0.9, c) * smoothstep(1.0, 0.92, c); vec3 col = mix(uRim, uCol, groove); float a = vA * (groove * 0.5 + rim * 0.45); gl_FragColor = vec4(col, a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
 });
 var trail = new THREE.Mesh(trGeo, trMat); trail.frustumCulled = false; trail.renderOrder = 1; scene.add(trail);
 var trLast = null;

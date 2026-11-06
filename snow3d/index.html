@@ -157,6 +157,17 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 @media (orientation: portrait) { #riderPanel { place-items: end stretch; } #riderPanel .card { width: 100%; } }
 @media (orientation: landscape) { #over .stats { grid-template-columns: repeat(4, 1fr); } #over .stat.big { grid-column: 1 / -1; } #over .card { width: min(100%, 620px); } }
 @media (max-height: 430px) { .stat.big b { font-size: 34px; } .stat b { font-size: 21px; } .stat { padding: 8px 10px; } h2 { font-size: 26px; } }
+#live { position: absolute; left: 50%; top: calc(var(--st) + 84px); transform: translateX(-50%); padding: 5px 14px 6px; border-radius: 999px; background: var(--glass2);
+  font: italic 800 20px/1 var(--display); letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; opacity: 0; transition: opacity .15s; font-variant-numeric: tabular-nums; }
+#live.on { opacity: 1; }
+#btnReplay { position: absolute; pointer-events: auto; right: calc(var(--sr) + 16px); top: calc(var(--st) + 66px); min-height: 40px; padding: 0 14px; border-radius: 999px; border: 0;
+  background: var(--gold); color: #2a1e00; font: 800 13px var(--round); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+#replayBar { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; padding-bottom: calc(var(--sb) + 22px);
+  background: linear-gradient(180deg, rgba(0,0,0,.55) 0 9%, rgba(0,0,0,0) 9% 91%, rgba(0,0,0,.55) 91%); cursor: pointer; }
+#replayBar b { font: italic 900 26px var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+#replayBar span { font: 700 12px var(--round); letter-spacing: .1em; color: var(--frost); }
+.diag summary { font: 700 12px var(--round); color: var(--frost); cursor: pointer; }
+.diag pre { white-space: pre-wrap; font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--frost); margin: 6px 0 0; max-height: 120px; overflow: auto; }
 #toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); font: 700 13px var(--round); opacity: 0; transition: opacity .25s; pointer-events: none; }
 #toast.on { opacity: 1; }
 #rotate { position: fixed; left: 50%; top: calc(var(--st) + 12px); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: var(--glass); font: 700 12px var(--round); pointer-events: none; }
@@ -181,8 +192,11 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
   <div id="comboBox"><div id="comboVal">0</div><div id="comboTimer"><i id="comboT"></i></div><div id="comboList"></div></div>
   <div class="tr">
     <div class="meta"><b id="spd">0</b><span>km/h</span><span id="dst">0 m</span></div>
+    <button class="icon" id="btnCam" aria-label="Cambia camera"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
     <button class="icon" id="btnPause" aria-label="Pausa"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg></button>
   </div>
+  <div id="live"></div>
+  <button id="btnReplay" class="hidden">▶ Replay</button>
   <div id="pops"></div>
   <div id="hint"></div>
   <div id="railBal">sul rail: ← → cambia trick · trascina ↑ ↓ press · tocca per saltare</div>
@@ -220,7 +234,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <h2>Pausa</h2>
     <div class="stats"><div class="stat"><b id="pScore">0</b><span>Punti</span></div><div class="stat"><b id="pDist">0 m</b><span>Distanza</span></div></div>
     <button class="btn pri" id="btnResume">Riprendi</button>
-    <div class="btnrow"><button class="btn" id="btnRestart">Ricomincia</button><button class="btn" id="btnPSet">Impostazioni</button><button class="btn" id="btnPGuide">Comandi</button><button class="btn" id="btnQuit">Menu</button></div>
+    <div class="btnrow"><button class="btn" id="btnPReplay">Rivedi l'ultimo trick</button><button class="btn" id="btnRestart">Ricomincia</button><button class="btn" id="btnPSet">Impostazioni</button><button class="btn" id="btnPGuide">Comandi</button><button class="btn" id="btnQuit">Menu</button></div>
   </div>
 </div>
 
@@ -252,6 +266,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
       <div class="opt"><span>Aiuti visivi (cerchio d'atterraggio)</span><div class="seg" data-k="hud"><button data-v="true">Sì</button><button data-v="false">No</button></div></div>
       <div class="opt"><span>Audio</span><div class="seg" data-k="sound"><button data-v="true">Effetti sì</button><button data-v="false">Effetti no</button></div><div class="seg" data-k="music"><button data-v="true">Musica sì</button><button data-v="false">Musica no</button></div></div>
     </div>
+    <details class="diag"><summary>Diagnostica (se qualcosa non si vede)</summary><pre id="diagTxt"></pre></details>
     <button class="btn pri" id="btnSetClose">Fatto</button>
   </div>
 </div>
@@ -272,6 +287,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
     <button class="btn pri" id="btnGuideClose">Ho capito</button>
   </div>
 </div>
+<div id="replayBar" class="hidden"><b>Replay</b><span>tocca per tornare a sciare</span></div>
 <div id="toast"></div>
 <div id="rotate" class="hidden">Gira il telefono in orizzontale per giocare meglio</div>
 
