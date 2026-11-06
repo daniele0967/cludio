@@ -53,16 +53,16 @@ function goalEvent(e) {
 
 // ------------------------------------------------------------ tutorial
 var TUT = [
-  { txt: 'Metti il pollice <b>sinistro</b> nella metà sinistra e muovilo: <b>← →</b> per curvare.', test: function (s) { return s.steer > 1.4; } },
-  { txt: 'Stick <b>↑</b> per andare più veloce, <b>↓</b> per frenare di traverso.', test: function (s) { return s.tuck > 0.6 && s.brake > 0.4; } },
-  { txt: 'Pollice <b>destro</b>: tieni premuto per caricare e <b>lascia</b> per saltare. Prova due volte.', test: function (s) { return s.pops >= 2; } },
-  { txt: 'Arriva su un <b>kicker</b>: tieni premuto sulla rampa e lascia sul bordo (<b>lip</b>).', test: function (s) { return s.kicks >= 1; } },
-  { txt: 'In aria stick <b>← o →</b> per girare (spin). Lascialo per fermarti dritto prima di atterrare.', test: function (s) { return s.spins >= 1; } },
-  { txt: 'In aria tocca a destra e <b>trascina</b> per un grab: la direzione sceglie quale. <b>Lascia prima di atterrare.</b>', test: function (s) { return s.grabs >= 1; } },
-  { txt: 'In aria stick <b>↑ o ↓</b> per un <b>flip</b>. Serve un kicker grande e un po\' di coraggio.', test: function (s) { return s.flips >= 1; } },
+  { txt: TXT('Metti il pollice <b>sinistro</b> nella metà sinistra e muovilo: <b>← →</b> per curvare.', 'Usa <b>A D</b> (o <b>← →</b>) per curvare.'), test: function (s) { return s.steer > 1.4; } },
+  { txt: TXT('Stick <b>↑</b> per andare più veloce, <b>↓</b> per frenare di traverso.', '<b>W</b> per andare più veloce, <b>S</b> per frenare di traverso.'), test: function (s) { return s.tuck > 0.6 && s.brake > 0.4; } },
+  { txt: TXT('Pollice <b>destro</b>: tieni premuto per caricare e <b>lascia</b> per saltare. Prova due volte.', 'Tieni <b>Spazio</b> per caricare e <b>lascia</b> per saltare. Prova due volte.'), test: function (s) { return s.pops >= 2; } },
+  { txt: TXT('Arriva su un <b>kicker</b>: tieni premuto sulla rampa e lascia sul bordo (<b>lip</b>).', 'Arriva su un <b>kicker</b>: tieni <b>Spazio</b> sulla rampa e lascia sul bordo (<b>lip</b>).'), test: function (s) { return s.kicks >= 1; } },
+  { txt: TXT('In aria stick <b>← o →</b> per girare (spin). Lascialo per fermarti dritto prima di atterrare.', 'In aria <b>A o D</b> per girare (spin). Lascia per fermarti dritto prima di atterrare.'), test: function (s) { return s.spins >= 1; } },
+  { txt: TXT('In aria tocca a destra e <b>trascina</b> per un grab: la direzione sceglie quale. <b>Lascia prima di atterrare.</b>', 'In aria tieni il <b>tasto del mouse</b> e trascina (o <b>Shift</b>) per un grab: la direzione sceglie quale. <b>Lascia prima di atterrare.</b>'), test: function (s) { return s.grabs >= 1; } },
+  { txt: TXT('In aria stick <b>↑ o ↓</b> per un <b>flip</b>. Serve un kicker grande e un po\' di coraggio.', 'In aria <b>W o S</b> per un <b>flip</b>. Serve un kicker grande e un po\' di coraggio.'), test: function (s) { return s.flips >= 1; } },
   { txt: 'Arriva <b>dritto e centrato</b> sulla rampetta di un <b>box</b> o di un rail e scivolaci sopra.', test: function (s) { return s.rails >= 1; } },
-  { txt: 'Sul rail colpetto di stick <b>← o →</b>: la tavola gira di traverso (boardslide).', test: function (s) { return s.switches >= 1; } },
-  { txt: 'A terra trascina a destra <b>↑</b> e tieni: nose press. Con lo stick <b>← →</b> fai un butter.', test: function (s) { return s.butters >= 1; } },
+  { txt: TXT('Sul rail colpetto di stick <b>← o →</b>: la tavola gira di traverso (boardslide).', 'Sul rail un colpetto di <b>A o D</b>: la tavola gira di traverso (boardslide).'), test: function (s) { return s.switches >= 1; } },
+  { txt: TXT('A terra trascina a destra <b>↑</b> e tieni: nose press. Con lo stick <b>← →</b> fai un butter.', 'A terra tieni <b>R</b>: nose press (<b>F</b> tail press). Con <b>A D</b> mentre premi fai un butter.'), test: function (s) { return s.butters >= 1; } },
   { txt: 'Fai due trick di fila prima che la barra gialla si svuoti: la <b>combo</b> moltiplica i punti.', test: function (s) { return s.bigBank >= 1; } }
 ];
 function tutStats() { return { steer: 0, tuck: 0, brake: 0, pops: 0, kicks: 0, spins: 0, grabs: 0, flips: 0, rails: 0, switches: 0, butters: 0, bigBank: 0 }; }
@@ -162,7 +162,7 @@ function handleEvents() {
         break;
       }
       case 'trick': popup(e.name, '+' + fmt(e.pts), '', 'small'); sfx('trick'); if (GAME) { GAME.tricks++; if (e.pts > GAME.best.pts) GAME.best = { name: e.name, pts: e.pts }; } break;
-      case 'railOn': sfx(e.kind === 'box' ? 'box' : 'rail'); popup(e.name, '', '', 'small'); burst(P.x, P.y, P.z, 8, 1, 0.8, 0.14); if (GAME && GAME.mode !== 'tutorial' && !save.railHint) { hint('Sul rail: stick <b>← →</b> cambia trick, trascina a destra <b>↑ ↓</b> per un press, tocca per saltare via.', 4); save.railHint = 1; } break;
+      case 'railOn': sfx(e.kind === 'box' ? 'box' : 'rail'); popup(e.name, '', '', 'small'); burst(P.x, P.y, P.z, 8, 1, 0.8, 0.14); if (GAME && GAME.mode !== 'tutorial' && !save.railHint) { hint(TXT('Sul rail: stick <b>← →</b> cambia trick, trascina a destra <b>↑ ↓</b> per un press, tocca per saltare via.', 'Sul rail: <b>A D</b> cambia trick, <b>R F</b> press, <b>Spazio</b> per saltare via.'), 4); save.railHint = 1; } break;
       case 'railSwitch': sfx('switch'); popup(e.name, '', '', 'small'); break;
       case 'sketch': popup('Sbilanciato', '', '', 'small'); break;
       case 'bank':
@@ -327,8 +327,8 @@ function updPerf(dt) {
   perf.acc += dt; perf.n++;
   if (perf.n >= 90) {
     var avg = perf.acc / perf.n * 1000; perf.acc = 0; perf.n = 0;
-    if (avg > 21 && quality.level > 0 && gtime - perf.lastChange > 3) { setQuality(quality.level - 1); perf.lastChange = gtime; toast('Qualità adattata al telefono'); }
-    else if (avg < 12.5 && quality.level < 2) { perf.goodT += 1.5; if (perf.goodT > 20 && gtime - perf.lastChange > 30) { setQuality(quality.level + 1); perf.lastChange = gtime; perf.goodT = 0; } }
+    if (avg > 21 && quality.level > 0 && gtime - perf.lastChange > 3) { setQuality(quality.level - 1); perf.lastChange = gtime; toast(TXT('Qualità adattata al telefono', 'Qualità adattata al computer')); }
+    else if (avg < 12.5 && quality.level < QMAX) { perf.goodT += 1.5; if (perf.goodT > 20 && gtime - perf.lastChange > 30) { setQuality(quality.level + 1); perf.lastChange = gtime; perf.goodT = 0; } }
   }
 }
 
@@ -359,6 +359,7 @@ function frame(now) {
     updLive();
     if (REP.btnT > 0) { REP.btnT -= dt; if (REP.btnT <= 0) $('btnReplay').classList.add('hidden'); }
   } else if (state === 'replay') { replayStep(dt); }
+  if (PC && state !== 'play') padRead(); // gamepad anche nei menu (Start, A)
   if (PROF.on) { var _n = performance.now(); PROF['play'] = (PROF['play'] || 0) + _n - _pt; _pt = _n; }
   var dC = P ? dist() : 0;
   genUntil(dC + 760);
@@ -564,7 +565,7 @@ function boot() {
   applyLight(save.set.light);
   quality.auto = save.set.quality === 'auto';
   initPost();
-  setQuality(quality.auto ? 2 : +save.set.quality);
+  setQuality(quality.auto ? QMAX : Math.min(QMAX, +save.set.quality));
   newWorld(4242, 'menu'); genUntil(700); newPlayer(7, -2, 0);
   try {
     var buf = b64ToBuf(window.RIDER_B64);
@@ -575,7 +576,7 @@ function boot() {
   // si compilano subito tutti i materiali (anche quelli che compaiono piu' avanti), cosi' in partita non ci sono scatti
   warmup();
   state = 'menu'; refreshMenu(); show('menu', true);
-  $('rotate').classList.toggle('hidden', false);
+  $('rotate').classList.toggle('hidden', PC);
   setTimeout(function () { $('rotate').classList.add('hidden'); }, 6000);
   setTimeout(function () { $('loading').classList.add('hidden'); }, 60);
   last = performance.now();

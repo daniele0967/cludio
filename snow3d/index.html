@@ -179,6 +179,16 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 #toast.on { opacity: 1; }
 #rotate { position: fixed; left: 50%; top: calc(var(--st) + 12px); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: var(--glass); font: 700 12px var(--round); pointer-events: none; }
 @media (orientation: landscape) { #rotate { display: none; } }
+/* versione PC: niente stick a schermo, legenda dei tasti in basso a sinistra (H la nasconde) */
+body.pc #stickHome { display: none; }
+body.pc #act { width: 96px; height: 96px; }
+body.pc #act .lb { font-size: 17px; }
+#keys { display: none; position: fixed; left: calc(var(--sl) + 18px); bottom: calc(var(--sb) + 16px); padding: 9px 12px; border-radius: 14px; background: var(--glass); border: 1px solid var(--edge);
+  font: 700 11px/1.75 var(--round); color: var(--frost); pointer-events: none; }
+#keys b { display: inline-block; min-width: 20px; padding: 0 5px; margin-right: 3px; border-radius: 6px; background: rgba(242,247,255,.14); color: var(--ice); text-align: center; font-weight: 800; }
+body.pc #keys { display: block; }
+body.pc.nokeys #keys { display: none; }
+body.pc canvas { cursor: crosshair; }
 @media (max-height: 520px) { #menu .logo { display: flex; gap: 12px; flex-wrap: wrap; align-items: baseline; font-size: clamp(38px, 10vh, 54px); } #menu .logo small { width: 100%; margin-top: 2px; } }
 @media (max-height: 430px) { .card { padding: 14px 16px; gap: 9px; border-radius: 22px; } .mode { padding: 8px 12px; } .mode b { font-size: 20px; } .mode span { font-size: 11.5px; } .btn { min-height: 40px; font-size: 13px; } #score { font-size: 32px; } .logo small { margin-top: 6px; } .sub { font-size: 12px; } }
 @media (max-height: 430px) { #menuRec { display: none; } .mode:not(.main) span { display: none; } #menu .card { gap: 8px; } }
@@ -206,6 +216,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
   <button id="btnReplay" class="hidden">▶ Replay</button>
   <div id="pops"></div>
   <div id="hint"></div>
+  <div id="keys"><div><b>A</b><b>D</b> curve · spin</div><div><b>W</b><b>S</b> veloce/freno · flip</div><div><b>Spazio</b> tieni e lascia = salto</div><div><b>mouse</b> tieni e trascina = grab</div><div><b>Shift</b> Indy · <b>R</b><b>F</b> press</div><div><b>C</b> camera · <b>V</b> replay · <b>H</b> nascondi</div></div>
   <div id="railBal">sul rail: ← → cambia trick · trascina ↑ ↓ press · tocca per saltare</div>
 </div>
 <div id="controls" class="hidden">

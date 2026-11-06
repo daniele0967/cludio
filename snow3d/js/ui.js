@@ -6,6 +6,14 @@ var TOUCH = { stick: null, sx0: 0, sy0: 0, act: null, ax0: 0, ay0: 0, mode: null
 var keys = { l: 0, r: 0, u: 0, d: 0 };
 var stickEl = $('stickBase'), knobEl = $('stickKnob'), compassEl = $('compass'), actEl = $('act'), chgEl = $('chg'), actLbl = $('actLbl');
 var STICK_R = 58;
+if (PC) {
+  document.body.classList.add('pc');
+  $('railBal').textContent = 'sul rail: A D cambia trick · R F press · Spazio per saltare via';
+  var rbs = document.querySelector('#replayBar span'); if (rbs) rbs.textContent = 'V o Spazio per tornare a sciare';
+  // qualita' Ultra (ombre 4096, risoluzione piu' fitta) solo sul PC
+  var qseg = document.querySelector('.seg[data-k="quality"]');
+  if (qseg) { var bu = document.createElement('button'); bu.dataset.v = '3'; bu.textContent = 'Ultra'; qseg.insertBefore(bu, qseg.children[1]); }
+}
 
 // otto direzioni per i grab: 0 = su, in senso orario. Per i goofy destra e sinistra si scambiano
 function grabSector(dx, dy) {
@@ -98,28 +106,41 @@ window.addEventListener('touchend', touchEnd);
 window.addEventListener('touchcancel', touchEnd);
 // mouse (per provare sul computer): il tasto sinistro a destra dello schermo fa da pollice destro
 canvas.addEventListener('mousedown', function (e) {
-  if (state !== 'play' || e.clientX < VW * 0.5) return;
+  if (state !== 'play' || (!PC && e.clientX < VW * 0.5) || e.button > 0 && !PC) return;
+  if (PC) e.preventDefault();
   ensureAudio(); TOUCH.act = 'm'; TOUCH.ax0 = e.clientX; TOUCH.ay0 = e.clientY; actStart(e.clientX, e.clientY);
 });
 window.addEventListener('mousemove', function (e) { if (TOUCH.act === 'm') touchMove({ preventDefault: function () {}, changedTouches: [{ identifier: 'm', clientX: e.clientX, clientY: e.clientY }] }); });
 window.addEventListener('mouseup', function (e) { if (TOUCH.act === 'm') touchEnd({ changedTouches: [{ identifier: 'm' }] }); });
 
-// tastiera: frecce/WASD = stick, Spazio = salto, 1-8 = grab, R/F = press, P = pausa
-var KEYGRAB = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5, Digit7: 6, Digit8: 7, KeyE: 2, KeyQ: 6 };
+// tastiera: frecce/WASD = stick, Spazio = salto, grab con i tasti (1-8, Shift, o la "rosa" U I O / J L / M K .), R/F = press,
+// C = camera, V = replay, P/Esc = pausa. Sul PC anche il mouse (tieni e trascina, ovunque) e il gamepad.
+// Grab con i tasti per direzione (come il trascinamento): I su, O su-destra, L destra, . giu'-destra, K giu', M giu'-sinistra, J sinistra, U su-sinistra
+var KEYDIR = { KeyI: [0, -1], KeyO: [1, -1], KeyL: [1, 0], Period: [1, 1], KeyK: [0, 1], KeyM: [-1, 1], KeyJ: [-1, 0], KeyU: [-1, -1] };
+var KEYGRAB = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3, Digit5: 4, Digit6: 5, Digit7: 6, Digit8: 7, KeyE: 2, KeyQ: 6, ShiftLeft: GRAB_CENTER, ShiftRight: GRAB_CENTER };
+function keyGrab(c) { if (c in KEYDIR) return grabSector(KEYDIR[c][0], KEYDIR[c][1]); return c in KEYGRAB ? KEYGRAB[c] : -1; }
+var heldGrab = null;
 window.addEventListener('keydown', function (e) {
-  if (e.repeat) return;
   var c = e.code;
+  if (PC && (c === 'Space' || c.indexOf('Arrow') === 0)) e.preventDefault(); // niente scroll della pagina
+  if (e.repeat) return;
   if (c === 'KeyP' || c === 'Escape') { if (state === 'play') pauseGame(); else if (state === 'pause') resumeGame(); return; }
+  if (state === 'replay' && (c === 'KeyV' || c === 'Space')) { endReplay(); return; }
+  if (PC && c === 'Enter' && state === 'menu' && $('settings').classList.contains('hidden') && $('guidePanel').classList.contains('hidden') && $('riderPanel').classList.contains('hidden')) { ensureAudio(); startRun('free'); return; }
+  if (PC && c === 'Enter' && state === 'over') { startRun(GAME.mode); return; }
   if (state !== 'play') return;
   ensureAudio();
   if (c === 'ArrowLeft' || c === 'KeyA') keys.l = 1;
   if (c === 'ArrowRight' || c === 'KeyD') keys.r = 1;
   if (c === 'ArrowUp' || c === 'KeyW') keys.u = 1;
   if (c === 'ArrowDown' || c === 'KeyS') keys.d = 1;
-  if (c === 'Space') { IN.jump = true; e.preventDefault(); }
-  if (c in KEYGRAB) IN.grab = KEYGRAB[c];
+  if (c === 'Space') { IN.jump = true; }
+  var g = keyGrab(c); if (g >= 0) { IN.grab = g; heldGrab = c; }
   if (c === 'KeyR') IN.press = 1;
   if (c === 'KeyF') IN.press = -1;
+  if (c === 'KeyC') $('btnCam').click();
+  if (c === 'KeyV' && !$('btnReplay').classList.contains('hidden')) startReplay();
+  if (c === 'KeyH' && PC) document.body.classList.toggle('nokeys');
 });
 window.addEventListener('keyup', function (e) {
   var c = e.code;
@@ -128,10 +149,47 @@ window.addEventListener('keyup', function (e) {
   if (c === 'ArrowUp' || c === 'KeyW') keys.u = 0;
   if (c === 'ArrowDown' || c === 'KeyS') keys.d = 0;
   if (c === 'Space') IN.jump = false;
-  if (c in KEYGRAB && IN.grab === KEYGRAB[c]) IN.grab = -1;
+  if (c === heldGrab) { IN.grab = -1; heldGrab = null; }
   if (c === 'KeyR' || c === 'KeyF') IN.press = 0;
 });
+window.addEventListener('blur', function () { keys.l = keys.r = keys.u = keys.d = 0; IN.jump = false; IN.grab = -1; IN.press = 0; heldGrab = null; });
+if (PC) window.addEventListener('contextmenu', function (e) { if (state === 'play') e.preventDefault(); });
+// gamepad: stick sinistro = stick, A = salto, stick destro = grab (direzione) a terra press su/giu', RB/RT = Indy,
+// X/B = nose/tail press, Y = camera, Start = pausa
+var PAD = { on: false, btn: [], used: false };
+function padRead() {
+  if (!navigator.getGamepads) return false;
+  var gps = navigator.getGamepads(), gp = null;
+  for (var i = 0; i < gps.length; i++) if (gps[i] && gps[i].connected) { gp = gps[i]; break; }
+  if (!gp) { PAD.on = false; return false; }
+  var b = function (i) { return gp.buttons[i] && (gp.buttons[i].pressed || gp.buttons[i].value > 0.4); };
+  var was = PAD.btn, now = []; for (var k = 0; k < 16; k++) now[k] = b(k);
+  var edge = function (k) { return now[k] && !was[k]; };
+  PAD.btn = now;
+  if (edge(9)) { if (state === 'play') pauseGame(); else if (state === 'pause') resumeGame(); }
+  if (state === 'pause' && edge(1)) resumeGame();
+  var panelOpen = !$('settings').classList.contains('hidden') || !$('guidePanel').classList.contains('hidden');
+  if (state === 'menu' && edge(0) && !panelOpen) { ensureAudio(); startRun('free'); return false; }
+  if (state === 'over' && edge(0)) { startRun(GAME.mode); return false; }
+  if (state === 'replay' && (edge(0) || edge(1))) endReplay();
+  if (state !== 'play') return false;
+  var ax = gp.axes, lx = ax[0] || 0, ly = ax[1] || 0, rx = ax[2] || 0, ry = ax[3] || 0;
+  var dz = function (v) { return Math.abs(v) < 0.15 ? 0 : (v - Math.sign(v) * 0.15) / 0.85; };
+  var any = Math.abs(lx) > 0.15 || Math.abs(ly) > 0.15 || Math.abs(rx) > 0.4 || Math.abs(ry) > 0.4 || now.some(function (x) { return x; });
+  if (!any && !PAD.used) return false;
+  PAD.used = any; PAD.on = true;
+  if (any) ensureAudio();
+  IN.sx = clamp(dz(lx) + (now[15] ? 1 : 0) - (now[14] ? 1 : 0), -1, 1); IN.sy = clamp(-dz(ly) + (now[12] ? 1 : 0) - (now[13] ? 1 : 0), -1, 1);
+  IN.jump = now[0];
+  var rm = Math.hypot(rx, ry);
+  if (P.mode === 'air') IN.grab = rm > 0.5 ? grabSector(rx, ry) : (now[5] || now[7]) ? GRAB_CENTER : -1;
+  else { IN.grab = -1; IN.press = now[2] || (ry < -0.6) ? 1 : now[1] || (ry > 0.6) ? -1 : 0; }
+  if (edge(3)) $('btnCam').click();
+  if (edge(8) && !$('btnReplay').classList.contains('hidden')) startReplay();
+  return true;
+}
 function readKeys() {
+  if (PC && padRead()) return;
   if (TOUCH.stick === null && (keys.l || keys.r || keys.u || keys.d)) { IN.sx = keys.r - keys.l; IN.sy = keys.u - keys.d; }
   else if (TOUCH.stick === null && !window.__bot) { IN.sx = 0; IN.sy = 0; }
 }
@@ -171,10 +229,10 @@ function updHud(dt) {
     $('comboList').textContent = CB.parts.slice(-4).map(function (p) { return p.name; }).join('  +  ');
   } else cb.classList.remove('on');
   // tasto destro: cosa fa adesso
-  var lbl = 'Salta', sm = 'tieni e lascia', hot = false;
-  if (P.mode === 'air') { lbl = 'Grab'; sm = 'tocca e trascina'; hot = IN.grab >= 0; }
-  else if (P.mode === 'rail') { lbl = 'Pop'; sm = '↑↓ press'; }
-  else if (P.butter) { lbl = P.butter.press > 0 ? 'Nose' : 'Tail'; sm = 'stick = butter'; hot = true; }
+  var pad = PC && PAD.on, lbl = 'Salta', sm = PC ? (pad ? 'tieni A' : 'tieni Spazio') : 'tieni e lascia', hot = false;
+  if (P.mode === 'air') { lbl = 'Grab'; sm = PC ? (pad ? 'stick destro' : 'mouse o Shift') : 'tocca e trascina'; hot = IN.grab >= 0; }
+  else if (P.mode === 'rail') { lbl = 'Pop'; sm = PC ? (pad ? 'A · X B press' : 'Spazio · R F press') : '↑↓ press'; }
+  else if (P.butter) { lbl = P.butter.press > 0 ? 'Nose' : 'Tail'; sm = PC ? 'A D = butter' : 'stick = butter'; hot = true; }
   else if (P.lipD !== null && P.lipD < 6) { lbl = 'Lip!'; sm = 'lascia sul bordo'; hot = P.charge > 0; }
   if (actLbl._l !== lbl + sm) { actLbl.innerHTML = lbl + '<small>' + sm + '</small>'; actLbl._l = lbl + sm; }
   actEl.classList.toggle('hot', hot || P.charge > 0);
@@ -196,7 +254,7 @@ function refreshMenu() {
   $('recFree').textContent = save.best ? fmt(save.best) : '—';
   $('recZen').textContent = save.bestZen ? fmt(save.bestZen) : '—';
   $('tutState').textContent = save.tutDone ? 'fatto' : 'consigliato';
-  $('menuRec').textContent = save.best ? 'Record Free Run: ' + fmt(save.best) + ' · combo migliore ' + fmt(save.bestCombo) : 'Prima volta? Prova il Tutorial: due minuti e sai fare tutto.';
+  $('menuRec').textContent = (save.best ? 'Record Free Run: ' + fmt(save.best) + ' · combo migliore ' + fmt(save.bestCombo) : 'Prima volta? Prova il Tutorial: due minuti e sai fare tutto.') + (PC ? ' · Invio (o A sul gamepad) = Free Run' : '');
 }
 document.querySelectorAll('.mode').forEach(function (b) { b.addEventListener('click', function () { ensureAudio(); sfx('click'); startRun(b.dataset.mode); }); });
 $('btnPause').addEventListener('click', function () { pauseGame(); });
@@ -232,7 +290,7 @@ document.querySelectorAll('#settings .seg').forEach(function (seg) {
     else if (k === 'quality' && v !== 'auto') v = +v;
     var old = save.set[k]; save.set[k] = v;
     if (k === 'light') applyLight(v);
-    if (k === 'quality') { quality.auto = v === 'auto'; setQuality(v === 'auto' ? 2 : v); }
+    if (k === 'quality') { quality.auto = v === 'auto'; setQuality(v === 'auto' ? QMAX : Math.min(QMAX, v)); }
     if (k === 'sound' || k === 'music') { ensureAudio(); setVolumes(); }
     if (k === 'stance' && old !== v) rebuildRider();
     sfx('click'); syncSettings(); persist();
@@ -292,6 +350,18 @@ var GUIDE = [
   ['Atterraggio', '<em>Perfetto</em> = tavola dritta e nessun grab: ×1,25. <em>Sporco</em> = storto o con il grab ancora in mano: punti a metà. Troppo storto, sulla testa o di traverso: caduta. Il cerchio verde mostra dove atterri (rosso = così cadi).'],
   ['Sfide', 'In Free Run c\'è sempre una sfida in alto a sinistra: completarla dà punti e, se ne hai perse, una vita.'],
   ['Computer', 'Frecce o WASD = stick · Spazio = salto · 1–8 = grab (E = Indy, Q = Melon) · R / F = nose / tail press · P = pausa.']
+];
+if (PC) GUIDE = [
+  ['Comandi', '<em>A D</em> (o ← →) curvi · <em>W</em> raccolto e più veloce · <em>S</em> freni di traverso · <em>Spazio</em> tieni per caricare, lascia per saltare · <em>mouse</em> tieni e trascina = grab · <em>Shift</em> = Indy · <em>R / F</em> = nose / tail press · <em>C</em> camera · <em>V</em> replay · <em>Esc</em> pausa · <em>H</em> nasconde la legenda.'],
+  ['Gamepad', 'Stick sinistro = curve, spin e flip · <em>A</em> salto (tieni e lascia) · stick destro = grab (la direzione sceglie quale), a terra su/giù = press · <em>RB / RT</em> = Indy · <em>X / B</em> = nose / tail press · <em>Y</em> camera · <em>Back</em> replay · <em>Start</em> pausa.'],
+  ['Saltare', 'Tieni <em>Spazio</em> per caricare, lascia per saltare. Sui kicker lascia proprio sul bordo (il <em>lip</em>): spinta in più e "Pop!". Se tieni premuto oltre il bordo, salta da solo. Tieni A o D mentre carichi: parti già girando.'],
+  ['Spin e flip', 'In aria <em>A D</em> = spin (180, 360, 540…), <em>W</em> = frontflip, <em>S</em> = backflip (invertibile nelle impostazioni). In diagonale (es. W+D) fai trick fuori asse: <em>Cork</em>, <em>Rodeo</em>, <em>Misty</em>. Lascia i tasti per fermarti dritto prima di atterrare.'],
+  ['Grab', 'In aria tieni il tasto del mouse e <em>trascina</em>: ↑ Nose, ↗ Mute, → Indy, ↘ Japan, ↓ Tail, ↙ Stalefish, ← Melon, ↖ Method. Oppure i tasti a rosa <em>U I O / J L / M K .</em> (stesse direzioni), o <em>1–8</em>, o <em>Shift</em> per l\'Indy. Tenerlo a lungo fa un tweak (vale di più). <em>Lascia prima di toccare terra.</em>'],
+  ['Rail e box', 'Arrivaci <em>dritto e centrato</em>: nessuna calamita, ti aggancia solo se la tavola ci finisce davvero sopra. Sul rail <em>A D</em> = gira la tavola (50-50, Boardslide, Lipslide), <em>R F</em> = press, <em>Spazio</em> = salti via (con A/D fai 180 Out, 360 Out…).'],
+  ['Press e butter', 'A terra tieni <em>R</em> (nose press) o <em>F</em> (tail press). Con <em>A D</em> mentre premi fai girare la tavola sulla neve: Nose Butter 180, 360… Se tieni il press e poi lasci, la tavola scatta e salti.'],
+  ['Combo', 'Ogni trick allunga la combo e alza il moltiplicatore. La barra gialla si svuota quando vai dritto: fai un altro trick prima che finisca. Se cadi perdi la combo. Ripetere lo stesso trick vale sempre meno: varia.'],
+  ['Atterraggio', '<em>Perfetto</em> = tavola dritta e nessun grab: ×1,25. <em>Sporco</em> = storto o con il grab ancora in mano: punti a metà. Troppo storto, sulla testa o di traverso: caduta. Il cerchio verde mostra dove atterri (rosso = così cadi).'],
+  ['Sfide', 'In Free Run c\'è sempre una sfida in alto a sinistra: completarla dà punti e, se ne hai perse, una vita.']
 ];
 $('guideList').innerHTML = GUIDE.map(function (g) { return '<div class="gl"><b>' + g[0] + '</b><div>' + g[1] + '</div></div>'; }).join('');
 var guideReturn = 'menu';

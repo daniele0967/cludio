@@ -19,6 +19,11 @@ rider = base64.b64encode((src3d / 'assets' / 'rider.bin').read_bytes()).decode()
 html = html.replace('/*__THREE__*/', three, 1).replace('/*__GAME__*/', game, 1).replace('/*__RIDER__*/', rider, 1)
 assert '/*__SAVE__*/null' in html
 (here / 'powder.html').write_text(html)
+# versione PC: stesso gioco, comandi tastiera/mouse/gamepad e grafica Ultra (salvataggi nel browser)
+pc = html.replace('<script>window.__INITIAL_SAVE__', "<script>window.PR_PLATFORM = 'pc';</script>\n<script>window.__INITIAL_SAVE__", 1)
+pc = re.sub(r'<title>([^<]*)</title>', lambda m: '<title>' + m.group(1) + ' PC</title>', pc, count=1)
+assert "PR_PLATFORM = 'pc'" in pc
+(here / 'powder-pc.html').write_text(pc)
 
 HEADER = """// Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.

@@ -57,8 +57,13 @@ function wpick(R, w) { // w: { chiave: peso }
   return k;
 }
 
+// ============================================================ piattaforma
+// Stesso gioco, due build: telefono (comandi touch) e PC (tastiera, mouse, gamepad, grafica Ultra).
+var PC = typeof window !== 'undefined' && window.PR_PLATFORM === 'pc';
+var QMAX = PC ? 3 : 2; // livello di qualita' massimo
+function TXT(phone, pc) { return PC ? pc : phone; }
 // ============================================================ salvataggio (ponte con Scriptable)
-var SAVE_KEY = 'powderrun_freeride_v2';
+var SAVE_KEY = PC ? 'powderrun_pc_v1' : 'powderrun_freeride_v2';
 var save = {
   best: 0, bestZen: 0, bestCombo: 0, bestDist: 0, runs: 0, totalTricks: 0, tutDone: false,
   set: { stance: 'regular', assist: 1, sens: 1, invFlip: false, quality: 'auto', sound: true, music: true, hud: true, outfit: 0, board: 0, light: 'mattina', camMode: 0 }

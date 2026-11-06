@@ -530,10 +530,11 @@ var quality = { pr: 1, auto: true, level: 2, shadow: 2048, ms: [] };
 function setQuality(level) {
   quality.level = level;
   var dpr = window.devicePixelRatio || 1;
-  quality.pr = level === 2 ? Math.min(dpr, 2) : level === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1);
+  quality.pr = level >= 2 ? Math.min(dpr, 2) : level === 1 ? Math.min(dpr, 1.5) : Math.min(dpr, 1);
+  if (level === 3) quality.pr = Math.min(Math.max(dpr, 1.25), 2); // Ultra (PC): anche sugli schermi a 1x si disegna un po' piu' fitto
   if (typeof POST !== 'undefined') POST.on = POST.ok && level >= 1;
   renderer.setPixelRatio(quality.pr);
-  var sz = level === 0 ? 1024 : 2048;
+  var sz = level === 0 ? 1024 : level === 3 ? 4096 : 2048;
   if (sz !== quality.shadow) {
     quality.shadow = sz; sun.shadow.mapSize.set(sz, sz);
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
