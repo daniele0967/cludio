@@ -44,6 +44,15 @@ const want = process.argv.slice(2);
     await shot('s_front');
     await page.evaluate(() => { window.__camFn = null; });
   }
+  if (want.includes('board')) {
+    await page.evaluate(() => { const pr = __pr; pr.place(80, 0, 7); pr.IN.sx = 0; window.__camFn = (cam, P) => { cam.position.set(P.x + 1.6, P.y + 0.55, P.z + 0.9); cam.lookAt(P.x, P.y + 0.05, P.z); cam.fov = 45; }; });
+    await page.waitForTimeout(1200);
+    await shot('s_board');
+    await page.evaluate(() => { window.__camFn = (cam, P) => { cam.position.set(P.x - 0.3, P.y + 1.6, P.z + 1.4); cam.lookAt(P.x, P.y, P.z); cam.fov = 45; }; __pr.IN.sx = 0.6; });
+    await page.waitForTimeout(900);
+    await shot('s_board_top');
+    await page.evaluate(() => { window.__camFn = null; __pr.IN.sx = 0; });
+  }
   if (!want.length || want.includes('rail')) {
     await page.evaluate(() => {
       const pr = __pr; let r = null;

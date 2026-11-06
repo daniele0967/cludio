@@ -1742,6 +1742,15 @@ var snowMatKick = makeSnowMat({ polygonOffset: true, polygonOffsetFactor: -1, po
 // (maglia 4 m) che partono un po' sotto la parte centrale, cosi' non si vedono fessure tra le due.
 var TC_IN = (function () { var a = []; for (var u = -42; u <= 42; u += (Math.abs(u) < 22 ? 1 : 2)) a.push(u); return a; })();
 var TC_OUT = (function () { var a = []; for (var u = 39; u < 90; u += 6) a.push(u); for (u = 90; u <= 330; u += 20) a.push(u); return a; })();
+// altezza della neve DISEGNATA (triangoli della griglia), che puo' essere qualche cm sopra quella calcolata
+function terrainMeshH(x, z) {
+  var d = -z, d0 = Math.floor(d), t = d - d0, u = x - cx(d), au = Math.abs(u), u0, u1;
+  if (au < 22) { u0 = Math.floor(u); u1 = u0 + 1; } else if (au <= 42) { u0 = Math.floor(u / 2) * 2; u1 = u0 + 2; } else return groundH(x, z);
+  var s = (u - u0) / (u1 - u0);
+  var Ha = profY(d0) + crossH(u0, d0), Hb = profY(d0) + crossH(u1, d0), Hc = profY(d0 + 1) + crossH(u0, d0 + 1), Hd = profY(d0 + 1) + crossH(u1, d0 + 1);
+  var h = s + t <= 1 ? Ha + s * (Hb - Ha) + t * (Hc - Ha) : Hd + (1 - s) * (Hc - Hd) + (1 - t) * (Hb - Hd);
+  return h + featH(u, d);
+}
 var chunks = {};
 var ROCK = new THREE.Color(0x6b6866), ROCKD = new THREE.Color(0x3f3d3e), SNOW = new THREE.Color(0xffffff), SNOWB = new THREE.Color(0xeef4fb);
 function terrainGrid(d0, len, rowStep, us, inner, sink) {
@@ -2773,8 +2782,9 @@ function clothMaterial() {
         '#include <skinning_vertex>',
         'float ph = position.x * 13.0 + position.y * 17.0 + position.z * 11.0;',
         'float wv = sin(uTime * 15.0 + ph) * 0.6 + sin(uTime * 26.0 + ph * 1.7) * 0.4;',
-        'transformed += objectNormal * aLoose * uFlap * wv * 0.018;',
-        'transformed += uWind * aLoose * (0.75 + 0.25 * wv);'].join('\n'));
+        'float wv2 = sin(uTime * 7.0 + ph * 0.5) * 0.5 + sin(uTime * 11.0 + ph * 0.9) * 0.5;',
+        'transformed += objectNormal * aLoose * uFlap * (wv * 0.026 + wv2 * 0.02);',
+        'transformed += uWind * aLoose * (0.7 + 0.3 * wv2);'].join('\n'));
   };
   m.customProgramCacheKey = function () { return 'cloth-v1'; };
   return m;
@@ -2829,8 +2839,10 @@ function makeRig(buf) {
         if (sg[0] === 'Hips') tmpA.y -= 0.4; // il busto della hoodie scende fino a meta' coscia: niente rigonfiamento sui fianchi
         var ab = tmpB.clone().sub(tmpA), t = clamp(tmpP.clone().sub(tmpA).dot(ab) / ab.lengthSq(), 0, 1), cp = tmpA.clone().addScaledVector(ab, t), rv = tmpP.clone().sub(cp);
         // il busto e' ovale: si misura il raggio con la larghezza schiacciata
-        var key = sg[0] + '>' + sg[1] + ':' + reg + ':' + Math.floor(t * 4), rr = sg[0] === 'Hips' ? Math.hypot(rv.x / 1.45, rv.y, rv.z) : rv.length();
-        it.cp = cp; it.rv = rv; it.rr = rr; it.key = key;
+        // raggio medio a fasce lungo l'osso, poi interpolato tra le fasce: niente gradini (effetto piumino)
+        var kb = sg[0] + '>' + sg[1] + ':' + reg + ':', rr = sg[0] === 'Hips' ? Math.hypot(rv.x / 1.45, rv.y, rv.z) : rv.length();
+        it.cp = cp; it.rv = rv; it.rr = rr; it.kb = kb; it.t = t;
+        var key = kb + Math.min(5, Math.floor(t * 6));
         sums[key] = (sums[key] || 0) + rr; cnts[key] = (cnts[key] || 0) + 1;
       }
       info[i] = it;
@@ -2849,20 +2861,22 @@ function makeRig(buf) {
       if ((reg === REG.JACKET || reg === REG.ACCENT) && Math.abs(px) > 0.3) nz *= 0.93 + 0.07 * Math.cos(Math.abs(px) * 26 + vnoise2(px * 6, yy * 6, 9) * 2);
       cols[i * 3] = c.r * nz; cols[i * 3 + 1] = c.g * nz; cols[i * 3 + 2] = c.b * nz;
       if (I.cp) {
-        var avg = sums[I.key] / cnts[I.key], extra;
-        if (reg === REG.PANTS) extra = 0.05 + 0.04 * sm01((0.55 - yy) / 0.35) + 0.015 * sm01((0.85 - yy) / 0.25);
-        else extra = (I.sg[0] === 'Hips' ? 0.055 : 0.04) + 0.025 * sm01((0.98 - yy) / 0.22) + (reg === REG.ACCENT ? 0.012 : 0);
+        var ft = clamp(I.t * 6 - 0.5, 0, 5), b0 = Math.floor(ft), b1 = Math.min(5, b0 + 1), fw = ft - b0;
+        var av = function (b) { var k = I.kb + b; if (cnts[k]) return sums[k] / cnts[k]; for (var d = 1; d < 6; d++) { if (cnts[I.kb + (b - d)]) return sums[I.kb + (b - d)] / cnts[I.kb + (b - d)]; if (cnts[I.kb + (b + d)]) return sums[I.kb + (b + d)] / cnts[I.kb + (b + d)]; } return I.rr; };
+        var avg = av(b0) * (1 - fw) + av(b1) * fw, extra;
+        if (reg === REG.PANTS) extra = 0.07 + 0.055 * sm01((0.55 - yy) / 0.35) + 0.02 * sm01((0.85 - yy) / 0.25);
+        else extra = (I.sg[0] === 'Hips' ? 0.075 : 0.055) + 0.035 * sm01((0.98 - yy) / 0.22) + (reg === REG.ACCENT ? 0.015 : 0);
         var target = avg * 0.85 + I.rr * 0.15 + extra, scale = target / Math.max(I.rr, 1e-4);
         pos[i * 3] = I.cp.x + I.rv.x * scale; pos[i * 3 + 1] = I.cp.y + I.rv.y * scale; pos[i * 3 + 2] = I.cp.z + I.rv.z * scale;
         // normale: verso fuori dal tubo (stoffa liscia)
         var nl = Math.hypot(I.rv.x, I.rv.y, I.rv.z) || 1, mn = m.nor;
-        mn[i * 3] = mn[i * 3] * 0.3 + I.rv.x / nl * 0.7; mn[i * 3 + 1] = mn[i * 3 + 1] * 0.3 + I.rv.y / nl * 0.7; mn[i * 3 + 2] = mn[i * 3 + 2] * 0.3 + I.rv.z / nl * 0.7;
+        var ow = I.sg[0] === 'Hips' ? 0.1 : 0.3; mn[i * 3] = mn[i * 3] * ow + I.rv.x / nl * (1 - ow); mn[i * 3 + 1] = mn[i * 3 + 1] * ow + I.rv.y / nl * (1 - ow); mn[i * 3 + 2] = mn[i * 3 + 2] * ow + I.rv.z / nl * (1 - ow);
         var ml = Math.hypot(mn[i * 3], mn[i * 3 + 1], mn[i * 3 + 2]) || 1; mn[i * 3] /= ml; mn[i * 3 + 1] /= ml; mn[i * 3 + 2] /= ml;
       } else {
         var f = infl[reg] * (m.name === 'joints' ? 1.1 : 1) + (reg === REG.BOOT && yy > 0.1 ? 0.03 : 0);
         pos[i * 3] += m.nor[i * 3] * f; pos[i * 3 + 1] += m.nor[i * 3 + 1] * f; pos[i * 3 + 2] += m.nor[i * 3 + 2] * f;
       }
-      loose[i] = reg === REG.PANTS ? 0.55 + 0.6 * sm01((0.6 - yy) / 0.45) : (reg === REG.JACKET || reg === REG.ACCENT) ? 0.3 + 0.8 * Math.max(sm01((0.95 - yy) / 0.2), sm01((Math.abs(px) - 0.35) / 0.3)) : reg === REG.NECK ? 0.15 : 0;
+      loose[i] = reg === REG.PANTS ? 0.7 + 0.8 * sm01((0.7 - yy) / 0.5) : (reg === REG.JACKET || reg === REG.ACCENT) ? 0.45 + 0.9 * Math.max(sm01((1.0 - yy) / 0.25), sm01((Math.abs(px) - 0.3) / 0.3)) : reg === REG.NECK ? 0.15 : 0;
     }
     var g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -3200,9 +3214,18 @@ function poseRider(dt, mode) {
   _qB.copy(P.q);
   _qb.setFromAxisAngle(AX, -PS.lean * 0.75 * (P.sw ? -1 : 1)); _qB.multiply(_qb);
   _org.set(P.x, P.y, P.z);
-  var sinkT = ground ? clamp(0.03 - Math.min(speedOf(), 22) * 0.001 + P.brake * 0.015 + (P.butter ? 0.008 : 0), 0.008, 0.045) : 0;
-  PS.sink = lerp(PS.sink || 0, sinkT, damp(ground ? 10 : 20, dt));
-  _org.y -= PS.sink;
+  // la tavola non va mai sotto la neve disegnata: si alza dove i triangoli del terreno stanno sopra la superficie calcolata
+  var liftT = 0;
+  if (ground) {
+    _t1.set(1, 0, 0).applyQuaternion(P.q);
+    for (var li = -1; li <= 1; li++) {
+      var lx = P.x + _t1.x * 0.62 * li, lz = P.z + _t1.z * 0.62 * li;
+      liftT = Math.max(liftT, terrainMeshH(lx, lz) - groundH(lx, lz));
+    }
+    liftT = clamp(liftT, 0, 0.25) + 0.006;
+  }
+  PS.lift = lerp(PS.lift || 0, liftT, first ? 1 : damp(25, dt));
+  _org.y += PS.lift;
   _rX.set(1, 0, 0).applyQuaternion(_qB); _rY.set(0, 1, 0).applyQuaternion(_qB); _rZ.set(0, 0, ss).applyQuaternion(_qB);
   // ---- posa bersaglio (numeri nel sistema del corpo)
   var crouchT = P.crouch;
@@ -3297,13 +3320,59 @@ function poseRider(dt, mode) {
   curlFingers(0.35);
   if (G0 && PS.grab > 0.2) curlFingers(1.25 * PS.grab, gh === 'Left' ? 'L' : 'R');
   boardFlex(dt, ground);
+  updRim(dt, ground);
   // stoffa: aria contro (opposta alla velocita') e sventolio
   var spd = speedOf();
   CLOTH.uTime.value += dt;
-  CLOTH.uFlap.value = lerp(CLOTH.uFlap.value, clamp(spd / 18, 0, 1.4) * (air ? 1.6 : 1) + (air && A ? Math.min(1, (Math.abs(A.ws) + Math.abs(A.wf)) / 8) : 0), damp(4, dt));
-  if (spd > 0.5) CLOTH.uWind.value.set(-P.vx, -P.vy, -P.vz).multiplyScalar(Math.min(spd, 22) / spd * 0.0016); else CLOTH.uWind.value.set(0, 0, 0);
+  CLOTH.uFlap.value = lerp(CLOTH.uFlap.value, (0.25 + clamp(spd / 16, 0, 1.6)) * (air ? 1.7 : 1) + (air && A ? Math.min(1, (Math.abs(A.ws) + Math.abs(A.wf)) / 8) : 0), damp(4, dt));
+  // aria contro (opposta alla velocita') + inerzia: nei cambi di direzione la stoffa resta indietro
+  if (!PS.vPrev) PS.vPrev = new THREE.Vector3(P.vx, P.vy, P.vz), PS.acc = new THREE.Vector3();
+  if (dt > 0) { _t1.set(P.vx, P.vy, P.vz).sub(PS.vPrev).multiplyScalar(1 / dt); PS.acc.lerp(_t1.clampLength(0, 40), damp(6, dt)); }
+  PS.vPrev.set(P.vx, P.vy, P.vz);
+  if (spd > 0.5) CLOTH.uWind.value.set(-P.vx, -P.vy, -P.vz).multiplyScalar(Math.min(spd, 24) / spd * 0.0034); else CLOTH.uWind.value.set(0, 0, 0);
+  CLOTH.uWind.value.addScaledVector(PS.acc, -0.0016);
+  if (air) CLOTH.uWind.value.y += 0.012;  // in volo la stoffa si gonfia verso l'alto
   PS.init = true;
 }
+// ---- solco: la neve smossa si alza ai bordi della tavola, cosi' la tavola sembra affondata dentro (ma resta visibile)
+var rim = null;
+function makeRim() {
+  var Lh = 0.78, Wh = 0.135, N = 56, rings = [[-0.004, 0.006], [0.02, 0.02], [0.05, 0.022], [0.085, 0.008], [0.12, -0.01], [0.16, -0.06]];
+  var pos = [], col = [], idx = [];
+  for (var r = 0; r < rings.length; r++) for (var i = 0; i < N; i++) {
+    var a = i / N * TAU, ex = Lh - Wh, off = rings[r][0];
+    // punto sul contorno a stadio
+    var sx = Math.cos(a), sz = Math.sin(a), px, pz;
+    // contorno a stadio (lati dritti, punte tonde) allargato di off
+    var cxp = clamp(sx * Lh, -ex, ex), ang = Math.atan2(sz * Wh, sx * Lh - cxp);
+    if (Math.abs(sx * Lh) > ex) { px = cxp + Math.cos(ang) * (Wh + off); pz = Math.sin(ang) * (Wh + off); }
+    else { px = cxp; pz = sz >= 0 ? Wh + off : -(Wh + off); }
+    pos.push(px, rings[r][1], pz);
+    var g = r === 0 ? 0.74 : r === 1 ? 0.86 : 0.9; col.push(g * 0.98, g * 0.99, g, [1, 1, 1, 0.55, 0.12, 0][r]);
+  }
+  for (r = 0; r < rings.length - 1; r++) for (i = 0; i < N; i++) {
+    var a0 = r * N + i, b0 = r * N + (i + 1) % N, c0 = a0 + N, d0 = b0 + N;
+    idx.push(a0, c0, b0, b0, c0, d0);
+  }
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+  geo.setIndex(idx); geo.computeVertexNormals();
+  var m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, normalMap: snowNormal, normalScale: new THREE.Vector2(0.35, 0.35), side: THREE.DoubleSide, envMapIntensity: 0.25, transparent: true, depthWrite: false }));
+  m.receiveShadow = true; scene.add(m);
+  return m;
+}
+var _rimQ = new THREE.Quaternion();
+function updRim(dt, ground) {
+  if (!rim) rim = makeRim();
+  var show = ground && P.mode === 'ground';
+  PS.rimH = lerp(PS.rimH || 0, show ? clamp(1.15 - speedOf() / 32, 0.55, 1.1) + P.brake * 0.4 : 0, damp(show ? 8 : 20, dt));
+  rim.visible = PS.rimH > 0.03;
+  if (!rim.visible) return;
+  rim.position.set(P.x, P.y + PS.lift - 0.004, P.z);
+  rim.quaternion.copy(P.q); _rimQ.setFromAxisAngle(AX, PS.roll * 0.3); rim.quaternion.multiply(_rimQ);
+  rim.scale.set(1, PS.rimH, 1 + Math.abs(Math.sin(P.yawOff)) * 0.25);
+}
+
 // flessione della tavola con una molla: si carica e scatta
 PS.fb = 0; PS.fbV = 0; PS.ft = 0; PS.ftV = 0; PS.fApplied = [9, 9];
 function boardFlex(dt, ground) {

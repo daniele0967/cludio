@@ -170,6 +170,15 @@ var snowMatKick = makeSnowMat({ polygonOffset: true, polygonOffsetFactor: -1, po
 // (maglia 4 m) che partono un po' sotto la parte centrale, cosi' non si vedono fessure tra le due.
 var TC_IN = (function () { var a = []; for (var u = -42; u <= 42; u += (Math.abs(u) < 22 ? 1 : 2)) a.push(u); return a; })();
 var TC_OUT = (function () { var a = []; for (var u = 39; u < 90; u += 6) a.push(u); for (u = 90; u <= 330; u += 20) a.push(u); return a; })();
+// altezza della neve DISEGNATA (triangoli della griglia), che puo' essere qualche cm sopra quella calcolata
+function terrainMeshH(x, z) {
+  var d = -z, d0 = Math.floor(d), t = d - d0, u = x - cx(d), au = Math.abs(u), u0, u1;
+  if (au < 22) { u0 = Math.floor(u); u1 = u0 + 1; } else if (au <= 42) { u0 = Math.floor(u / 2) * 2; u1 = u0 + 2; } else return groundH(x, z);
+  var s = (u - u0) / (u1 - u0);
+  var Ha = profY(d0) + crossH(u0, d0), Hb = profY(d0) + crossH(u1, d0), Hc = profY(d0 + 1) + crossH(u0, d0 + 1), Hd = profY(d0 + 1) + crossH(u1, d0 + 1);
+  var h = s + t <= 1 ? Ha + s * (Hb - Ha) + t * (Hc - Ha) : Hd + (1 - s) * (Hc - Hd) + (1 - t) * (Hb - Hd);
+  return h + featH(u, d);
+}
 var chunks = {};
 var ROCK = new THREE.Color(0x6b6866), ROCKD = new THREE.Color(0x3f3d3e), SNOW = new THREE.Color(0xffffff), SNOWB = new THREE.Color(0xeef4fb);
 function terrainGrid(d0, len, rowStep, us, inner, sink) {
