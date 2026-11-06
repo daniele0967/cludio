@@ -9,8 +9,9 @@ const GI = (process.env.GI || '3').split(',').map(Number);
   page.on('pageerror', e => console.log('pageerror', e.message, e.stack.split('\n').slice(0,8).join(' | ')));
   await page.goto('file://' + path.resolve(__dirname, '../../snow/powder.html'));
   await page.waitForFunction(() => window.__pr && window.__pr.state === 'menu', null, { timeout: 90000 });
-  const res = await page.evaluate(([GIS, SER]) => {
+  const res = await page.evaluate(([GIS, SER, OV]) => {
     const pr = __pr, T = pr.THREE, out = [];
+    if (OV) Object.assign(pr.GPOSE.japan, JSON.parse(OV));
     pr.start('free'); if (SER) { window.__ser = []; window.__hj = []; }
     const W = (b) => { const v = new T.Vector3(); pr.rig().B[b].getWorldPosition(v); return v; };
     for (const gi of GIS) for (const st of ['regular', 'goofy']) for (const sw of [false, true]) for (const ws of [0, 6]) {
@@ -52,7 +53,7 @@ const GI = (process.env.GI || '3').split(',').map(Number);
       out.push(`${G.name} ${st} ${sw ? 'sw' : 'av'} spin${ws}: gomito scatto max ${(maxJump * 100).toFixed(1)}cm@${jumpAt} mano scatto ${(maxHJ * 100).toFixed(1)}cm, mano-punto ${(maxDist * 100).toFixed(0)}cm, braccia nel corpo ${(maxPen * 100).toFixed(0)}cm [${penAt.trim()}], tavola nel corpo ${(maxBoard * 100).toFixed(0)}cm, ginocchio nel petto ${(maxKnee * 100).toFixed(0)}cm@${kneeAt}`);
     }
     return out.join('\n');
-  }, [GI, !!process.env.SER]);
+  }, [GI, !!process.env.SER, process.env.OV || '']);
   console.log(res);
   await browser.close();
 })();

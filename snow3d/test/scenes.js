@@ -44,6 +44,17 @@ const want = process.argv.slice(2);
     await shot('s_front');
     await page.evaluate(() => { window.__camFn = null; });
   }
+  if (want.includes('track')) {
+    await page.evaluate(() => { const pr = __pr; pr.place(60, 0, 10); window.__tk = setInterval(() => { pr.IN.sx = Math.sin(performance.now() / 700) * 0.7; }, 30); window.__camFn = null; });
+    await page.waitForFunction(() => -__pr.P.z > 95 && __pr.P.mode === 'ground', null, { timeout: 180000, polling: 100 });
+    await page.evaluate(() => { clearInterval(window.__tk); __pr.IN.sx = 0; window.__frozen = 1; const P = __pr.P; window.__camFn = (cam) => { cam.position.set(P.x + 2.5, P.y + 3.2, P.z - 6); cam.lookAt(P.x, P.y, P.z + 10); cam.fov = 50; }; });
+    await page.waitForTimeout(600);
+    await shot('s_track');
+    await page.evaluate(() => { const P = __pr.P; window.__camFn = (cam) => { cam.position.set(P.x - 1.0, P.y + 1.4, P.z - 2.5); cam.lookAt(P.x, P.y - 1, P.z + 8); cam.fov = 50; }; });
+    await page.waitForTimeout(600);
+    await shot('s_track_low');
+    await page.evaluate(() => { window.__camFn = null; window.__frozen = 0; });
+  }
   if (want.includes('board')) {
     await page.evaluate(() => { const pr = __pr; pr.place(80, 0, 7); pr.IN.sx = 0; window.__camFn = (cam, P) => { cam.position.set(P.x + 1.6, P.y + 0.55, P.z + 0.9); cam.lookAt(P.x, P.y + 0.05, P.z); cam.fov = 45; }; });
     await page.waitForTimeout(1200);

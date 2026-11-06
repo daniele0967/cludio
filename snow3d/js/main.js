@@ -96,7 +96,7 @@ function tutEvent(e) {
 function startRun(mode) {
   show('menu', false); show('pause', false); show('over', false); show('settings', false); show('riderPanel', false); show('guidePanel', false);
   show('hud', true); show('controls', true);
-  clearPark(); trailReset(); resetTouch();
+  clearPark(); trailReset(); groundFxReset(); resetTouch();
   newWorld(1 + Math.floor(Math.random() * 1e9), mode);
   genUntil(760);
   newPlayer(6, 0, 7);
@@ -118,7 +118,7 @@ function resumeGame() { if (state !== 'pause') return; show('pause', false); sta
 function toMenu() {
   show('pause', false); show('over', false); show('hud', false); show('controls', false);
   state = 'menu'; GAME = null; resetTouch(); hintEl.classList.remove('on');
-  clearPark(); trailReset();
+  clearPark(); trailReset(); groundFxReset();
   newWorld(4242, 'menu'); genUntil(700); newPlayer(7, -2, 0); if (rig) rig.rag = null; PS.init = false;
   refreshMenu(); show('menu', true);
 }
@@ -205,7 +205,8 @@ function updEffects(dt) {
     if (trailD > 0.35) {
       trailD = 0;
       var w = 0.2 + Math.abs(Math.sin(P.yawOff)) * 0.55;
-      _e2.set(0, 0, 1).applyQuaternion(P.q);
+      // lato del solco perpendicolare alla marcia (non alla tavola: andando switch la tavola si gira, la marcia no)
+      var vh = Math.hypot(P.vx, P.vz) || 1; _e2.set(-P.vz / vh, 0, P.vx / vh);
       if (!trLast) trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, false);
       trailAdd(P.x, P.y + 0.025, P.z, _e2.x, _e2.z, w, true);
       trLast = 1;
@@ -384,6 +385,7 @@ function frame(now) {
   if (bgCam.fov !== camera.fov || bgCam.aspect !== camera.aspect) { bgCam.fov = camera.fov; bgCam.aspect = camera.aspect; bgCam.updateProjectionMatrix(); }
   cloudMat.uniforms.uOff.value.x += dt * 0.0015; cloudMat.uniforms.uOff.value.y += dt * 0.0006;
   updFlakes(dt, camera.position, LT.snowfall, gtime);
+  updGroundFx(dt, camera.position, gtime, 0.5 + 0.5 * Math.sin(gtime * 0.4) * Math.sin(gtime * 0.17 + 1));
   pMat.uniforms.uScale.value = VH * 0.5 / Math.tan(camera.fov * DEG / 2) * 0.9;
   if (flashA > 0) { flashA = Math.max(0, flashA - dt * 1.4); }
   POST.speed = state === 'play' && P ? clamp((speedOf() - 15) / 13, 0, 1) * 0.85 : 0;
@@ -586,7 +588,7 @@ window.__pr = {
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
   GPOSE: GPOSE, BASE: BASE, grabPoint: grabPoint, bodyCapsules: bodyCapsules, armPenetration: armPenetration, penBreakdown: penBreakdown, boardPen: boardPen, GRABS: GRABS, PS: PS, poseRider: poseRider, groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
   scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
-  place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
-  cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
+  place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); groundFxReset(); },
+  cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes, trail: function () { return { n: trN, pos: trPos, col: trCol, mesh: trail }; }, terrainMeshH: terrainMeshH
 };
 setTimeout(boot, 30);

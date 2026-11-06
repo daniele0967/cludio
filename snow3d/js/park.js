@@ -392,20 +392,20 @@ function updParticles(dt) {
 // Fiocchi morbidi in un cubo di 70 m attorno alla camera: cadono ondeggiando, spinti un po' dal vento,
 // piu' grandi vicino alla camera. Nevica sempre; con la luce "Neve" nevica forte.
 var FN = 2600, fPos = new Float32Array(FN * 3), fSeed = new Float32Array(FN), fGeo = new THREE.BufferGeometry();
-for (var fi = 0; fi < FN; fi++) { fPos[fi * 3] = (Math.random() - 0.5) * 70; fPos[fi * 3 + 1] = (Math.random() - 0.5) * 40; fPos[fi * 3 + 2] = (Math.random() - 0.5) * 70; fSeed[fi] = Math.random(); }
+for (var fi = 0; fi < FN; fi++) { fPos[fi * 3] = (Math.random() - 0.5) * 44; fPos[fi * 3 + 1] = (Math.random() - 0.5) * 24; fPos[fi * 3 + 2] = (Math.random() - 0.5) * 44; fSeed[fi] = Math.random(); }
 fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
 fGeo.setAttribute('aSeed', new THREE.BufferAttribute(fSeed, 1));
 var fMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, fog: false,
   uniforms: { uScale: { value: 300 }, uSize: { value: 0.07 }, uAlpha: { value: 0.9 } },
-  vertexShader: 'attribute float aSeed; uniform float uScale, uSize; varying float vA; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z; gl_PointSize = clamp(uSize * (0.6 + aSeed) * uScale / max(0.3, d), 1.0, 26.0); vA = smoothstep(0.3, 1.5, d) * (1.0 - smoothstep(22.0, 34.0, d)); gl_Position = projectionMatrix * mv; }',
-  fragmentShader: 'uniform float uAlpha; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, (1.0 - r) * (1.0 - r) * vA * uAlpha);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
+  vertexShader: 'attribute float aSeed; uniform float uScale, uSize; varying float vA; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z; gl_PointSize = clamp(uSize * (0.6 + aSeed) * uScale / max(0.3, d), 1.5, 34.0); vA = smoothstep(0.3, 1.2, d) * (1.0 - smoothstep(17.0, 22.0, d)); gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'uniform float uAlpha; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c) * 4.0; if (r > 1.0) discard; vec3 fc = mix(vec3(1.0), vec3(0.62, 0.68, 0.8), smoothstep(0.15, 0.95, r) * 0.85 + c.y * 0.3); gl_FragColor = vec4(fc, (1.0 - r * r * r) * vA * uAlpha);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
 });
 var flakes = new THREE.Points(fGeo, fMat); flakes.frustumCulled = false; flakes.renderOrder = 5; scene.add(flakes);
 function updFlakes(dt, cam, amount, time) {
-  var heavy = amount > 0.5, n = heavy ? FN : Math.floor(FN * 0.55);
+  var heavy = amount > 0.5, n = heavy ? FN : Math.floor(FN * 0.7);
   fGeo.setDrawRange(0, n);
-  fMat.uniforms.uSize.value = heavy ? 0.085 : 0.065;
+  fMat.uniforms.uSize.value = heavy ? 0.16 : 0.13;
   fMat.uniforms.uScale.value = VH * 0.5 / Math.tan(camera.fov * DEG / 2);
   var fall = heavy ? 1.6 : 1.0, wx = Math.sin(time * 0.13) * 0.8 + 0.6, wz = 0.35;
   for (var i = 0; i < n; i++) {
@@ -414,41 +414,119 @@ function updFlakes(dt, cam, amount, time) {
     fPos[k + 1] -= fall * (0.7 + s * 0.6) * dt;
     fPos[k + 2] += (wz + Math.cos(time * (0.7 + s) + i * 1.3) * 0.4) * dt;
     var rx = fPos[k] - cam.x, ry = fPos[k + 1] - cam.y, rz = fPos[k + 2] - cam.z;
-    if (rx > 35) fPos[k] -= 70; else if (rx < -35) fPos[k] += 70;
-    if (rz > 35) fPos[k + 2] -= 70; else if (rz < -35) fPos[k + 2] += 70;
-    if (ry < -20) fPos[k + 1] += 40; else if (ry > 20) fPos[k + 1] -= 40;
+    if (rx > 22) fPos[k] -= 44; else if (rx < -22) fPos[k] += 44;
+    if (rz > 22) fPos[k + 2] -= 44; else if (rz < -22) fPos[k + 2] += 44;
+    if (ry < -12) fPos[k + 1] += 24; else if (ry > 12) fPos[k + 1] -= 24;
   }
   fGeo.attributes.position.needsUpdate = true;
 }
 
+// ------------------------------------------------------------ neve viva sul terreno
+// 1) Neve soffiata: veli bassi che scivolano sul pendio col vento (si formano, corrono qualche metro, svaniscono).
+// 2) Brillantini: cristalli fermi sulla neve che si accendono e si spengono quando la camera si muove.
+var DN = 260, dPos = new Float32Array(DN * 3), dLife = new Float32Array(DN), dMax = new Float32Array(DN), dSz = new Float32Array(DN), dA = new Float32Array(DN), dH = new Float32Array(DN), dGeo = new THREE.BufferGeometry();
+dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3)); dGeo.setAttribute('aSize', new THREE.BufferAttribute(dSz, 1)); dGeo.setAttribute('aAlpha', new THREE.BufferAttribute(dA, 1));
+var dMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, fog: true,
+  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uScale: { value: 300 } }]),
+  vertexShader: '#include <fog_pars_vertex>\nattribute float aSize; attribute float aAlpha; uniform float uScale; varying float vA; void main(){ vec4 mvPosition = modelViewMatrix * vec4(position, 1.0); float d = -mvPosition.z; gl_PointSize = clamp(aSize * uScale / max(0.5, d), 1.0, 160.0); vA = aAlpha * smoothstep(0.8, 3.0, d); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
+  fragmentShader: '#include <fog_pars_fragment>\nvarying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; c.y *= 2.2; float r = dot(c, c) * 4.0; if (r > 1.0) discard; float a = (1.0 - r) * vA; gl_FragColor = vec4(mix(vec3(0.82, 0.87, 0.96), vec3(1.0), 1.0 - r), a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
+});
+var drift = new THREE.Points(dGeo, dMat); drift.frustumCulled = false; drift.renderOrder = 2; scene.add(drift);
+var GN = 700, gPos = new Float32Array(GN * 3), gSeed = new Float32Array(GN), gGeo = new THREE.BufferGeometry();
+gGeo.setAttribute('position', new THREE.BufferAttribute(gPos, 3)); gGeo.setAttribute('aSeed', new THREE.BufferAttribute(gSeed, 1));
+var gMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+  uniforms: { uCam: { value: new THREE.Vector3() }, uTime: { value: 0 }, uScale: { value: 300 } },
+  vertexShader: 'attribute float aSeed; uniform vec3 uCam; uniform float uTime, uScale; varying float vA; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z;' +
+    // si accende solo per certi angoli di vista: muovendosi i cristalli si accendono e si spengono
+    ' vec3 v = normalize(uCam - position); float ph = dot(v, vec3(37.0, 23.0, 41.0)) * (1.0 + aSeed) + aSeed * 61.0 + uTime * 0.6;' +
+    ' float tw = pow(max(0.0, sin(ph)), 24.0); vA = tw * (1.0 - smoothstep(9.0, 22.0, d)) * smoothstep(0.6, 2.0, d);' +
+    ' gl_PointSize = clamp(0.05 * uScale / max(0.5, d), 1.5, 9.0) * (0.6 + tw); gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'varying float vA; void main(){ vec2 c = abs(gl_PointCoord - 0.5) * 2.0; float st = max(1.0 - c.x * 6.0 * c.y - c.x * 0.4 - c.y * 0.4, 0.0); float a = st * vA; if (a < 0.01) discard; gl_FragColor = vec4(1.0, 0.99, 0.95, a);\n}'
+});
+var glitter = new THREE.Points(gGeo, gMat); glitter.frustumCulled = false; glitter.renderOrder = 2; scene.add(glitter);
+var GR = 22, gInit = false, WIND = new THREE.Vector3(0.85, 0, 0.35).normalize();
+function groundSpawnG(i, cx0, cz0, near) {
+  var a = Math.random() * TAU, r = near ? Math.sqrt(Math.random()) * GR : GR * (0.85 + Math.random() * 0.15);
+  var x = cx0 + Math.cos(a) * r, z = cz0 + Math.sin(a) * r;
+  gPos[i * 3] = x; gPos[i * 3 + 1] = terrainMeshH(x, z) + 0.015; gPos[i * 3 + 2] = z; gSeed[i] = Math.random();
+}
+function spawnDrift(i, cx0, cz0) {
+  // nasce sopravento rispetto alla camera, cosi' attraversa la scena
+  var a = Math.random() * TAU, r = 3 + Math.random() * 22, x = cx0 + Math.cos(a) * r - WIND.x * 6, z = cz0 + Math.sin(a) * r - WIND.z * 6;
+  dPos[i * 3] = x; dPos[i * 3 + 2] = z; dH[i] = 0.05 + Math.random() * Math.random() * 0.5;
+  dPos[i * 3 + 1] = terrainMeshH(x, z) + dH[i];
+  dMax[i] = dLife[i] = 1.5 + Math.random() * 2.5; dSz[i] = 0.5 + Math.random() * 1.1;
+}
+function updGroundFx(dt, cam, time, gust) {
+  var sc = VH * 0.5 / Math.tan(camera.fov * DEG / 2);
+  dMat.uniforms.uScale.value = sc; gMat.uniforms.uScale.value = sc; gMat.uniforms.uCam.value.copy(cam); gMat.uniforms.uTime.value = time;
+  if (!gInit) { for (var i = 0; i < GN; i++) groundSpawnG(i, cam.x, cam.z, true); for (i = 0; i < DN; i++) { spawnDrift(i, cam.x, cam.z); dLife[i] *= Math.random(); } gInit = true; }
+  // brillantini: quelli rimasti troppo lontani rinascono sul bordo davanti
+  for (i = 0; i < GN; i++) { var dx = gPos[i * 3] - cam.x, dz = gPos[i * 3 + 2] - cam.z; if (dx * dx + dz * dz > GR * GR * 1.1) groundSpawnG(i, cam.x, cam.z, false); }
+  gGeo.attributes.position.needsUpdate = true; gGeo.attributes.aSeed.needsUpdate = true;
+  // veli di neve: corrono col vento a raffiche, seguendo il terreno
+  var sp = 2.2 + 2.6 * (gust || 0.5);
+  for (i = 0; i < DN; i++) {
+    dLife[i] -= dt;
+    if (dLife[i] <= 0) { spawnDrift(i, cam.x, cam.z); continue; }
+    var k = i * 3, s2 = sp * (0.7 + 0.6 * ((i * 0.37) % 1));
+    dPos[k] += (WIND.x * s2 + Math.sin(time * 1.7 + i) * 0.4) * dt; dPos[k + 2] += (WIND.z * s2 + Math.cos(time * 1.3 + i * 0.7) * 0.4) * dt;
+    dPos[k + 1] = terrainMeshH(dPos[k], dPos[k + 2]) + dH[i] * (1 + 0.3 * Math.sin(time * 2 + i));
+    var t = dLife[i] / dMax[i];
+    dA[i] = Math.sin(t * PI) * 0.2 * (0.6 + (gust || 0.5));
+  }
+  dGeo.attributes.position.needsUpdate = true; dGeo.attributes.aAlpha.needsUpdate = true; dGeo.attributes.aSize.needsUpdate = true;
+}
+function groundFxReset() { gInit = false; }
+
 // ------------------------------------------------------------ tracce della tavola sulla neve
-var TRN = 900, trPos = new Float32Array(TRN * 2 * 3), trA = new Float32Array(TRN * 2), trV = new Float32Array(TRN * 2), trN = 0;
-for (var tvi = 0; tvi < TRN; tvi++) { trV[tvi * 2] = 0; trV[tvi * 2 + 1] = 1; }
+// Un vero solco in 3D: sezione a 7 punti (bordo sfumato, cordolo alzato, parete, fondo, ...), appoggiata sui
+// triangoli del terreno disegnato, illuminata come la neve (il cordolo prende luce, il fondo resta in ombra).
+// Resta sul terreno per ~300 m: si vede la propria linea, le curve e le derapate.
+var TRN = 900, TRC = 7, trN = 0;
+var trPos = new Float32Array(TRN * TRC * 3), trNor = new Float32Array(TRN * TRC * 3), trCol = new Float32Array(TRN * TRC * 4), trUv = new Float32Array(TRN * TRC * 2), trDist = 0;
 var trGeo = new THREE.BufferGeometry();
 trGeo.setAttribute('position', new THREE.BufferAttribute(trPos, 3));
-trGeo.setAttribute('aA', new THREE.BufferAttribute(trA, 1));
-trGeo.setAttribute('aV', new THREE.BufferAttribute(trV, 1));
-(function () { var idx = []; for (var i = 0; i < TRN - 1; i++) { var a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); } trGeo.setIndex(idx); })();
-var trMat = new THREE.ShaderMaterial({
-  transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3, fog: true,
-  uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uCol: { value: new THREE.Color(0x7d93b4) }, uRim: { value: new THREE.Color(0xffffff) } }]),
-  vertexShader: '#include <fog_pars_vertex>\nattribute float aA; attribute float aV; varying float vA; varying float vV; void main(){ vA = aA; vV = aV; vec4 mvPosition = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix * mvPosition;\n#include <fog_vertex>\n}',
-  // solco nella neve fresca: fondo in ombra, bordi sollevati e illuminati
-  fragmentShader: '#include <fog_pars_fragment>\nuniform vec3 uCol, uRim; varying float vA; varying float vV; void main(){ float c = abs(vV * 2.0 - 1.0); float groove = smoothstep(0.9, 0.35, c); float rim = smoothstep(0.62, 0.9, c) * smoothstep(1.0, 0.92, c); vec3 col = mix(uRim, uCol, groove); float a = vA * (groove * 0.5 + rim * 0.45); gl_FragColor = vec4(col, a);\n#include <tonemapping_fragment>\n#include <colorspace_fragment>\n#include <fog_fragment>\n}'
-});
-var trail = new THREE.Mesh(trGeo, trMat); trail.frustumCulled = false; trail.renderOrder = 1; scene.add(trail);
+trGeo.setAttribute('normal', new THREE.BufferAttribute(trNor, 3));
+trGeo.setAttribute('color', new THREE.BufferAttribute(trCol, 4));
+trGeo.setAttribute('uv', new THREE.BufferAttribute(trUv, 2)); // senza uv la normal map della neve da' valori non validi
+(function () { var idx = []; for (var i = 0; i < TRN - 1; i++) for (var j = 0; j < TRC - 1; j++) { var a = i * TRC + j, b = a + 1, c = a + TRC, d = c + 1; idx.push(a, b, c, b, d, c); } trGeo.setIndex(idx); })(); // faccia in su: il lato r e' a sinistra della marcia (vedi updEffects)
+var trMat = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, depthWrite: false, roughness: 0.95, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.4, 0.4), envMapIntensity: 0.5, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+var trail = new THREE.Mesh(trGeo, trMat); trail.frustumCulled = false; trail.renderOrder = 1; trail.receiveShadow = true; scene.add(trail);
 var trLast = null;
-function trailReset() { trN = 0; trA.fill(0); trLast = null; trGeo.setDrawRange(0, 0); trGeo.attributes.aA.needsUpdate = true; }
+// sezione: [posizione (in larghezze del solco, il cordolo e' fisso in metri), altezza, luce, alfa]
+var TR_S = [[-1, 0.14, 0.0, 1.0, 0], [-1, 0.04, 0.045, 1.06, 1], [-0.7, 0, 0.008, 0.7, 1], [0, 0, 0.003, 0.6, 1], [0.7, 0, 0.008, 0.7, 1], [1, 0.04, 0.045, 1.06, 1], [1, 0.14, 0.0, 1.0, 0]];
+function trailReset() { trN = 0; trLast = null; trGeo.setDrawRange(0, 0); }
+var _trH = new Float32Array(TRC), _trO = new Float32Array(TRC);
 function trailAdd(x, y, z, rx, rz, w, on) {
   if (trN >= TRN) {
-    trPos.copyWithin(0, 6 * 60); trA.copyWithin(0, 2 * 60); trN -= 60;
+    var sh = 60 * TRC;
+    trPos.copyWithin(0, sh * 3); trNor.copyWithin(0, sh * 3); trCol.copyWithin(0, sh * 4); trUv.copyWithin(0, sh * 2); trN -= 60;
   }
-  var i = trN++;
-  trPos[i * 6] = x - rx * w; trPos[i * 6 + 1] = y; trPos[i * 6 + 2] = z - rz * w;
-  trPos[i * 6 + 3] = x + rx * w; trPos[i * 6 + 4] = y; trPos[i * 6 + 5] = z + rz * w;
-  trA[i * 2] = trA[i * 2 + 1] = on ? 1 : 0;
-  trGeo.attributes.position.needsUpdate = true; trGeo.attributes.aA.needsUpdate = true;
-  trGeo.setDrawRange(0, Math.max(0, (trN - 1) * 6));
+  var i = trN++, g = w * 0.8; trDist += 0.35 * 2;
+  // normale del terreno sotto il centro
+  var hc = terrainMeshH(x, z), hx = terrainMeshH(x + 0.4, z) - terrainMeshH(x - 0.4, z), hz = terrainMeshH(x, z + 0.4) - terrainMeshH(x, z - 0.4);
+  var nx = -hx / 0.8, nz = -hz / 0.8, nl = 1 / Math.sqrt(nx * nx + 1 + nz * nz);
+  for (var j = 0; j < TRC; j++) {
+    var S = TR_S[j], o = S[0] * g + (S[0] < 0 ? -S[1] : S[1]);
+    var px = x + rx * o, pz = z + rz * o, h = terrainMeshH(px, pz) + 0.006 + S[2] * (on ? 1 : 0.3);
+    _trO[j] = o; _trH[j] = h - hc;
+    var k = (i * TRC + j) * 3; trPos[k] = px; trPos[k + 1] = h; trPos[k + 2] = pz;
+    trUv[(i * TRC + j) * 2] = o * 2; trUv[(i * TRC + j) * 2 + 1] = trDist;
+    var l = S[3], c4 = (i * TRC + j) * 4;
+    // fondo un po' azzurro (ombra della neve), cordolo bianco
+    var bl = l < 0.9 ? 1 : 0; trCol[c4] = 0.93 * l * (1 - 0.1 * bl); trCol[c4 + 1] = 0.95 * l * (1 - 0.02 * bl); trCol[c4 + 2] = Math.min(1, 0.98 * l * (1 + 0.22 * bl)); trCol[c4 + 3] = S[4] * (on ? 1 : 0);
+  }
+  // normali della sezione: pendenza tra i vicini, aggiunta alla normale del terreno
+  for (j = 0; j < TRC; j++) {
+    var a = Math.max(0, j - 1), b = Math.min(TRC - 1, j + 1), sl = (_trH[b] - _trH[a]) / Math.max(1e-3, _trO[b] - _trO[a]);
+    var ex = nx * nl - rx * sl, ey = nl, ez = nz * nl - rz * sl, el = 1 / Math.sqrt(ex * ex + ey * ey + ez * ez);
+    k = (i * TRC + j) * 3; trNor[k] = ex * el; trNor[k + 1] = ey * el; trNor[k + 2] = ez * el;
+  }
+  trGeo.attributes.position.needsUpdate = true; trGeo.attributes.normal.needsUpdate = true; trGeo.attributes.color.needsUpdate = true; trGeo.attributes.uv.needsUpdate = true;
+  trGeo.setDrawRange(0, Math.max(0, (trN - 1) * (TRC - 1) * 6));
 }
 
 // ------------------------------------------------------------ cerchio dove si atterra (aiuto visivo)

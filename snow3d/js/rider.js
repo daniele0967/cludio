@@ -462,7 +462,11 @@ var GPOSE = {
   stale:   { hand: 'rear', knee: 0.4, pt: [-0.12,  -1,  0], hip: [0.01,  0.67,  0.02], bend: 0.03, side: 0.86, twist: 0.09, arch: 0, bpos: [-0.09,  0.31,  -0.01], brot: [-0.27,  -0.33,  0.3], free: [0.44,  0.61,  0.18], elbow: [-0.53,  0.03,  -0.69] },
   melon:   { hand: 'front', knee: 0.36, pt: [0.1,  -1,  0], hip: [-0.06,  0.68,  0.04], bend: 0.19, side: -0.82, twist: 0.2, arch: 0, bpos: [0,  0.33,  -0.18], brot: [-0.73,  -0.02,  -0.35], free: [-0.42,  0.58,  0], elbow: [0.5,  -0.02,  -0.5] },
   method:  { hand: 'front', kneeDown: 1, pt: [0.08, -1, 0], hip: [0, 0.76, 0.1], bend: 0.05, side: 0.05, twist: 0.35, arch: 0.45, bpos: [0, 0.6, -0.42], brot: [-1.15, 0.12, -0.25], free: [-0.25, 0.85, 0.1], elbow: [0.35, 0.1, -0.7] },
-  japan:   { hand: 'front', via: [0.7, -0.35, -0.15, 0.75], kneeDown: 2, knee: 0.6, pt: [0.1, 1, 0], hip: [0, 0.72, 0.06], bend: 0.45, side: 0.25, twist: 0.45, arch: 0.15, bpos: [0.0, 0.4, -0.2], brot: [0.7, -0.7, 0.25], free: [-0.15, 0.85, 0.05], elbow: [0.5, 0.2, 0.6] }
+  // Japan (dalla foto di riferimento): tavola verticale con la punta in su sul fianco della mano davanti, deck verso
+  // il petto, un po' dietro le gambe; ginocchio davanti raccolto alto verso il petto, gamba dietro piegata in basso che
+  // incrocia; la mano davanti prende la lamina punte (ora sul lato esterno) appena sotto l'attacco davanti, all'altezza
+  // del bacino; braccio libero su e indietro.
+  japan:   { hand: 'front', via: [0.65, 0.1, -0.15, 0.2], knees: { f: [0.15, 0.75, 1], b: [-0.2, -0.7, 1] }, pt: [0.13, 1, 0], hip: [0, 0.72, 0.04], bend: 0.12, side: 0.15, twist: 0.2, arch: 0.1, bpos: [0.28, 0.6, -0.08], brot: [-1.4, 1.35, 0.1], free: [-0.5, 0.7, -0.3], elbow: [0.6, 0.15, -0.3] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali della tavola) dove va la mano
@@ -506,7 +510,7 @@ function poseRider(dt, mode) {
   var first = !PS.init;
   // ---- stato
   var gi = air && A && A.grab >= 0 ? A.grab : -1;
-  PS.grab = lerp(PS.grab, gi >= 0 ? 1 : 0, first ? 1 : damp(gi >= 0 ? (gi === 3 ? 7.5 : 11) : 9, dt)); // Japan: la mano fa un giro lungo, piu' calma
+  PS.grab = lerp(PS.grab, gi >= 0 ? 1 : 0, first ? 1 : damp(gi >= 0 ? 11 : 9, dt));
   if (gi >= 0 && gi !== PS.gi) PS.reach.set(0, 0, 0); // cambio di grab: la correzione del grab precedente non vale piu'
   if (gi >= 0) PS.gi = gi;
   if (PS.grab < 0.01) PS.gi = -1;
@@ -657,8 +661,9 @@ function poseRider(dt, mode) {
 var rim = null;
 function makeRim() {
   var Lh = 0.78, Wh = 0.135, N = 56, rings = [[-0.004, 0.006], [0.02, 0.02], [0.05, 0.022], [0.085, 0.008], [0.12, -0.01], [0.16, -0.06]];
-  var pos = [], col = [], idx = [];
+  var pos = [], col = [], idx = [], uvs = [];
   for (var r = 0; r < rings.length; r++) for (var i = 0; i < N; i++) {
+    uvs.push(i / N * 8, r * 0.15);
     var a = i / N * TAU, ex = Lh - Wh, off = rings[r][0];
     // punto sul contorno a stadio
     var sx = Math.cos(a), sz = Math.sin(a), px, pz;
@@ -674,7 +679,7 @@ function makeRim() {
     idx.push(a0, c0, b0, b0, c0, d0);
   }
   var geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 4)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   geo.setIndex(idx); geo.computeVertexNormals();
   var m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, normalMap: snowNormal, normalScale: new THREE.Vector2(0.35, 0.35), side: THREE.DoubleSide, envMapIntensity: 0.25, transparent: true, depthWrite: false }));
   m.receiveShadow = true; scene.add(m);
@@ -740,6 +745,7 @@ function poseLegs(front, back, ss, air) {
     D2W((x > 0 ? 0.3 : 0.4) + (x > 0 ? 1 : -1) * kn, 0.25 + (air ? 0.5 * Math.max(PS.grab, PS.tuck) : 0), 1 - kn * 0.4, _pl);
     var gpk = PS.gi >= 0 ? gpose(GRABS[PS.gi]) : null, kd = gpk ? (gpk.kneeDown || 0) * PS.grab * (gpk.kneeDown === 2 && x < 0 ? 0 : 1) : 0;
     if (kd > 0) { D2W(x > 0 ? 0.25 : 0.05, -1.0, 0.75, _t2); _pl.lerp(_t2, kd); }
+    if (gpk && gpk.knees) { var kp = x > 0 ? gpk.knees.f : gpk.knees.b; D2W(kp[0], kp[1], kp[2], _t2); _pl.lerp(_t2, PS.grab); }
     solveLimb(lg[0] + 'UpLeg', lg[0] + 'Leg', lg[0] + 'Foot', _tg, L.thigh, L.shin, _pl, ZF);
     _F.copy(_bz).multiplyScalar(ss).applyAxisAngle(_by, lg[2] * DEG * ss);
     setFootQ(lg[0] + 'Foot', _F, _by);
