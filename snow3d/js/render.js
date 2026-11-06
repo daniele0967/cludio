@@ -59,10 +59,10 @@ var skyMat = new THREE.ShaderMaterial({
     'uniform vec3 uTop, uHor, uSunCol; uniform vec3 uSun; uniform float uSunI; varying vec3 vDir;',
     'void main(){',
     '  vec3 d = normalize(vDir); float h = d.y;',
-    '  float t = pow(clamp(h, 0.0, 1.0), 0.42);',
+    '  float t = pow(clamp(h, 0.001, 1.0), 0.42);',
     '  vec3 col = mix(uHor, uTop, t);',
     '  col = mix(col, uHor * 1.04, smoothstep(0.08, -0.02, h) * 0.6);',
-    '  float s = max(dot(d, uSun), 0.0);',
+    '  float s = clamp(dot(d, uSun), 0.0001, 1.0);',
     '  col += uSunCol * (pow(s, 2200.0) * 40.0 + pow(s, 260.0) * 1.2 + pow(s, 18.0) * 0.28 + pow(s, 3.0) * 0.1) * uSunI;',
     '  col += uSunCol * smoothstep(0.25, 0.0, abs(h)) * pow(s, 2.0) * 0.18 * uSunI;',
     '  gl_FragColor = vec4(col, 1.0);',
@@ -207,7 +207,7 @@ function terrainGrid(d0, len, rowStep, us, inner, sink) {
   var idx = new Uint16Array((rows - 1) * (cols - 1) * 6), q = 0;
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
-    idx[q++] = a; idx[q++] = c2; idx[q++] = b; idx[q++] = b; idx[q++] = c2; idx[q++] = d2;
+    idx[q++] = a; idx[q++] = b; idx[q++] = c2; idx[q++] = b; idx[q++] = d2; idx[q++] = c2; // faccia verso l alto
   }
   var geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -458,7 +458,7 @@ function applyLight(name) {
   gnd.rotation.x = -PI / 2; gnd.position.y = -3; es.add(gnd);
   if (envRT) envRT.dispose();
   envRT = pm.fromScene(es, 0.02);
-  scene.environment = envRT.texture;
+  if (!(typeof GROUND_FIX !== 'undefined' && GROUND_FIX >= 1)) scene.environment = envRT.texture;
   pm.dispose(); sk.geometry.dispose(); gnd.geometry.dispose();
   [snowMat, snowMatKick].forEach(function (m) { m.envMapIntensity = LT.env; });
 }

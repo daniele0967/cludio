@@ -220,7 +220,7 @@ function syncSettings() {
     seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
   });
   $('sens').value = save.set.sens; $('sensV').textContent = Math.round(save.set.sens * 100) + '%';
-  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
+  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · terreno: ' + (DIAG.ground || '?') + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
     (DIAG.errors.length ? '\nErrori:\n' + DIAG.errors.slice(-4).join('\n') : '\nNessun errore');
 }
 document.querySelectorAll('#settings .seg').forEach(function (seg) {

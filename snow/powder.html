@@ -1615,10 +1615,10 @@ var skyMat = new THREE.ShaderMaterial({
     'uniform vec3 uTop, uHor, uSunCol; uniform vec3 uSun; uniform float uSunI; varying vec3 vDir;',
     'void main(){',
     '  vec3 d = normalize(vDir); float h = d.y;',
-    '  float t = pow(clamp(h, 0.0, 1.0), 0.42);',
+    '  float t = pow(clamp(h, 0.001, 1.0), 0.42);',
     '  vec3 col = mix(uHor, uTop, t);',
     '  col = mix(col, uHor * 1.04, smoothstep(0.08, -0.02, h) * 0.6);',
-    '  float s = max(dot(d, uSun), 0.0);',
+    '  float s = clamp(dot(d, uSun), 0.0001, 1.0);',
     '  col += uSunCol * (pow(s, 2200.0) * 40.0 + pow(s, 260.0) * 1.2 + pow(s, 18.0) * 0.28 + pow(s, 3.0) * 0.1) * uSunI;',
     '  col += uSunCol * smoothstep(0.25, 0.0, abs(h)) * pow(s, 2.0) * 0.18 * uSunI;',
     '  gl_FragColor = vec4(col, 1.0);',
@@ -1763,7 +1763,7 @@ function terrainGrid(d0, len, rowStep, us, inner, sink) {
   var idx = new Uint16Array((rows - 1) * (cols - 1) * 6), q = 0;
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
-    idx[q++] = a; idx[q++] = c2; idx[q++] = b; idx[q++] = b; idx[q++] = c2; idx[q++] = d2;
+    idx[q++] = a; idx[q++] = b; idx[q++] = c2; idx[q++] = b; idx[q++] = d2; idx[q++] = c2; // faccia verso l alto
   }
   var geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -2014,7 +2014,7 @@ function applyLight(name) {
   gnd.rotation.x = -PI / 2; gnd.position.y = -3; es.add(gnd);
   if (envRT) envRT.dispose();
   envRT = pm.fromScene(es, 0.02);
-  scene.environment = envRT.texture;
+  if (!(typeof GROUND_FIX !== 'undefined' && GROUND_FIX >= 1)) scene.environment = envRT.texture;
   pm.dispose(); sk.geometry.dispose(); gnd.geometry.dispose();
   [snowMat, snowMatKick].forEach(function (m) { m.envMapIntensity = LT.env; });
 }
@@ -2123,7 +2123,7 @@ function snowGrid(f, sEnd, wExt, lines) {
   var idx = [];
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
-    idx.push(a, c2, b, b, c2, d2);
+    idx.push(a, b, c2, b, d2, c2); // faccia verso l alto
   }
   var geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -3452,7 +3452,7 @@ function syncSettings() {
     seg.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
   });
   $('sens').value = save.set.sens; $('sensV').textContent = Math.round(save.set.sens * 100) + '%';
-  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
+  $('diagTxt').textContent = 'WebGL ' + DIAG.gl + ' · terreno: ' + (DIAG.ground || '?') + ' · neve: ' + DIAG.snow + ' · effetti: ' + DIAG.post + ' · qualità ' + quality.level + ' (' + quality.pr.toFixed(1) + 'x)' +
     (DIAG.errors.length ? '\nErrori:\n' + DIAG.errors.slice(-4).join('\n') : '\nNessun errore');
 }
 document.querySelectorAll('#settings .seg').forEach(function (seg) {
@@ -3988,6 +3988,43 @@ function renderFrame(dt) {
   renderer.render(scene, camera);
 }
 // se il telefono non accetta lo shader della neve, si passa a quello standard (la neve si vede comunque)
+// Autotest del terreno: una foto di nascosto dall'alto sul rider. Se la neve non c'e' (si vede solo il colore
+// di fondo) o esce nera/non valida, si passa a una neve piu' semplice, poi a una ancora piu' semplice.
+var GROUND_FIX = 0;
+function groundSelfTest() {
+  var gl = renderer.getContext(), tcam = new THREE.PerspectiveCamera(50, VW / Math.max(1, VH), 0.1, 200);
+  var oldC = renderer.getClearColor(new THREE.Color()), oldA = renderer.getClearAlpha();
+  function shoot() {
+    tcam.position.set(P.x + 3, P.y + 9, P.z + 4); tcam.lookAt(P.x + 3, P.y, P.z - 3); tcam.updateMatrixWorld();
+    if (rig) { rig.group.visible = false; rig.board.visible = false; }
+    renderer.setRenderTarget(null); renderer.autoClear = false;
+    renderer.setClearColor(0xff00ff, 1); renderer.clear();
+    renderer.render(scene, tcam);
+    var w = gl.drawingBufferWidth, h = gl.drawingBufferHeight, px = new Uint8Array(4), bad = 0, n = 0;
+    for (var iy = 1; iy < 8; iy++) for (var ix = 1; ix < 8; ix++) {
+      gl.readPixels(Math.floor(w * ix / 8), Math.floor(h * iy / 8), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px); n++;
+      if ((px[0] > 200 && px[1] < 60 && px[2] > 200) || (px[0] + px[1] + px[2] < 30)) bad++;
+    }
+    renderer.setClearColor(oldC, oldA);
+    if (rig) { rig.group.visible = true; rig.board.visible = true; }
+    return bad / n;
+  }
+  try {
+    var f = shoot();
+    DIAG.ground = 'test ' + Math.round((1 - f) * 100) + '%';
+    if (f > 0.5) { GROUND_FIX = 1; scene.environment = null; hemi.intensity = Math.max(hemi.intensity, 0.9); f = shoot(); DIAG.ground += ' → senza riflessi ' + Math.round((1 - f) * 100) + '%'; }
+    if (f > 0.5) { GROUND_FIX = 2; useEmergencySnow(); f = shoot(); DIAG.ground += ' → neve semplice ' + Math.round((1 - f) * 100) + '%'; }
+    if (f > 0.5) { GROUND_FIX = 3; useEmergencySnow(true); f = shoot(); DIAG.ground += ' → neve base ' + Math.round((1 - f) * 100) + '%'; }
+  } catch (e) { DIAG.ground = 'errore test: ' + e.message; }
+}
+// neve di emergenza: materiale Lambert (o base) senza mappe, che qualsiasi telefono disegna
+function useEmergencySnow(basic) {
+  var m = basic ? new THREE.MeshBasicMaterial({ vertexColors: true, color: 0xe4ebf3 }) : new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xf2f6fb });
+  var mk = m.clone(); mk.polygonOffset = true; mk.polygonOffsetFactor = -1; mk.polygonOffsetUnits = -1;
+  var oldS = snowMat, oldK = snowMatKick;
+  scene.traverse(function (o) { if (o.isMesh && o.material === oldS) o.material = m; else if (o.isMesh && o.material === oldK) o.material = mk; });
+  snowMat = m; snowMatKick = mk;
+}
 function checkSnowShader() {
   var bad = false;
   [snowMat, snowMatKick].forEach(function (m) {
@@ -4010,6 +4047,7 @@ function warmup() {
   renderFrame(0);
   checkSnowShader();
   scene.remove(tmp);
+  groundSelfTest();
   tmp.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
 }
 // un esemplare di ogni oggetto del park, vicino alla camera, per compilare i materiali
@@ -4052,6 +4090,7 @@ window.__pr = {
   get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
+  groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
   scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes

@@ -79,7 +79,7 @@ function snowGrid(f, sEnd, wExt, lines) {
   var idx = [];
   for (r = 0; r < rows - 1; r++) for (c = 0; c < cols - 1; c++) {
     var a = r * cols + c, b = a + 1, c2 = a + cols, d2 = c2 + 1;
-    idx.push(a, c2, b, b, c2, d2);
+    idx.push(a, b, c2, b, d2, c2); // faccia verso l alto
   }
   var geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
