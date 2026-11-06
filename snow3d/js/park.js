@@ -18,6 +18,41 @@ var flagTex = [0xff5a36, 0x21b8ff, 0xf4c01e];
 var flagMats = flagTex.map(function (c) { return new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, side: THREE.DoubleSide }); });
 var KICK_BLUE = new THREE.Color(0x2a5fe0), WHITE = new THREE.Color(0xffffff);
 
+// unisce le mesh di un gruppo che usano lo stesso materiale: meno oggetti da disegnare
+function mergeByMaterial(group, keep) {
+  group.updateMatrixWorld(true);
+  var inv = new THREE.Matrix4().copy(group.matrixWorld).invert(), buckets = {}, out = new THREE.Group(), m4 = new THREE.Matrix4();
+  group.traverse(function (o) {
+    if (!o.isMesh || (keep && keep(o)) || Array.isArray(o.material)) return;
+    var k = o.material.uuid; (buckets[k] || (buckets[k] = { mat: o.material, list: [], shadow: o.castShadow })).list.push(o);
+  });
+  for (var k in buckets) {
+    var b = buckets[k], pos = [], nor = [], uv = [], idx = [], base = 0;
+    b.list.forEach(function (o) {
+      var g = o.geometry; m4.multiplyMatrices(inv, o.matrixWorld);
+      var nm = new THREE.Matrix3().getNormalMatrix(m4), p = g.attributes.position, n = g.attributes.normal, t = g.attributes.uv, v = new THREE.Vector3();
+      for (var i = 0; i < p.count; i++) {
+        v.fromBufferAttribute(p, i).applyMatrix4(m4); pos.push(v.x, v.y, v.z);
+        v.fromBufferAttribute(n, i).applyMatrix3(nm).normalize(); nor.push(v.x, v.y, v.z);
+        uv.push(t ? t.getX(i) : 0, t ? t.getY(i) : 0);
+      }
+      if (g.index) for (i = 0; i < g.index.count; i++) idx.push(g.index.getX(i) + base); else for (i = 0; i < p.count; i++) idx.push(i + base);
+      base += p.count;
+      o.parent.remove(o); g.dispose();
+    });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx); geo.computeBoundingSphere();
+    var mesh = new THREE.Mesh(geo, b.mat); mesh.castShadow = b.shadow; mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  // quello che resta (es. la neve del kicker) si sposta nel nuovo gruppo
+  group.children.slice().forEach(function (c) { out.add(c); });
+  return out;
+}
+
 // griglia di neve (kicker, rampe dei rail): y = terreno con quell'ostacolo
 function snowGrid(f, sEnd, wExt, lines) {
   var rows = Math.max(2, Math.ceil(sEnd / KS) + 1), ws = [];
@@ -79,7 +114,8 @@ function buildKick(f) {
     var sp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6), poleMat2); sp.position.set(cx(sd) + su, sy + 0.5, -sd); g.add(sp);
   }
   if (f.tag === 'big') g.add(buildArch(f.d0 - 22, f.u, 'BIG AIR'));
-  return g;
+  var snow = g.children[0];
+  return mergeByMaterial(g, function (o) { return o === snow; });
 }
 var poleMat2 = new THREE.MeshStandardMaterial({ color: 0xdfe5ec, roughness: 0.4, metalness: 0.3 });
 var signMats = {};
@@ -163,7 +199,7 @@ function buildRail(r) {
     var a0 = r.pts[0], a1 = r.pts[r.pts.length - 1];
     [a0, a1].forEach(function (p) { var cap = new THREE.Mesh(new THREE.SphereGeometry(0.046, 10, 8), mat); cap.position.set(p.x, p.y - 0.042, p.z); g.add(cap); });
   }
-  return g;
+  return mergeByMaterial(g);
 }
 
 // cancello di partenza

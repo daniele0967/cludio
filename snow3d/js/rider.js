@@ -375,6 +375,11 @@ function poseRider(dt, mode) {
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
   // ---- bacino
   var hipH = lerp(0.93, 0.58, PS.crouch);
+  // nei grab le ginocchia salgono al petto: il bacino scende verso la tavola
+  if (G0 && PS.grab > 0.01) {
+    hipH = lerp(hipH, G0.at === 'heel' ? 0.47 : G0.at === 'toe' ? 0.43 : 0.5, PS.grab);
+    PS.xOff = lerp(PS.xOff, (G0.at === 'nose' ? 0.14 : G0.at === 'tail' ? -0.14 : 0) * PS.grab, damp(10, dt));
+  }
   _v3.set(P.hx, 0, P.hz).normalize();
   _U.copy(_v2).applyAxisAngle(_v3, -PS.lean * 0.9).normalize();
   if (P.wobble > 0) { P.wobble = Math.max(0, P.wobble - dt * 1.6); _U.applyAxisAngle(_v1, Math.sin(rig.t * 22) * 0.12 * P.wobble); }
@@ -386,8 +391,8 @@ function poseRider(dt, mode) {
   B.Hips.quaternion.copy(_qc);
   B.Hips.updateMatrixWorld(true);
   // ---- busto: torsione verso la punta, piegato in avanti quando si accuccia
-  var bend = 0.12 + 0.55 * PS.crouch + (air && PS.grab > 0 && G0 && G0.at !== 'heel' ? 0.2 * PS.grab : 0);
-  var side = (G0 && PS.grab > 0.05 ? (G0.at === 'nose' ? 0.35 : G0.at === 'tail' ? -0.35 : 0) * PS.grab : 0);
+  var bend = 0.12 + 0.5 * PS.crouch + (air && PS.grab > 0 && G0 ? (G0.at === 'heel' ? 0.05 : 0.35) * PS.grab : 0);
+  var side = (G0 && PS.grab > 0.05 ? (G0.at === 'nose' ? 0.45 : G0.at === 'tail' ? -0.45 : 0) * PS.grab : 0);
   ['Spine', 'Spine1', 'Spine2'].forEach(function (n, i) {
     var f = (i + 1) / 3;
     _F.copy(_c).applyAxisAngle(_U, (0.3 + PS.twist * f) * ss);

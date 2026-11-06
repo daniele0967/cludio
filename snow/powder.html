@@ -1088,6 +1088,7 @@ function stepGround(dt, released) {
   var k = 0.0094 - 0.004 * P.tuck, skid = Math.abs(Math.sin(P.yawOff));
   var dec = 0.035 * G * n.y + k * sp * sp + P.brake * (5 + 0.25 * sp) + Math.abs(P.steer) * 0.5 + skid * (1.5 + 0.12 * sp);
   if (P.sketchT > 0) dec += 2.5;
+  if (sp > 19) dec += 0.55 * (sp - 19); // oltre i 70 km/h l'aria frena di piu'
   // sulla pista non ci si ferma mai del tutto
   var d = dist(), u = P.x - cx(d), onPiste = Math.abs(u) < halfW(d) + 1;
   var push = onPiste && sp < 7 && !P.brake && -P.vz > 0 ? 2.2 : 0;
@@ -1109,6 +1110,16 @@ function stepGround(dt, released) {
     }
     P.lipD = onRamp ? kf.dLip - d : null; P.kickTag = kf;
   } else P.lipD = null;
+  // prima dei rail si rallenta un po' (come si fa davvero): niente rail a 70 all'ora
+  var rl = railsNear(d + 12);
+  for (var ri = 0; ri < rl.length; ri++) {
+    var rr = rl[ri];
+    if (d > rr.d0 - 16 && d < rr.d0 && Math.abs(u - rr.pts[0].u) < 1.6) {
+      sp = speedOf();
+      if (sp > 12.5) { var fr = lerp(sp, 12.5, damp(3, dt)) / sp; P.vx *= fr; P.vy *= fr; P.vz *= fr; P.scrub = Math.min(1, (sp - 12.5) * 0.3); }
+      break;
+    }
+  }
   // movimento
   var px = P.x, pz = P.z;
   P.x += P.vx * dt; P.y += P.vy * dt; P.z += P.vz * dt;
@@ -1525,9 +1536,9 @@ var VW = 1, VH = 1;
 
 // ------------------------------------------------------------ luce: tre momenti della giornata
 var LIGHTS = {
-  mattina: { az: 38, el: 34, sun: 0xfff2df, sunI: 3.1, top: 0x1f63c6, hor: 0xcfe1f3, haze: 0xd6e5f3, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.55, exp: 0.86, env: 0.75, snowfall: 0.15, cloud: 0.55 },
-  pomeriggio: { az: 62, el: 22, sun: 0xffe2b8, sunI: 3.0, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe2dbd2, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.5, exp: 0.9, env: 0.7, snowfall: 0.1, cloud: 0.45 },
-  tramonto: { az: 74, el: 9, sun: 0xffb27a, sunI: 2.6, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.55, exp: 0.98, env: 0.65, snowfall: 0.08, cloud: 0.6 },
+  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.1, top: 0x1f63c6, hor: 0xcfe1f3, haze: 0xd6e5f3, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.55, exp: 0.86, env: 0.75, snowfall: 0.15, cloud: 0.55 },
+  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.0, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe2dbd2, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.5, exp: 0.9, env: 0.7, snowfall: 0.1, cloud: 0.45 },
+  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 2.6, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.55, exp: 0.98, env: 0.65, snowfall: 0.08, cloud: 0.6 },
   nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 0.9, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xd0d8e2, hemiS: 0xd8e2ee, hemiG: 0xeef1f5, hemiI: 1.4, exp: 0.95, env: 0.9, snowfall: 1, cloud: 0.95 }
 };
 var LT = null;
@@ -1955,6 +1966,41 @@ var flagTex = [0xff5a36, 0x21b8ff, 0xf4c01e];
 var flagMats = flagTex.map(function (c) { return new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, side: THREE.DoubleSide }); });
 var KICK_BLUE = new THREE.Color(0x2a5fe0), WHITE = new THREE.Color(0xffffff);
 
+// unisce le mesh di un gruppo che usano lo stesso materiale: meno oggetti da disegnare
+function mergeByMaterial(group, keep) {
+  group.updateMatrixWorld(true);
+  var inv = new THREE.Matrix4().copy(group.matrixWorld).invert(), buckets = {}, out = new THREE.Group(), m4 = new THREE.Matrix4();
+  group.traverse(function (o) {
+    if (!o.isMesh || (keep && keep(o)) || Array.isArray(o.material)) return;
+    var k = o.material.uuid; (buckets[k] || (buckets[k] = { mat: o.material, list: [], shadow: o.castShadow })).list.push(o);
+  });
+  for (var k in buckets) {
+    var b = buckets[k], pos = [], nor = [], uv = [], idx = [], base = 0;
+    b.list.forEach(function (o) {
+      var g = o.geometry; m4.multiplyMatrices(inv, o.matrixWorld);
+      var nm = new THREE.Matrix3().getNormalMatrix(m4), p = g.attributes.position, n = g.attributes.normal, t = g.attributes.uv, v = new THREE.Vector3();
+      for (var i = 0; i < p.count; i++) {
+        v.fromBufferAttribute(p, i).applyMatrix4(m4); pos.push(v.x, v.y, v.z);
+        v.fromBufferAttribute(n, i).applyMatrix3(nm).normalize(); nor.push(v.x, v.y, v.z);
+        uv.push(t ? t.getX(i) : 0, t ? t.getY(i) : 0);
+      }
+      if (g.index) for (i = 0; i < g.index.count; i++) idx.push(g.index.getX(i) + base); else for (i = 0; i < p.count; i++) idx.push(i + base);
+      base += p.count;
+      o.parent.remove(o); g.dispose();
+    });
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx); geo.computeBoundingSphere();
+    var mesh = new THREE.Mesh(geo, b.mat); mesh.castShadow = b.shadow; mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  // quello che resta (es. la neve del kicker) si sposta nel nuovo gruppo
+  group.children.slice().forEach(function (c) { out.add(c); });
+  return out;
+}
+
 // griglia di neve (kicker, rampe dei rail): y = terreno con quell'ostacolo
 function snowGrid(f, sEnd, wExt, lines) {
   var rows = Math.max(2, Math.ceil(sEnd / KS) + 1), ws = [];
@@ -2016,7 +2062,8 @@ function buildKick(f) {
     var sp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.0, 6), poleMat2); sp.position.set(cx(sd) + su, sy + 0.5, -sd); g.add(sp);
   }
   if (f.tag === 'big') g.add(buildArch(f.d0 - 22, f.u, 'BIG AIR'));
-  return g;
+  var snow = g.children[0];
+  return mergeByMaterial(g, function (o) { return o === snow; });
 }
 var poleMat2 = new THREE.MeshStandardMaterial({ color: 0xdfe5ec, roughness: 0.4, metalness: 0.3 });
 var signMats = {};
@@ -2100,7 +2147,7 @@ function buildRail(r) {
     var a0 = r.pts[0], a1 = r.pts[r.pts.length - 1];
     [a0, a1].forEach(function (p) { var cap = new THREE.Mesh(new THREE.SphereGeometry(0.046, 10, 8), mat); cap.position.set(p.x, p.y - 0.042, p.z); g.add(cap); });
   }
-  return g;
+  return mergeByMaterial(g);
 }
 
 // cancello di partenza
@@ -2690,6 +2737,11 @@ function poseRider(dt, mode) {
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
   // ---- bacino
   var hipH = lerp(0.93, 0.58, PS.crouch);
+  // nei grab le ginocchia salgono al petto: il bacino scende verso la tavola
+  if (G0 && PS.grab > 0.01) {
+    hipH = lerp(hipH, G0.at === 'heel' ? 0.47 : G0.at === 'toe' ? 0.43 : 0.5, PS.grab);
+    PS.xOff = lerp(PS.xOff, (G0.at === 'nose' ? 0.14 : G0.at === 'tail' ? -0.14 : 0) * PS.grab, damp(10, dt));
+  }
   _v3.set(P.hx, 0, P.hz).normalize();
   _U.copy(_v2).applyAxisAngle(_v3, -PS.lean * 0.9).normalize();
   if (P.wobble > 0) { P.wobble = Math.max(0, P.wobble - dt * 1.6); _U.applyAxisAngle(_v1, Math.sin(rig.t * 22) * 0.12 * P.wobble); }
@@ -2701,8 +2753,8 @@ function poseRider(dt, mode) {
   B.Hips.quaternion.copy(_qc);
   B.Hips.updateMatrixWorld(true);
   // ---- busto: torsione verso la punta, piegato in avanti quando si accuccia
-  var bend = 0.12 + 0.55 * PS.crouch + (air && PS.grab > 0 && G0 && G0.at !== 'heel' ? 0.2 * PS.grab : 0);
-  var side = (G0 && PS.grab > 0.05 ? (G0.at === 'nose' ? 0.35 : G0.at === 'tail' ? -0.35 : 0) * PS.grab : 0);
+  var bend = 0.12 + 0.5 * PS.crouch + (air && PS.grab > 0 && G0 ? (G0.at === 'heel' ? 0.05 : 0.35) * PS.grab : 0);
+  var side = (G0 && PS.grab > 0.05 ? (G0.at === 'nose' ? 0.45 : G0.at === 'tail' ? -0.45 : 0) * PS.grab : 0);
   ['Spine', 'Spine1', 'Spine2'].forEach(function (n, i) {
     var f = (i + 1) / 3;
     _F.copy(_c).applyAxisAngle(_U, (0.3 + PS.twist * f) * ss);
@@ -3663,7 +3715,7 @@ window.__pr = {
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
   scene: scene, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
-  cx: cx, profY: profY, railCapture: railCapture, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
+  cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
 };
 setTimeout(boot, 30);
 

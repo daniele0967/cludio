@@ -126,6 +126,7 @@ function stepGround(dt, released) {
   var k = 0.0094 - 0.004 * P.tuck, skid = Math.abs(Math.sin(P.yawOff));
   var dec = 0.035 * G * n.y + k * sp * sp + P.brake * (5 + 0.25 * sp) + Math.abs(P.steer) * 0.5 + skid * (1.5 + 0.12 * sp);
   if (P.sketchT > 0) dec += 2.5;
+  if (sp > 19) dec += 0.55 * (sp - 19); // oltre i 70 km/h l'aria frena di piu'
   // sulla pista non ci si ferma mai del tutto
   var d = dist(), u = P.x - cx(d), onPiste = Math.abs(u) < halfW(d) + 1;
   var push = onPiste && sp < 7 && !P.brake && -P.vz > 0 ? 2.2 : 0;
@@ -147,6 +148,16 @@ function stepGround(dt, released) {
     }
     P.lipD = onRamp ? kf.dLip - d : null; P.kickTag = kf;
   } else P.lipD = null;
+  // prima dei rail si rallenta un po' (come si fa davvero): niente rail a 70 all'ora
+  var rl = railsNear(d + 12);
+  for (var ri = 0; ri < rl.length; ri++) {
+    var rr = rl[ri];
+    if (d > rr.d0 - 16 && d < rr.d0 && Math.abs(u - rr.pts[0].u) < 1.6) {
+      sp = speedOf();
+      if (sp > 12.5) { var fr = lerp(sp, 12.5, damp(3, dt)) / sp; P.vx *= fr; P.vy *= fr; P.vz *= fr; P.scrub = Math.min(1, (sp - 12.5) * 0.3); }
+      break;
+    }
+  }
   // movimento
   var px = P.x, pz = P.z;
   P.x += P.vx * dt; P.y += P.vy * dt; P.z += P.vz * dt;

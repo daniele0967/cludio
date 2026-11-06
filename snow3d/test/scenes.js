@@ -61,6 +61,36 @@ const want = process.argv.slice(2);
     console.log(JSON.stringify(info));
     await page.evaluate(() => { clearInterval(window.__ap); window.__camFn = null; });
   }
+  if (want.includes('grabs')) {
+    for (const gi of [2, 0, 1, 5, 4, 6]) {
+      await page.evaluate((gi) => {
+        const pr = __pr, f = pr.W.feats.find(g => g.t === 'kick' && (g.size === 'L' || g.size === 'XL')) || pr.W.feats.find(g => g.t === 'kick' && g.size === 'M' && g.d0 > 20);
+        pr.place(f.d0 - 14, f.u, f.K.vd); window.__gi = gi;
+        clearInterval(window.__ap);
+        window.__ap = setInterval(() => { const P = pr.P, IN = pr.IN; if (P.mode === 'ground') { IN.jump = -P.z > f.d0 - 4 && -P.z < f.dLip; IN.sx = 0; IN.grab = -1; } else if (P.mode === 'air') { IN.jump = false; IN.grab = P.air.t > 0.2 ? gi : -1; IN.sx = 0; } }, 10);
+        window.__camFn = null;
+      }, gi);
+      await until(() => __pr.P.mode === 'air' && __pr.P.air.grab >= 0 && __pr.P.air.grabT > 0.5);
+      await page.evaluate(() => { const pr = __pr; window.__frozen = 1; window.__camFn = (cam, P) => { cam.position.set(P.x + 3.0, P.y + 1.4, P.z - 1.2); cam.lookAt(P.x, P.y + 0.55, P.z); cam.fov = 38; }; });
+      await page.waitForTimeout(300);
+      await shot('g_' + gi);
+      await page.evaluate(() => { window.__camFn = null; clearInterval(window.__ap); });
+    }
+  }
+  if (want.includes('slide')) {
+    await page.evaluate(() => {
+      const pr = __pr; pr.gen(6000); const r = pr.W.rails.find(x => x.kind === 'rail' && x.entry === 'direct');
+      window.__r = r; pr.place(r.d0 - 16, r.pts[0].u, 9);
+      window.__ap = setInterval(() => { const P = pr.P, IN = pr.IN; if (P.mode === 'rail') { if (P.rail.t > 0.15 && P.rail.t < 0.3) IN.sx = 1; else IN.sx = 0; return; } const u = P.x - pr.cx(-P.z), hd = Math.atan2(P.hx, -P.hz); IN.sx = P.mode === 'ground' ? Math.max(-1, Math.min(1, ((r.pts[0].u - u) * 0.15 - hd) * 3)) : 0; }, 10);
+    });
+    await until(() => __pr.P.mode === 'rail' && __pr.P.rail.t > 0.5, 90000);
+    await shot('s_slide');
+    await page.evaluate(() => { window.__camFn = (cam, P) => { cam.position.set(P.x + 2.6, P.y + 1.1, P.z + 1.4); cam.lookAt(P.x, P.y + 0.6, P.z); cam.fov = 40; }; });
+    await page.waitForTimeout(250);
+    await shot('s_slide_side');
+    await page.evaluate(() => { clearInterval(window.__ap); window.__camFn = null; });
+    console.log(await page.evaluate(() => JSON.stringify({ mode: __pr.P.mode, combo: __pr.CB().parts.map(p => p.name) })));
+  }
   if (!want.length || want.includes('crash')) {
     await page.evaluate(() => { const pr = __pr; pr.place(80, 0, 14); setTimeout(() => pr.crash('tilt'), 300); });
     await page.waitForTimeout(1600);
