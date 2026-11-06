@@ -340,6 +340,7 @@ function frame(now) {
   if (state === 'play') {
     readKeys();
     acc += dt; var n = 0;
+    if (window.__frozen) acc = 0; // solo per i test: rider fermo a meta' trick
     while (acc >= DT && n < 10) { stepPlayer(DT); acc -= DT; n++; }
     if (n >= 10) acc = 0;
     recFrame(dt);

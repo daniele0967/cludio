@@ -462,7 +462,7 @@ var GPOSE = {
   stale:   { hand: 'rear', knee: 0.4, pt: [-0.12,  -1,  0], hip: [0.01,  0.67,  0.02], bend: 0.03, side: 0.86, twist: 0.09, arch: 0, bpos: [-0.09,  0.31,  -0.01], brot: [-0.27,  -0.33,  0.3], free: [0.44,  0.61,  0.18], elbow: [-0.53,  0.03,  -0.69] },
   melon:   { hand: 'front', knee: 0.36, pt: [0.1,  -1,  0], hip: [-0.06,  0.68,  0.04], bend: 0.19, side: -0.82, twist: 0.2, arch: 0, bpos: [0,  0.33,  -0.18], brot: [-0.73,  -0.02,  -0.35], free: [-0.42,  0.58,  0], elbow: [0.5,  -0.02,  -0.5] },
   method:  { hand: 'front', kneeDown: 1, pt: [0.08, -1, 0], hip: [0, 0.76, 0.1], bend: 0.05, side: 0.05, twist: 0.35, arch: 0.45, bpos: [0, 0.6, -0.42], brot: [-1.15, 0.12, -0.25], free: [-0.25, 0.85, 0.1], elbow: [0.35, 0.1, -0.7] },
-  japan:   { hand: 'front', kneeDown: 2, knee: 0.6, pt: [0.1, 1, 0], hip: [0, 0.72, 0.06], bend: 0.45, side: 0.25, twist: 0.45, arch: 0.15, bpos: [0.0, 0.4, -0.2], brot: [0.7, -0.7, 0.25], free: [-0.15, 0.85, 0.05], elbow: [0.5, 0.2, 0.6] }
+  japan:   { hand: 'front', via: [0.7, -0.35, -0.15, 0.75], kneeDown: 2, knee: 0.6, pt: [0.1, 1, 0], hip: [0, 0.72, 0.06], bend: 0.45, side: 0.25, twist: 0.45, arch: 0.15, bpos: [0.0, 0.4, -0.2], brot: [0.7, -0.7, 0.25], free: [-0.15, 0.85, 0.05], elbow: [0.5, 0.2, 0.6] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali della tavola) dove va la mano
@@ -506,7 +506,7 @@ function poseRider(dt, mode) {
   var first = !PS.init;
   // ---- stato
   var gi = air && A && A.grab >= 0 ? A.grab : -1;
-  PS.grab = lerp(PS.grab, gi >= 0 ? 1 : 0, first ? 1 : damp(gi >= 0 ? 11 : 9, dt));
+  PS.grab = lerp(PS.grab, gi >= 0 ? 1 : 0, first ? 1 : damp(gi >= 0 ? (gi === 3 ? 7.5 : 11) : 9, dt)); // Japan: la mano fa un giro lungo, piu' calma
   if (gi >= 0 && gi !== PS.gi) PS.reach.set(0, 0, 0); // cambio di grab: la correzione del grab precedente non vale piu'
   if (gi >= 0) PS.gi = gi;
   if (PS.grab < 0.01) PS.gi = -1;
@@ -853,7 +853,12 @@ function poseArm(side, isFront, G0, GP, hLocal, ss) {
   var grabbing = GP && ((GP.hand === 'front') === isFront) && PS.grab > 0.01;
   if (grabbing) {
     grabPoint(G0, isFront, _t3).applyQuaternion(_bq).add(_bpos);
-    _hw.lerp(_t3, sm01(PS.grab));
+    var gs = sm01(GP.via ? clamp((PS.grab - GP.via[3]) / (0.985 - GP.via[3]), 0, 1) : PS.grab);
+    if (GP.via && gs < 0.999) {
+      // la mano non va dritta (attraverserebbe il corpo): passa da un punto fuori, es. davanti al ginocchio
+      _t2.copy(_hipP).addScaledVector(_rX, GP.via[0]).addScaledVector(_rY, GP.via[1]).addScaledVector(_rZ, GP.via[2]);
+      var u = 1 - gs; _hw.multiplyScalar(u * u).addScaledVector(_t2, 2 * u * gs).addScaledVector(_t3, gs * gs);
+    } else _hw.lerp(_t3, gs);
     D2W(GP.elbow[0], GP.elbow[1], GP.elbow[2], _pl);
   } else { pushOut(_hw); D2W(out * 0.55, -0.5, -0.15, _pl); }
   rig.B[side + 'Arm'].getWorldPosition(_shp);
