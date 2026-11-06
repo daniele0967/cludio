@@ -168,6 +168,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 #replayBar span { font: 700 12px var(--round); letter-spacing: .1em; color: var(--frost); }
 .diag summary { font: 700 12px var(--round); color: var(--frost); cursor: pointer; }
 .diag pre { white-space: pre-wrap; font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--frost); margin: 6px 0 0; max-height: 120px; overflow: auto; }
+#glwarn { position: fixed; left: 50%; top: calc(var(--st) + 60px); transform: translateX(-50%); width: min(90vw, 460px); padding: 9px 14px; border-radius: 12px; background: rgba(170, 20, 40, .9); color: #fff; font: 700 12.5px/1.35 var(--round); text-align: center; pointer-events: none; z-index: 40; }
 #toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); font: 700 13px var(--round); opacity: 0; transition: opacity .25s; pointer-events: none; }
 #toast.on { opacity: 1; }
 #rotate { position: fixed; left: 50%; top: calc(var(--st) + 12px); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: var(--glass); font: 700 12px var(--round); pointer-events: none; }
@@ -289,6 +290,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 </div>
 <div id="replayBar" class="hidden"><b>Replay</b><span>tocca per tornare a sciare</span></div>
 <div id="toast"></div>
+<div id="glwarn" class="hidden"></div>
 <div id="rotate" class="hidden">Gira il telefono in orizzontale per giocare meglio</div>
 
 <script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>

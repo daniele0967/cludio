@@ -168,6 +168,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 #replayBar span { font: 700 12px var(--round); letter-spacing: .1em; color: var(--frost); }
 .diag summary { font: 700 12px var(--round); color: var(--frost); cursor: pointer; }
 .diag pre { white-space: pre-wrap; font: 11px/1.4 ui-monospace, Menlo, monospace; color: var(--frost); margin: 6px 0 0; max-height: 120px; overflow: auto; }
+#glwarn { position: fixed; left: 50%; top: calc(var(--st) + 60px); transform: translateX(-50%); width: min(90vw, 460px); padding: 9px 14px; border-radius: 12px; background: rgba(170, 20, 40, .9); color: #fff; font: 700 12.5px/1.35 var(--round); text-align: center; pointer-events: none; z-index: 40; }
 #toast { position: fixed; left: 50%; bottom: calc(var(--sb) + 18px); transform: translateX(-50%); padding: 9px 14px; border-radius: 999px; background: var(--glass); border: 1px solid var(--edge); font: 700 13px var(--round); opacity: 0; transition: opacity .25s; pointer-events: none; }
 #toast.on { opacity: 1; }
 #rotate { position: fixed; left: 50%; top: calc(var(--st) + 12px); transform: translateX(-50%); padding: 8px 14px; border-radius: 999px; background: var(--glass); font: 700 12px var(--round); pointer-events: none; }
@@ -289,6 +290,7 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 </div>
 <div id="replayBar" class="hidden"><b>Replay</b><span>tocca per tornare a sciare</span></div>
 <div id="toast"></div>
+<div id="glwarn" class="hidden"></div>
 <div id="rotate" class="hidden">Gira il telefono in orizzontale per giocare meglio</div>
 
 <script>window.__INITIAL_SAVE__ = /*__SAVE__*/null;</script>
@@ -1569,6 +1571,9 @@ DIAG.gl = renderer.capabilities.isWebGL2 ? 2 : 1;
 renderer.debug.onShaderError = function (gl, program, vs, fs) {
   var log = (gl.getProgramInfoLog(program) || '') + ' ' + (gl.getShaderInfoLog(fs) || '') + ' ' + (gl.getShaderInfoLog(vs) || '');
   DIAG.errors.push(log.slice(0, 400));
+  // avviso visibile: cosi' si sa subito se il telefono rifiuta qualcosa
+  var b = document.getElementById('glwarn');
+  if (b) { b.textContent = 'Il telefono ha rifiutato un effetto grafico (' + DIAG.errors.length + '). Impostazioni → Diagnostica per i dettagli.'; b.classList.remove('hidden'); setTimeout(function () { b.classList.add('hidden'); }, 8000); }
 };
 window.addEventListener('error', function (e) { DIAG.errors.push(String(e.message).slice(0, 300)); });
 var scene = new THREE.Scene();
@@ -1672,9 +1677,11 @@ var snowNormal = (function () {
 
 // ------------------------------------------------------------ materiale neve (battitura, brillantini)
 var snowUniforms = { uCordFade: { value: 0 }, uSparkle: { value: 1 } }; // niente righe di pista battuta: e' tutta neve fresca
-var SNOW_SIMPLE = false; // diventa vero se il telefono rifiuta lo shader della neve: si usa quello standard
+// La neve usa il materiale standard di Three.js (lo stesso del rider): niente shader personalizzati sul terreno,
+// che su alcuni iPhone non venivano disegnati.
+var SNOW_SIMPLE = true;
 function makeSnowMat(opts) {
-  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.75, 0.75), envMapIntensity: 0.7 }, opts || {}));
+  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xf2f6fb, vertexColors: true, roughness: 0.82, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.9, 0.9), envMapIntensity: 0.7 }, opts || {}));
   m.customProgramCacheKey = function () { return SNOW_SIMPLE ? 'snow-simple' : 'snow-full-2'; };
   m.onBeforeCompile = function (sh) {
     if (SNOW_SIMPLE) return;

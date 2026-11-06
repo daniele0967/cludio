@@ -15,6 +15,9 @@ DIAG.gl = renderer.capabilities.isWebGL2 ? 2 : 1;
 renderer.debug.onShaderError = function (gl, program, vs, fs) {
   var log = (gl.getProgramInfoLog(program) || '') + ' ' + (gl.getShaderInfoLog(fs) || '') + ' ' + (gl.getShaderInfoLog(vs) || '');
   DIAG.errors.push(log.slice(0, 400));
+  // avviso visibile: cosi' si sa subito se il telefono rifiuta qualcosa
+  var b = document.getElementById('glwarn');
+  if (b) { b.textContent = 'Il telefono ha rifiutato un effetto grafico (' + DIAG.errors.length + '). Impostazioni → Diagnostica per i dettagli.'; b.classList.remove('hidden'); setTimeout(function () { b.classList.add('hidden'); }, 8000); }
 };
 window.addEventListener('error', function (e) { DIAG.errors.push(String(e.message).slice(0, 300)); });
 var scene = new THREE.Scene();
@@ -118,9 +121,11 @@ var snowNormal = (function () {
 
 // ------------------------------------------------------------ materiale neve (battitura, brillantini)
 var snowUniforms = { uCordFade: { value: 0 }, uSparkle: { value: 1 } }; // niente righe di pista battuta: e' tutta neve fresca
-var SNOW_SIMPLE = false; // diventa vero se il telefono rifiuta lo shader della neve: si usa quello standard
+// La neve usa il materiale standard di Three.js (lo stesso del rider): niente shader personalizzati sul terreno,
+// che su alcuni iPhone non venivano disegnati.
+var SNOW_SIMPLE = true;
 function makeSnowMat(opts) {
-  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xffffff, vertexColors: true, roughness: 0.84, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.75, 0.75), envMapIntensity: 0.7 }, opts || {}));
+  var m = new THREE.MeshStandardMaterial(Object.assign({ color: 0xf2f6fb, vertexColors: true, roughness: 0.82, metalness: 0, normalMap: snowNormal, normalScale: new THREE.Vector2(0.9, 0.9), envMapIntensity: 0.7 }, opts || {}));
   m.customProgramCacheKey = function () { return SNOW_SIMPLE ? 'snow-simple' : 'snow-full-2'; };
   m.onBeforeCompile = function (sh) {
     if (SNOW_SIMPLE) return;
