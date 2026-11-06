@@ -323,14 +323,14 @@ function curlFingers(amount, side) {
 //  pt    punto della tavola per la mano [x, lato +1 punte / -1 talloni, y]
 //  free  mano libera rispetto al bacino [x, y, z]   elbow gomito della mano che afferra [x, y, z]
 var GPOSE = {
-  nose:   { hand: 'front', pt: [0.68, 0, 0.02], hip: [0.08, 0.62, 0.0], bend: 0.7, side: 0.45, twist: 0.1, arch: 0, bpos: [-0.1, 0.14, 0.02], brot: [0, 0.45, 0], free: [-0.55, 0.32, -0.02], elbow: [0.3, 0.5, 0.35] },
-  tail:   { hand: 'rear', pt: [-0.68, 0, 0.02], hip: [-0.08, 0.62, 0.0], bend: 0.6, side: -0.45, twist: -0.1, arch: 0, bpos: [0.1, 0.14, 0.02], brot: [0, -0.45, 0], free: [0.55, 0.32, 0.05], elbow: [-0.3, 0.5, 0.35] },
-  indy:   { hand: 'rear', pt: [-0.05, 1, 0.0], hip: [0.0, 0.6, -0.02], bend: 0.75, side: -0.08, twist: -0.05, arch: 0, bpos: [0.0, 0.1, 0.05], brot: [0.12, 0, 0], free: [0.38, 0.58, 0.18], elbow: [-0.45, -0.3, 0.45] },
-  mute:   { hand: 'front', pt: [0.04, 1, 0.0], hip: [0.03, 0.58, -0.02], bend: 0.78, side: 0.1, twist: 0.05, arch: 0, bpos: [0.04, 0.08, 0.05], brot: [0.1, 0.2, 0.35], free: [-0.48, 0.38, -0.05], elbow: [0.45, -0.3, 0.45] },
-  stale:  { hand: 'rear', pt: [-0.12, -1, -0.01], hip: [-0.04, 0.58, 0.04], bend: 0.42, side: -0.2, twist: -0.15, arch: 0, bpos: [0.0, 0.16, -0.04], brot: [-0.15, 0.2, 0.3], free: [0.42, 0.5, 0.25], elbow: [-0.5, 0.05, -0.5] },
-  melon:  { hand: 'front', pt: [0.1, -1, -0.01], hip: [0.04, 0.58, 0.04], bend: 0.45, side: 0.2, twist: 0.1, arch: 0, bpos: [0.0, 0.16, -0.03], brot: [-0.15, -0.2, -0.35], free: [-0.42, 0.55, 0.0], elbow: [0.5, 0.05, -0.5] },
-  method: { hand: 'front', pt: [0.04, -1, -0.03], hip: [0.0, 0.7, 0.06], bend: 0.12, side: 0.1, twist: 0.15, arch: 0.42, bpos: [0.0, 0.36, -0.34], brot: [-1.1, 0.15, -0.25], free: [-0.3, 0.78, 0.05], elbow: [0.4, 0.2, -0.6] },
-  japan:  { hand: 'front', pt: [0.12, 1, -0.01], hip: [0.0, 0.66, 0.08], bend: 0.45, side: 0.15, twist: 0.1, arch: 0.22, bpos: [0.0, 0.28, -0.24], brot: [0.9, -0.35, 0.2], free: [-0.2, 0.82, 0.0], elbow: [0.5, 0.2, 0.2] }
+  nose:   { hand: 'front', pt: [0.76,  0,  0.03], hip: [0.08,  0.62,  0], bend: 0.7, side: 0.45, twist: 0.1, arch: 0, bpos: [-0.1,  0.14,  0.02], brot: [0,  0.7,  -0.01], free: [-0.55,  0.32,  -0.02], elbow: [0.3, 0.5, 0.35] },
+  tail:   { hand: 'rear', pt: [-0.76,  0,  0.03], hip: [-0.08,  0.51,  -0.01], bend: 0.6, side: -0.45, twist: -0.1, arch: 0, bpos: [0.14,  0.19,  0.03], brot: [0,  -0.51,  0.04], free: [0.55,  0.32,  0.05], elbow: [-0.3, 0.5, 0.35] },
+  indy:    { knee: 1.3, hand: 'rear', pt: [-0.08,  1,  -0.01], hip: [0.17,  0.62,  0.14], bend: 0.46, side: 0.77, twist: -0.5, arch: 0, bpos: [0,  0.12,  0.03], brot: [0.12,  0,  0], free: [0.4,  0.58,  0.18], elbow: [-0.45, -0.3, 0.45] },
+  mute:    { knee: 1.3, hand: 'front', pt: [0.1,  1,  0.03], hip: [-0.03,  0.58,  -0.06], bend: 0.55, side: 0.08, twist: -0.76, arch: 0, bpos: [0.01,  0.2,  0.15], brot: [0.16,  0.29,  0.38], free: [-0.48,  0.38,  -0.05], elbow: [0.45, -0.3, 0.45] },
+  stale:  { knee: 0.5, hand: 'rear', pt: [-0.2,  -1,  0.03], hip: [-0.01,  0.45,  0.02], bend: 0.42, side: 0.23, twist: -0.15, arch: 0, bpos: [-0.06,  0.33,  -0.01], brot: [-0.15,  0.2,  0.3], free: [0.42,  0.5,  0.25], elbow: [-0.5, 0.05, -0.5] },
+  melon:  { knee: 0.5, hand: 'front', pt: [0.18,  -1,  0.03], hip: [0,  0.5,  0.1], bend: 0.45, side: -0.2, twist: 0.12, arch: 0, bpos: [0,  0.37,  -0.03], brot: [-0.19,  -0.15,  -0.35], free: [-0.4,  0.55,  0], elbow: [0.5, 0.05, -0.5] },
+  method: { hand: 'front', pt: [0.12,  -1,  0.03], hip: [-0.01,  0.63,  0.06], bend: 0.12, side: 0.1, twist: 0.31, arch: 0.42, bpos: [0,  0.42,  -0.32], brot: [-1.1,  0.15,  -0.25], free: [-0.3,  0.78,  0.05], elbow: [0.4, 0.2, -0.6] },
+  japan:  { knee: 1.0, hand: 'front', pt: [0.12,  1,  0.03], hip: [-0.04,  0.6,  0.07], bend: 0.45, side: -0.16, twist: 0.11, arch: 0.22, bpos: [0.04,  0.37,  -0.24], brot: [0.9,  -0.35,  0.2], free: [-0.2,  0.82,  0], elbow: [0.5, 0.2, 0.2] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali della tavola) dove va la mano
@@ -341,8 +341,8 @@ function grabPoint(g, front, out) {
 
 // pose di base (senza grab): bacino, busto, mani [x, y, z] rispetto al bacino
 var BASE = {
-  ride:  { hip: [0.0, 0.9, -0.04], bend: 0.18, hF: [0.4, -0.08, 0.16], hR: [-0.36, -0.12, 0.06] },
-  crouch:{ hip: [0.0, 0.6, -0.08], bend: 0.7, hF: [0.36, -0.02, 0.26], hR: [-0.32, -0.06, 0.16] },
+  ride:  { hip: [0.0, 0.9, -0.04], bend: 0.18, hF: [0.46, -0.06, 0.22], hR: [-0.42, -0.1, 0.14] },
+  crouch:{ hip: [0.0, 0.6, -0.08], bend: 0.7, hF: [0.42, 0.0, 0.3], hR: [-0.38, -0.04, 0.2] },
   air:   { hip: [0.0, 0.76, -0.02], bend: 0.3, hF: [0.46, 0.12, 0.18], hR: [-0.44, 0.08, 0.08] },
   tuck:  { hip: [0.0, 0.5, 0.0], bend: 0.9, hF: [0.16, 0.0, 0.38], hR: [-0.16, -0.02, 0.36] },
   spin:  { hip: [0.0, 0.66, 0.0], bend: 0.45, hF: [0.12, 0.3, 0.26], hR: [-0.12, 0.28, 0.24] },
@@ -476,6 +476,7 @@ function poseRider(dt, mode) {
       poseLegs(front, back, ss, air);
     }
   }
+  bodyCapsules();
   poseArm(front, true, G0, GP, PS.hF, ss);
   poseArm(back, false, G0, GP, PS.hR, ss);
   curlFingers(0.35);
@@ -512,7 +513,9 @@ function poseLegs(front, back, ss, air) {
     var x = lg[1];
     _tg.copy(_bpos).addScaledVector(_bx, x).addScaledVector(_by, BOARD_T + 0.085);
     // ginocchia: avanti (lato petto), un po' verso la punta; nei grab e nella raccolta salgono
-    D2W(x > 0 ? 0.3 : 0.4, 0.25 + (air ? 0.5 * Math.max(PS.grab, PS.tuck) : 0), 1, _pl);
+    // ginocchia: avanti (lato petto); nei grab sulle punte si aprono verso punta e coda per far passare il braccio
+    var kn = PS.gi >= 0 ? (gpose(GRABS[PS.gi]).knee || 0) * PS.grab : 0;
+    D2W((x > 0 ? 0.3 : 0.4) + (x > 0 ? 1 : -1) * kn, 0.25 + (air ? 0.5 * Math.max(PS.grab, PS.tuck) : 0), 1 - kn * 0.4, _pl);
     solveLimb(lg[0] + 'UpLeg', lg[0] + 'Leg', lg[0] + 'Foot', _tg, L.thigh, L.shin, _pl, ZF);
     _F.copy(_bz).multiplyScalar(ss).applyAxisAngle(_by, lg[2] * DEG * ss);
     setFootQ(lg[0] + 'Foot', _F, _by);
@@ -521,16 +524,95 @@ function poseLegs(front, back, ss, air) {
 }
 // braccio: la mano va nel punto della posa (rispetto al bacino) o sulla tavola se e' quella del grab.
 // Il gomito punta sempre verso l'esterno, dalla sua parte: le braccia non si incrociano.
+// ---- il corpo come ostacolo: busto, bacino, testa e cosce sono capsule solide
+var _cs = [], _ca = new THREE.Vector3(), _cb = new THREE.Vector3(), _ce = new THREE.Vector3(), _cm = new THREE.Vector3(), _cu = new THREE.Vector3(), _cv2 = new THREE.Vector3();
+var _d1 = new THREE.Vector3(), _d2 = new THREE.Vector3(), _rr = new THREE.Vector3(), _cp1 = new THREE.Vector3(), _cp2 = new THREE.Vector3();
+function bodyCapsules() {
+  var B = rig.B; _cs.length = 0;
+  function cap(a, b, r, ext) {
+    var p = new THREE.Vector3(), q = new THREE.Vector3(); B[a].getWorldPosition(p); B[b].getWorldPosition(q);
+    if (ext) q.sub(p).multiplyScalar(1 + ext).add(p);
+    _cs.push([p, q, r]);
+  }
+  cap('Hips', 'Spine2', 0.17, 0.0);       // pancia e fianchi
+  cap('Spine1', 'Neck', 0.16, 0.0);       // petto
+  cap('Neck', 'Head', 0.13, 0.9);         // testa
+  cap('LeftUpLeg', 'LeftLeg', 0.11, 0); cap('RightUpLeg', 'RightLeg', 0.11, 0);   // cosce
+  cap('LeftLeg', 'LeftFoot', 0.08, 0); cap('RightLeg', 'RightFoot', 0.08, 0);     // stinchi
+}
+// distanza tra due segmenti
+function segDist(p1, q1, p2, q2) {
+  _d1.subVectors(q1, p1); _d2.subVectors(q2, p2); _rr.subVectors(p1, p2);
+  var a = _d1.dot(_d1), e = _d2.dot(_d2), f = _d2.dot(_rr), s, t;
+  if (a < 1e-9 && e < 1e-9) return _rr.length();
+  if (a < 1e-9) { s = 0; t = clamp(f / e, 0, 1); }
+  else {
+    var c = _d1.dot(_rr);
+    if (e < 1e-9) { t = 0; s = clamp(-c / a, 0, 1); }
+    else {
+      var bb = _d1.dot(_d2), den = a * e - bb * bb;
+      s = den !== 0 ? clamp((bb * f - c * e) / den, 0, 1) : 0;
+      t = (bb * s + f) / e;
+      if (t < 0) { t = 0; s = clamp(-c / a, 0, 1); } else if (t > 1) { t = 1; s = clamp((bb - c) / a, 0, 1); }
+    }
+  }
+  _cp1.copy(p1).addScaledVector(_d1, s); _cp2.copy(p2).addScaledVector(_d2, t);
+  return _cp1.distanceTo(_cp2);
+}
+// quanto un segmento del braccio entra nel corpo (0 = fuori); skipFrom salta il pezzo attaccato alla spalla
+function armPenetration(a, b, skipFrom) {
+  _ca.copy(a).lerp(b, skipFrom || 0);
+  var pen = 0;
+  for (var i = 0; i < _cs.length; i++) {
+    var c = _cs[i], d = segDist(_ca, b, c[0], c[1]), need = c[2] + 0.055;
+    if (d < need) pen += need - d;
+  }
+  return pen;
+}
+var CAP_NAMES = ['pancia', 'petto', 'testa', 'coscia S', 'coscia D', 'stinco S', 'stinco D'];
+function penBreakdown(a, b, skipFrom) {
+  _ca.copy(a).lerp(b, skipFrom || 0); var r = [];
+  for (var i = 0; i < _cs.length; i++) { var c = _cs[i], d = segDist(_ca, b, c[0], c[1]), need = c[2] + 0.055; if (d < need) r.push(CAP_NAMES[i] + ' ' + Math.round((need - d) * 100)); }
+  return r.join(', ');
+}
+// spinge fuori dal corpo un punto (es. la mano)
+function pushOut(p) {
+  for (var i = 0; i < _cs.length; i++) {
+    var c = _cs[i], need = c[2] + 0.06;
+    _cu.subVectors(c[1], c[0]); var L2 = _cu.lengthSq() || 1e-6, t = clamp(_cv2.subVectors(p, c[0]).dot(_cu) / L2, 0, 1);
+    _cm.copy(c[0]).addScaledVector(_cu, t); _cv2.subVectors(p, _cm); var d = _cv2.length();
+    if (d < need && d > 1e-5) p.addScaledVector(_cv2, (need - d) / d);
+  }
+}
+// braccio: si provano 16 posizioni del gomito attorno alla linea spalla-mano e si tiene quella che resta
+// fuori dal corpo (a parita', quella piu' vicina alla direzione voluta). Cosi' il braccio gira attorno al busto.
+var _ax = new THREE.Vector3(), _ub = new THREE.Vector3(), _vb = new THREE.Vector3(), _best = new THREE.Vector3(), _elb = new THREE.Vector3(), _shp = new THREE.Vector3();
 function poseArm(side, isFront, G0, GP, hLocal, ss) {
-  var L = rig.L, out = isFront ? 1 : -1;
+  var L = rig.L, out = isFront ? 1 : -1, l1 = L.upper, l2 = L.fore;
   _hw.copy(_hipP).addScaledVector(_rX, hLocal.x).addScaledVector(_rY, hLocal.y).addScaledVector(_rZ, hLocal.z);
   var grabbing = GP && ((GP.hand === 'front') === isFront) && PS.grab > 0.01;
   if (grabbing) {
     grabPoint(G0, isFront, _t3).applyQuaternion(_bq).add(_bpos);
     _hw.lerp(_t3, sm01(PS.grab));
     D2W(GP.elbow[0], GP.elbow[1], GP.elbow[2], _pl);
-  } else D2W(out * 0.55, -0.5, -0.15, _pl);
-  solveLimb(side + 'Arm', side + 'ForeArm', side + 'Hand', _hw, L.upper, L.fore, _pl, ZB);
+  } else { pushOut(_hw); D2W(out * 0.55, -0.5, -0.15, _pl); }
+  rig.B[side + 'Arm'].getWorldPosition(_shp);
+  var dv = _ax.subVectors(_hw, _shp), dist = clamp(dv.length(), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-3);
+  dv.normalize();
+  var x = (l1 * l1 - l2 * l2 + dist * dist) / (2 * dist), h = Math.sqrt(Math.max(0, l1 * l1 - x * x));
+  _ub.copy(_pl).addScaledVector(dv, -_pl.dot(dv)); if (_ub.lengthSq() < 1e-6) _ub.set(0, -1, 0).addScaledVector(dv, dv.y);
+  _ub.normalize(); _vb.crossVectors(dv, _ub);
+  var bestScore = -1e9;
+  _cb.copy(_shp).addScaledVector(dv, Math.min(dist, l1 + l2 - 1e-3));
+  for (var k = 0; k < 16; k++) {
+    var ang = k / 16 * TAU, ca = Math.cos(ang), sa = Math.sin(ang);
+    _elb.copy(_shp).addScaledVector(dv, x).addScaledVector(_ub, h * ca).addScaledVector(_vb, h * sa);
+    var pen = armPenetration(_shp, _elb, 0.35) + armPenetration(_elb, _cb, 0);
+    var score = -pen * 40 + ca;                // fuori dal corpo prima di tutto, poi vicino al gomito voluto
+    if (score > bestScore) { bestScore = score; _best.copy(_elb); }
+  }
+  _pl.copy(_best).sub(_cm.copy(_shp).add(_cb).multiplyScalar(0.5));
+  solveLimb(side + 'Arm', side + 'ForeArm', side + 'Hand', _hw, l1, l2, _pl, ZB);
 }
 
 // ------------------------------------------------------------ ragdoll (caduta)

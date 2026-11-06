@@ -29,7 +29,9 @@ const path = require('path');
           // la mano libera non deve stare sotto la tavola
           const other = G.hand === 'front' ? back : front, op = new T.Vector3(); rig.B[other + 'Hand'].getWorldPosition(op);
           const hips = new T.Vector3(); rig.B.Hips.getWorldPosition(hips);
-          out.push(`${st.padEnd(7)} ${sw ? 'switch' : 'avanti'} ${G.name.padEnd(10)} mano-punto ${(hp.distanceTo(gp) * 100).toFixed(0)} cm, mano libera ${op.y > hips.y ? 'sopra' : 'sotto'} il bacino`);
+          pr.bodyCapsules(); let pen = 0;
+          for (const sd of ['Left', 'Right']) { const a = new T.Vector3(), e = new T.Vector3(), h = new T.Vector3(); rig.B[sd + 'Arm'].getWorldPosition(a); rig.B[sd + 'ForeArm'].getWorldPosition(e); rig.B[sd + 'Hand'].getWorldPosition(h); pen += pr.armPenetration(a, e, 0.35) + pr.armPenetration(e, h, 0); }
+          out.push(`${st.padEnd(7)} ${sw ? 'switch' : 'avanti'} ${G.name.padEnd(10)} mano-punto ${(hp.distanceTo(gp) * 100).toFixed(0)} cm, braccia nel corpo ${(pen * 100).toFixed(0)} cm`);
         }
       }
     }
@@ -45,7 +47,9 @@ const path = require('path');
         const rig = pr.rig(), ss = st === 'goofy' ? -1 : 1, front = ss > 0 ? 'Left' : 'Right', back = ss > 0 ? 'Right' : 'Left';
         const fh = new T.Vector3(), bh = new T.Vector3(); rig.B[front + 'Hand'].getWorldPosition(fh); rig.B[back + 'Hand'].getWorldPosition(bh);
         const along = fh.clone().sub(bh).dot(nose);
-        out.push(`andatura ${st.padEnd(7)} sterzo ${steer}: mano davanti ${(along * 100).toFixed(0)} cm piu' verso la punta ${along > 0.3 ? 'OK' : 'INCROCIATE'}`);
+        pr.bodyCapsules(); let pen = 0;
+        for (const sd of ['Left', 'Right']) { const a = new T.Vector3(), e = new T.Vector3(), h = new T.Vector3(); rig.B[sd + 'Arm'].getWorldPosition(a); rig.B[sd + 'ForeArm'].getWorldPosition(e); rig.B[sd + 'Hand'].getWorldPosition(h); pen += pr.armPenetration(a, e, 0.35) + pr.armPenetration(e, h, 0); }
+        out.push(`andatura ${st.padEnd(7)} sterzo ${steer}: mani separate ${along > 0.3 ? 'OK' : 'INCROCIATE'}, braccia nel corpo ${(pen * 100).toFixed(0)} cm`);
       }
     }
     return out.join('\n');
