@@ -10,7 +10,7 @@ const GI = +(process.env.GI || 3), TAG = process.env.TAG || '';
   await page.goto('file://' + path.resolve(__dirname, '../../snow/powder.html'));
   await page.waitForFunction(() => window.__pr && window.__pr.state === 'menu', null, { timeout: 90000 });
   if (process.env.GOOFY) await page.evaluate(() => { __pr.save.set.stance = 'goofy'; });
-  await page.evaluate(() => { __pr.start('free'); window.__bot = 1; });
+  await page.evaluate((up) => { __pr.start('free'); window.__bot = 1; window.__UP = up; }, !!process.env.UP);
   await page.waitForTimeout(800);
   await page.evaluate((gi) => {
     const pr = __pr, f = pr.W.feats.find(g => g.t === 'kick' && (g.size === 'L' || g.size === 'XL')) || pr.W.feats.find(g => g.t === 'kick' && g.size === 'M' && g.d0 > 20);
@@ -18,7 +18,12 @@ const GI = +(process.env.GI || 3), TAG = process.env.TAG || '';
     window.__ap = setInterval(() => { const P = pr.P, IN = pr.IN; if (P.mode === 'ground') { IN.jump = -P.z > f.d0 - 4 && -P.z < f.dLip; IN.sx = 0; IN.grab = -1; } else if (P.mode === 'air') { IN.jump = false; IN.grab = P.air.t > 0.2 ? gi : -1; IN.sx = 0; } }, 10);
   }, GI);
   await page.waitForFunction(() => __pr.P.mode === 'air' && __pr.P.air.grab >= 0 && __pr.P.air.grabT > 0.75, null, { timeout: 180000, polling: 30 });
-  await page.evaluate(() => { window.__frozen = 1; });
+  await page.evaluate(() => { window.__frozen = 1;
+    if (window.__UP) { const pr = __pr, T = pr.THREE, P = pr.P, nose = new T.Vector3(P.hx, 0, P.hz).normalize(), up = new T.Vector3(0, 1, 0); P.q.setFromRotationMatrix(new T.Matrix4().makeBasis(nose, up, new T.Vector3().crossVectors(nose, up))); }
+    // mani colorate: davanti rossa, dietro gialla
+    const rig = __pr.rig(), ss = __pr.save.set.stance === 'goofy' ? -1 : 1, fr = ss > 0 ? 'Left' : 'Right', bk = ss > 0 ? 'Right' : 'Left';
+    for (const [b, c] of [[fr, 0xff2020], [bk, 0xffd000]]) { const m = new __pr.THREE.Mesh(new __pr.THREE.SphereGeometry(0.06), new __pr.THREE.MeshBasicMaterial({ color: c, depthTest: false })); m.renderOrder = 9; rig.B[b + 'Hand'].add(m); }
+  });
   // nel sistema della tavola: x punta, z lato punte (regular)
   const views = { toe: [0.4, 0.5, 4.0], heel: [-0.4, 0.5, -4.0], nose: [4.0, 0.5, 0.5], tail: [-4.0, 0.5, -0.5] };
   await page.evaluate(() => { const h = document.getElementById('hud') || document.querySelector('.hud'); document.querySelectorAll('body > div').forEach(d => { if (d.id !== 'game' && !d.querySelector('canvas')) d.style.visibility = 'hidden'; }); });

@@ -463,10 +463,10 @@ var GPOSE = {
   melon:   { hand: 'front', knee: 0.36, pt: [0.1,  -1,  0], hip: [-0.06,  0.68,  0.04], bend: 0.19, side: -0.82, twist: 0.2, arch: 0, bpos: [0,  0.33,  -0.18], brot: [-0.73,  -0.02,  -0.35], free: [-0.42,  0.58,  0], elbow: [0.5,  -0.02,  -0.5] },
   method:  { hand: 'front', kneeDown: 1, pt: [0.08, -1, 0], hip: [0, 0.76, 0.1], bend: 0.05, side: 0.05, twist: 0.35, arch: 0.45, bpos: [0, 0.6, -0.42], brot: [-1.15, 0.12, -0.25], free: [-0.25, 0.85, 0.1], elbow: [0.35, 0.1, -0.7] },
   // Japan (dalla foto di riferimento): tavola verticale con la punta in su sul fianco della mano davanti, deck verso
-  // il petto, un po' dietro le gambe; ginocchio davanti raccolto alto verso il petto, gamba dietro piegata in basso che
-  // incrocia; la mano davanti prende la lamina punte (ora sul lato esterno) appena sotto l'attacco davanti, all'altezza
-  // del bacino; braccio libero su e indietro.
-  japan:   { hand: 'front', via: [0.65, 0.1, -0.15, 0.2], knees: { f: [0.15, 0.75, 1], b: [-0.2, -0.7, 1] }, pt: [0.13, 1, 0], hip: [0, 0.72, 0.04], bend: 0.12, side: 0.15, twist: 0.2, arch: 0.1, bpos: [0.28, 0.6, -0.08], brot: [-1.4, 1.35, 0.1], free: [-0.5, 0.7, -0.3], elbow: [0.6, 0.15, -0.3] }
+  // il petto e girata di ~40 gradi verso il rider (la lamina punte sporge in avanti), sul fianco; ginocchio davanti raccolto verso il centro, all'altezza della pancia, gamba dietro piegata in basso che
+  // incrocia; la mano DAVANTI scende all'esterno del ginocchio (braccio visibile davanti al busto, non dietro) e prende la
+  // lamina punte (ora sul lato esterno) appena sotto l'attacco davanti, all'altezza del bacino; braccio libero su e indietro.
+  japan:   { hand: 'front', via: [0.6, 0.15, 0.4, 0.2], knees: { f: [-0.45, 0.15, 1], b: [-0.3, -0.6, 1] }, pt: [0.25, 1, 0], hip: [0, 0.72, 0.04], bend: 0.12, side: 0.15, twist: 0.2, arch: 0.1, bpos: [0.34, 0.46, 0.02], brot: [-1.4, 1.35, -0.64], free: [-0.5, 0.7, -0.3], elbow: [1, 0.1, 0.2] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali della tavola) dove va la mano
