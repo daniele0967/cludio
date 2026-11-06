@@ -62,7 +62,7 @@ const want = process.argv.slice(2);
     await page.evaluate(() => { clearInterval(window.__ap); window.__camFn = null; });
   }
   if (want.includes('grabs')) {
-    for (const gi of [2, 0, 1, 5, 4, 6]) {
+    for (const gi of [0, 1, 2, 3, 4, 5, 6, 7]) {
       await page.evaluate((gi) => {
         const pr = __pr, f = pr.W.feats.find(g => g.t === 'kick' && (g.size === 'L' || g.size === 'XL')) || pr.W.feats.find(g => g.t === 'kick' && g.size === 'M' && g.d0 > 20);
         pr.place(f.d0 - 14, f.u, f.K.vd); window.__gi = gi;
@@ -70,8 +70,8 @@ const want = process.argv.slice(2);
         window.__ap = setInterval(() => { const P = pr.P, IN = pr.IN; if (P.mode === 'ground') { IN.jump = -P.z > f.d0 - 4 && -P.z < f.dLip; IN.sx = 0; IN.grab = -1; } else if (P.mode === 'air') { IN.jump = false; IN.grab = P.air.t > 0.2 ? gi : -1; IN.sx = 0; } }, 10);
         window.__camFn = null;
       }, gi);
-      await until(() => __pr.P.mode === 'air' && __pr.P.air.grab >= 0 && __pr.P.air.grabT > 0.5);
-      await page.evaluate(() => { const pr = __pr; window.__frozen = 1; window.__camFn = (cam, P) => { cam.position.set(P.x + 3.0, P.y + 1.4, P.z - 1.2); cam.lookAt(P.x, P.y + 0.55, P.z); cam.fov = 38; }; });
+      await until(() => __pr.P.mode === 'air' && __pr.P.air.grab >= 0 && __pr.P.air.grabT > 0.75);
+      await page.evaluate(() => { const pr = __pr; window.__frozen = 1; window.__camFn = (cam, P) => { cam.position.set(P.x + 3.2, P.y + 1.0, P.z - 0.4); cam.lookAt(P.x, P.y + 0.45, P.z); cam.fov = 36; }; });
       await page.waitForTimeout(300);
       await shot('g_' + gi);
       await page.evaluate(() => { window.__camFn = null; clearInterval(window.__ap); });

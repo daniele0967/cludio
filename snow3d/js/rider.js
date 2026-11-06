@@ -317,15 +317,28 @@ var _hipP = new THREE.Vector3(), _tg = new THREE.Vector3(), _tg2 = new THREE.Vec
 var _bpos = new THREE.Vector3();
 var BOARD_T = 0.013;
 
-// punti della tavola (in coordinate della tavola) dove vanno le mani nei grab
+// Pose dei grab. Coordinate della tavola: x verso la punta, side +1 = lato punte dei piedi, -1 = lato talloni.
+//  pt:    dove va la mano [x, side, y] (y < 0 = sotto la soletta)
+//  board: come si muove la tavola rispetto al corpo: toeUp (rollio, lamina delle punte su), noseUp (beccheggio),
+//         yaw, up / back (verso i talloni) / along (verso la punta) in metri
+//  body:  hip (altezza del bacino), bend (busto in avanti), side (piega verso punta + / coda -), twist, arch (schiena inarcata)
+//  free:  dove va la mano libera rispetto alla spalla [avanti(petto), verso la punta, su]
+//  elbow: verso dove punta il gomito della mano che afferra [avanti, punta, su]
+var GPOSE = {
+  nose:    { pt: [0.7, 0, 0.02], board: { toeUp: 0, noseUp: 0.7, yaw: 0, up: 0.16, back: 0, along: -0.08 }, body: { hip: 0.52, bend: 0.8, side: 0.6, twist: 0.25, arch: 0 }, free: [-0.05, -0.6, 0.1], elbow: [0.3, 0.4, 0.6] },
+  mute:    { pt: [0.06, 1, 0.0], board: { toeUp: 0.35, noseUp: -0.4, yaw: -0.45, up: 0.12, back: -0.05, along: 0 }, body: { hip: 0.44, bend: 0.9, side: 0.25, twist: 0.05, arch: 0 }, free: [-0.3, -0.45, 0.35], elbow: [0.6, 0.2, 0.4] },
+  indy:    { pt: [-0.05, 1, 0.0], board: { toeUp: 0.5, noseUp: 0.2, yaw: 0.15, up: 0.16, back: -0.05, along: 0 }, body: { hip: 0.43, bend: 0.8, side: -0.1, twist: -0.15, arch: 0 }, free: [0.3, 0.35, 0.5], elbow: [0.6, -0.2, 0.4] },
+  japan:   { pt: [0.18, 1, -0.01], board: { toeUp: 1.05, noseUp: -0.35, yaw: 0.1, up: 0.3, back: 0.28, along: -0.05 }, body: { hip: 0.5, bend: 0.55, side: 0.2, twist: 0.25, arch: 0.25 }, free: [0, 0, 0.72], elbow: [0.5, 0.5, 0.3] },
+  tail:    { pt: [-0.7, 0, 0.02], board: { toeUp: 0, noseUp: -0.6, yaw: 0, up: 0.14, back: 0, along: 0.08 }, body: { hip: 0.52, bend: 0.7, side: -0.6, twist: -0.3, arch: 0 }, free: [0.1, 0.6, 0.12], elbow: [0.2, -0.4, 0.6] },
+  stale:   { pt: [-0.14, -1, -0.01], board: { toeUp: -0.55, noseUp: 0.35, yaw: 0.25, up: 0.22, back: 0.2, along: 0.05 }, body: { hip: 0.52, bend: 0.3, side: -0.35, twist: -0.45, arch: 0.15 }, free: [0.5, 0.3, 0.05], elbow: [-0.6, -0.4, 0.2] },
+  melon:   { pt: [0.08, -1, -0.01], board: { toeUp: -0.6, noseUp: -0.3, yaw: -0.35, up: 0.18, back: 0.12, along: 0 }, body: { hip: 0.47, bend: 0.45, side: 0.35, twist: 0.35, arch: 0 }, free: [-0.2, -0.3, 0.6], elbow: [-0.6, 0.3, 0.2] },
+  method:  { pt: [0.02, -1, -0.03], board: { toeUp: -1.35, noseUp: 0.2, yaw: -0.15, up: 0.42, back: 0.4, along: -0.02 }, body: { hip: 0.56, bend: 0.25, side: 0.15, twist: 0.45, arch: 0.45 }, free: [-0.15, -0.45, 0.65], elbow: [-0.5, 0.2, 0.5] }
+};
+function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
+// punto della tavola (coordinate locali) dove va la mano
 function grabPoint(g, front, out) {
-  var ss = stanceSign();
-  switch (g.at) {
-    case 'nose': return out.set(0.62, 0.03, 0);
-    case 'tail': return out.set(-0.62, 0.03, 0);
-    case 'toe': return out.set(front ? 0.08 : -0.08, 0.02, 0.13 * ss);
-    default: return out.set(front ? 0.1 : -0.1, 0.02, -0.13 * ss);
-  }
+  var ss = stanceSign(), pp = gpose(g).pt;
+  return out.set(pp[0], pp[2], pp[1] * 0.135 * ss);
 }
 
 function poseRider(dt, mode) {
@@ -343,9 +356,11 @@ function poseRider(dt, mode) {
   var G0 = PS.gi >= 0 ? GRABS[PS.gi] : null, tweak = G0 && A ? clamp((A.grabT - 0.25) / 0.6, 0, 1) * PS.grab : 0;
   _qa.copy(P.q);
   _qb.setFromAxisAngle(AX, PS.roll); _qa.multiply(_qb);
-  if (G0 && PS.grab > 0.01) {
-    var tw = G0.tweak === 'method' ? [0.15 * ss, 0, -0.55] : G0.tweak === 'japan' ? [0, 0, 0.45] : G0.at === 'nose' ? [0, 0.25, 0] : G0.at === 'tail' ? [0, -0.25, 0] : G0.at === 'toe' ? [0, 0, -0.3] : [0, 0, 0.3];
-    _qb.setFromEuler(_ex.set(tw[2] * ss * tweak, 0, tw[1] * PS.grab + tw[0] * tweak)); _qa.multiply(_qb);
+  // la forma del grab arriva subito al 60%, il resto con il tweak (tenendolo)
+  var gk = G0 ? PS.grab * (0.6 + 0.4 * tweak) : 0, GP = G0 ? gpose(G0) : null;
+  if (GP && gk > 0.01) {
+    var bd = GP.board;
+    _qb.setFromEuler(_ex.set(-ss * bd.toeUp * gk, bd.yaw * ss * gk, bd.noseUp * gk, 'XZY')); _qa.multiply(_qb);
   }
   var press = P.butter ? P.butter.press : 0;
   PS.press = lerp(PS.press, press, damp(10, dt));
@@ -354,7 +369,11 @@ function poseRider(dt, mode) {
   rig.board.quaternion.copy(_bq);
   _bpos.set(P.x, P.y, P.z);
   if (Math.abs(PS.press) > 0.01) { _v1.set(PS.press > 0 ? 0.7 : -0.7, 0, 0).applyQuaternion(_bq); _v2.set(PS.press > 0 ? 0.7 : -0.7, 0, 0).applyQuaternion(P.q); _bpos.add(_v2).sub(_v1); }
-  if (rail && P.rail) { _bpos.y += P.rail.offY * 0; }
+  if (GP && gk > 0.01) {
+    // la tavola si sposta: su verso il corpo, dietro (lato talloni) nei grab tirati alle spalle
+    _v1.set(0, 1, 0).applyQuaternion(P.q); _v2.set(0, 0, ss).applyQuaternion(P.q); _v3.set(1, 0, 0).applyQuaternion(P.q);
+    _bpos.addScaledVector(_v1, GP.board.up * gk).addScaledVector(_v2, -GP.board.back * gk).addScaledVector(_v3, GP.board.along * gk);
+  }
   rig.board.position.copy(_bpos);
   rig.board.updateMatrixWorld(true);
   _bx.set(1, 0, 0).applyQuaternion(_bq); _by.set(0, 1, 0).applyQuaternion(_bq); _bz.set(0, 0, 1).applyQuaternion(_bq);
@@ -368,8 +387,15 @@ function poseRider(dt, mode) {
   if (P.landT < 0.3 && P.mode === 'ground') crouch = Math.max(crouch, (1 - P.landT / 0.3) * (P.quality === 'sketchy' ? 1 : 0.75));
   PS.crouch = lerp(PS.crouch, crouch, damp(12, dt));
   PS.lean = lerp(PS.lean, clamp(lean, -0.9, 0.9), damp(9, dt));
-  var spinW = air && A ? A.ws : 0;
-  var twist = 0.38 - (P.charge > 0 ? P.prewind * 0.9 * P.charge : 0) + clamp(-spinW * 0.07, -0.6, 0.6) * (ss);
+  var spinW = air && A ? A.ws : 0, flipW = air && A ? A.wf : 0;
+  // dinamica in aria: raccolta nei flip, apertura del corpo poco prima di atterrare
+  var tuckT = air ? clamp(Math.abs(flipW) / 4.5, 0, 1) * 0.9 + clamp(Math.abs(spinW) / 9, 0, 1) * 0.35 : 0;
+  var openT = air && A && A.tLand < 0.4 && A.grab < 0 ? 1 - A.tLand / 0.4 : 0;
+  PS.tuck = lerp(PS.tuck || 0, Math.max(0, tuckT - openT), damp(tuckT > (PS.tuck || 0) ? 9 : 5, dt));
+  PS.open = lerp(PS.open || 0, openT, damp(10, dt));
+  if (air) crouch = Math.max(crouch, PS.tuck * 0.9);
+  if (air && PS.open > 0.05 && PS.grab < 0.1) crouch = lerp(crouch, 0.15, PS.open * 0.7);
+  var twist = 0.38 - (P.charge > 0 ? P.prewind * 0.9 * P.charge : 0) + clamp(-spinW * 0.09, -0.75, 0.75) * (ss);
   if (P.mode === 'ground' && P.brake) twist += 0.3;
   PS.twist = lerp(PS.twist, twist, damp(8, dt));
   PS.xOff = lerp(PS.xOff, press * 0.13 + (rail && P.rail ? P.rail.press * 0.1 : 0), damp(8, dt));
@@ -378,9 +404,9 @@ function poseRider(dt, mode) {
   PS.compV += (-70 * PS.comp - 11 * PS.compV) * dt; PS.comp = clamp(PS.comp + PS.compV * dt, -0.32, 0.08);
   var hipH = lerp(0.93, 0.58, PS.crouch) + PS.comp;
   // nei grab le ginocchia salgono al petto: il bacino scende verso la tavola
-  if (G0 && PS.grab > 0.01) {
-    hipH = lerp(hipH, G0.at === 'heel' ? 0.47 : G0.at === 'toe' ? 0.43 : 0.5, PS.grab);
-    PS.xOff = lerp(PS.xOff, (G0.at === 'nose' ? 0.14 : G0.at === 'tail' ? -0.14 : 0) * PS.grab, damp(10, dt));
+  if (GP && PS.grab > 0.01) {
+    hipH = lerp(hipH, GP.body.hip, PS.grab);
+    PS.xOff = lerp(PS.xOff, GP.body.side * 0.22 * PS.grab, damp(10, dt));
   }
   _v3.set(P.hx, 0, P.hz).normalize();
   _U.copy(_v2).applyAxisAngle(_v3, -PS.lean * 0.9).normalize();
@@ -393,11 +419,15 @@ function poseRider(dt, mode) {
   B.Hips.quaternion.copy(_qc);
   B.Hips.updateMatrixWorld(true);
   // ---- busto: torsione verso la punta, piegato in avanti quando si accuccia
-  var bend = 0.12 + 0.5 * PS.crouch + (air && PS.grab > 0 && G0 ? (G0.at === 'heel' ? 0.05 : 0.35) * PS.grab : 0);
-  var side = (G0 && PS.grab > 0.05 ? (G0.at === 'nose' ? 0.45 : G0.at === 'tail' ? -0.45 : 0) * PS.grab : 0);
+  var bend = 0.12 + 0.5 * PS.crouch + PS.tuck * 0.35, side = 0, gtw = 0, arch = 0;
+  if (GP && PS.grab > 0.01) {
+    bend = lerp(bend, GP.body.bend, PS.grab); side = GP.body.side * PS.grab; gtw = GP.body.twist * PS.grab; arch = GP.body.arch * gk;
+  }
+  if (PS.open > 0.05) bend = lerp(bend, 0.15, PS.open * 0.6);
   ['Spine', 'Spine1', 'Spine2'].forEach(function (n, i) {
     var f = (i + 1) / 3;
-    _F.copy(_c).applyAxisAngle(_U, (0.3 + PS.twist * f) * ss);
+    if (arch && i === 2) bend -= arch * 0.6;
+    _F.copy(_c).applyAxisAngle(_U, (0.3 + (PS.twist + gtw) * f) * ss);
     _v3.crossVectors(_U, _F).normalize(); // sinistra del busto
     _v4.copy(_U).applyAxisAngle(_v3, bend * f * 0.9).applyAxisAngle(_F, side * f * ss);
     _v5.copy(_F).applyAxisAngle(_v3, bend * f * 0.9);
@@ -409,6 +439,7 @@ function poseRider(dt, mode) {
   if (_tg.lengthSq() < 0.01) _tg.copy(_v1);
   _tg.normalize();
   if (air && A && A.landX !== undefined) { _tg2.set(A.landX - P.x, (A.landY - P.y) * 0.6, A.landZ - P.z).normalize(); _tg.lerp(_tg2, 0.5).normalize(); }
+  if (air && Math.abs(spinW) > 2) _tg.applyAxisAngle(AY, clamp(spinW * 0.12, -0.9, 0.9));
   PS.look.lerp(_tg, damp(6, dt)).normalize();
   B.Spine2.getWorldQuaternion(_qa);
   _v3.set(0, 1, 0).applyQuaternion(_qa); _v4.set(0, 0, 1).applyQuaternion(_qa);
@@ -425,7 +456,7 @@ function poseRider(dt, mode) {
   [[front, 0.255, 15], [back, -0.255, -9]].forEach(function (lg) {
     var x = lg[1], tgt = _tg.copy(_bpos).addScaledVector(_bx, x).addScaledVector(_by, BOARD_T + 0.085);
     _pl.copy(_c).addScaledVector(_bx, x > 0 ? 0.25 : 0.45).addScaledVector(_by, 0.25);
-    if (air && PS.grab > 0.05) _pl.addScaledVector(_by, 0.6 * PS.grab);
+    if (air && (PS.grab > 0.05 || PS.tuck > 0.05)) _pl.addScaledVector(_by, 0.6 * Math.max(PS.grab, PS.tuck));
     solveLimb(lg[0] + 'UpLeg', lg[0] + 'Leg', lg[0] + 'Foot', tgt, L.thigh, L.shin, _pl, ZF);
     _F.copy(_bz).multiplyScalar(ss).applyAxisAngle(_by, lg[2] * DEG * ss * (x > 0 ? 1 : 1));
     setFootQ(lg[0] + 'Foot', _F, _by);
@@ -440,28 +471,42 @@ function poseRider(dt, mode) {
   if (G0 && PS.grab > 0.2) curlFingers(1.25 * PS.grab, (G0.hand === 'front') === (front === 'Left') ? 'L' : 'R');
   PS.init = true;
 }
-var _hand = { L: new THREE.Vector3(), R: new THREE.Vector3() }, _handInit = false;
+var _hand = { L: new THREE.Vector3(), R: new THREE.Vector3() }, _handV = { L: new THREE.Vector3(), R: new THREE.Vector3() }, _handInit = false;
+var _hd = new THREE.Vector3();
 function armPose(side, isFront, G0, gi, air, rail, t, dt) {
   var B = rig.B, L = rig.L, ss = stanceSign(), S = side[0];
   B[side + 'Arm'].getWorldPosition(_sh);
-  var dirX = isFront ? 1 : -1, tgt = _tg2;
+  var dirX = isFront ? 1 : -1, tgt = _tg2, GP = G0 ? gpose(G0) : null, grabbing = G0 && PS.grab > 0.02 && ((G0.hand === 'front') === isFront);
+  var sw = air && P.air ? P.air.ws : 0;
   // braccia in equilibrio: avanti verso la punta e dietro verso la coda
-  var sp = speedOf();
   var lift = air ? 0.15 : rail ? 0.25 : 0.02 + Math.abs(PS.lean) * 0.25;
   tgt.copy(_sh).addScaledVector(_bx, dirX * (isFront ? 0.42 : 0.3)).addScaledVector(_c, isFront ? 0.22 : 0.12).addScaledVector(_U, -0.42 + lift);
-  if (air && P.air && Math.abs(P.air.ws) > 3) tgt.copy(_sh).addScaledVector(_c, 0.32).addScaledVector(_U, -0.3).addScaledVector(_bx, dirX * 0.08);
+  // spin veloce: braccia chiuse sul petto (si gira piu' veloci); flip: abbracciano le ginocchia
+  if (air && Math.abs(sw) > 3) tgt.lerp(_v4.copy(_sh).addScaledVector(_c, 0.3).addScaledVector(_U, -0.28).addScaledVector(_bx, -dirX * 0.05), clamp((Math.abs(sw) - 3) / 4, 0, 1));
+  if (air && PS.tuck > 0.1) tgt.lerp(_v4.copy(_sh).addScaledVector(_c, 0.42).addScaledVector(_U, -0.5).addScaledVector(_bx, dirX * 0.05), PS.tuck * 0.8);
+  // prima di atterrare: braccia larghe per l'equilibrio
+  if (air && PS.open > 0.05) tgt.lerp(_v4.copy(_sh).addScaledVector(_bx, dirX * 0.55).addScaledVector(_c, 0.15).addScaledVector(_U, -0.1), PS.open);
   if (P.mode === 'ground' && !P.butter && P.brake) tgt.addScaledVector(_U, 0.15);
-  // la mano che fa il grab va sul punto della tavola
-  if (G0 && PS.grab > 0.02 && ((G0.hand === 'front') === isFront)) {
+  if (grabbing) {
     var gp = grabPoint(G0, isFront, _v3).applyQuaternion(rig.board.quaternion).add(rig.board.position);
     tgt.lerp(gp, PS.grab);
-  } else if (G0 && PS.grab > 0.02) {
-    // l'altra mano si apre per lo stile
-    tgt.lerp(_v4.copy(_sh).addScaledVector(_U, 0.25).addScaledVector(_bx, dirX * 0.45).addScaledVector(_c, -0.1), PS.grab);
+  } else if (GP && PS.grab > 0.02) {
+    // la mano libera: ogni grab ha la sua
+    var f = GP.free;
+    tgt.lerp(_v4.copy(_sh).addScaledVector(_c, f[0]).addScaledVector(_bx, f[1]).addScaledVector(_U, f[2]), PS.grab);
   }
-  var h = _hand[S];
-  if (!_handInit || !PS.init) h.copy(tgt); else h.lerp(tgt, damp(G0 && PS.grab > 0.5 ? 30 : 12, dt));
-  _pl.copy(_U).multiplyScalar(-0.6).addScaledVector(_c, -0.6).addScaledVector(_bx, -dirX * 0.2);
+  // molla sulle mani: seguono con un filo di ritardo e rimbalzano (si sente la forza della rotazione)
+  var h = _hand[S], hv = _handV[S];
+  if (!_handInit || !PS.init) { h.copy(tgt); hv.set(0, 0, 0); }
+  else if (grabbing && PS.grab > 0.6) { h.lerp(tgt, damp(35, dt)); hv.set(0, 0, 0); }
+  else {
+    var kS = air ? 140 : 220, cS = air ? 15 : 24;
+    _hd.copy(tgt).sub(h).multiplyScalar(kS).addScaledVector(hv, -cS);
+    hv.addScaledVector(_hd, Math.min(dt, 0.033)); h.addScaledVector(hv, Math.min(dt, 0.033));
+    if (h.distanceTo(tgt) > 0.6) h.lerp(tgt, 0.5);
+  }
+  if (grabbing && GP) _pl.copy(_c).multiplyScalar(GP.elbow[0]).addScaledVector(_bx, GP.elbow[1] * dirX).addScaledVector(_U, GP.elbow[2]);
+  else _pl.copy(_U).multiplyScalar(-0.6).addScaledVector(_c, -0.6).addScaledVector(_bx, -dirX * 0.2);
   solveLimb(side + 'Arm', side + 'ForeArm', side + 'Hand', h, L.upper, L.fore, _pl, ZB);
   if (S === 'R') _handInit = true;
 }
