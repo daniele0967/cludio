@@ -18,7 +18,8 @@ const path = require('path');
       pr.bodyCapsules(); const r = [];
       for (const sd of ['Left', 'Right']) { const a = new T.Vector3(), e = new T.Vector3(), h = new T.Vector3(); rig.B[sd + 'Arm'].getWorldPosition(a); rig.B[sd + 'ForeArm'].getWorldPosition(e); rig.B[sd + 'Hand'].getWorldPosition(h);
         const u = pr.penBreakdown(a, e, 0.35), f = pr.penBreakdown(e, h, 0); if (u) r.push(sd + ' braccio: ' + u); if (f) r.push(sd + ' avambraccio: ' + f); }
-      out.push(pr.GRABS[gi].name + ' (' + pr.GRABS[gi].hand + ') -> ' + (r.join(' | ') || 'pulito'));
+      const hp = new T.Vector3(); rig.B.Hips.getWorldPosition(hp); const by = new T.Vector3(0, 1, 0).applyQuaternion(rig.board.quaternion); const clr = hp.clone().sub(rig.board.position).dot(by);
+      out.push(pr.GRABS[gi].name + ' tavola nel corpo ' + Math.round(pr.boardPen() * 100) + ' cm, bacino sopra la tavola ' + Math.round(clr * 100) + ' cm -> ' + (r.join(' | ') || 'braccia pulite'));
     }
     return out.join('\n');
   }));

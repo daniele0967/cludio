@@ -239,6 +239,20 @@ function makeBoard(bd, mats) {
     inner.add(bg);
   });
   g.add(inner); g.userData.inner = inner;
+  // flessione: la tavola si piega come una tavola vera (carico sul tail per l'ollie, press, atterraggi)
+  var flexGeos = [topGeo, botGeo, edgeGeo].map(function (geo) { return { geo: geo, base: geo.attributes.position.array.slice() }; });
+  g.userData.flex = function (bow, tip) {
+    // bow > 0: centro giu' e punte su (atterraggio, press); tip: piega in piu' sulla punta (+) o sulla coda (-)
+    flexGeos.forEach(function (f) {
+      var pa = f.geo.attributes.position.array, b = f.base;
+      for (var i = 0; i < pa.length; i += 3) {
+        var x = b[i] / Lh;
+        pa[i + 1] = b[i + 1] + bow * 0.07 * x * x + (tip > 0 ? Math.max(0, x) : Math.max(0, -x)) * Math.abs(tip) * 0.12 * Math.abs(x);
+      }
+      f.geo.attributes.position.needsUpdate = true;
+    });
+    if (Math.abs(bow) > 0.02 || Math.abs(tip) > 0.02) { flexGeos.forEach(function (f) { f.geo.computeVertexNormals(); }); }
+  };
   return g;
 }
 
@@ -322,15 +336,17 @@ function curlFingers(amount, side) {
 //  bpos  spostamento della tavola [x, y, z]      brot  [toeUp (lamina punte su), noseUp, shifty (+ frontside)]
 //  pt    punto della tavola per la mano [x, lato +1 punte / -1 talloni, y]
 //  free  mano libera rispetto al bacino [x, y, z]   elbow gomito della mano che afferra [x, y, z]
+// Principio delle guide: non si scende verso la tavola, si porta la tavola su piegando le ginocchia;
+// bacino alto, schiena il piu' possibile dritta. hip[1] = altezza del bacino sopra la tavola a riposo.
 var GPOSE = {
-  nose:   { hand: 'front', pt: [0.76,  0,  0.03], hip: [0.08,  0.62,  0], bend: 0.7, side: 0.45, twist: 0.1, arch: 0, bpos: [-0.1,  0.14,  0.02], brot: [0,  0.7,  -0.01], free: [-0.55,  0.32,  -0.02], elbow: [0.3, 0.5, 0.35] },
-  tail:   { hand: 'rear', pt: [-0.76,  0,  0.03], hip: [-0.08,  0.51,  -0.01], bend: 0.6, side: -0.45, twist: -0.1, arch: 0, bpos: [0.14,  0.19,  0.03], brot: [0,  -0.51,  0.04], free: [0.55,  0.32,  0.05], elbow: [-0.3, 0.5, 0.35] },
-  indy:    { knee: 1.3, hand: 'rear', pt: [-0.08,  1,  -0.01], hip: [0.17,  0.62,  0.14], bend: 0.46, side: 0.77, twist: -0.5, arch: 0, bpos: [0,  0.12,  0.03], brot: [0.12,  0,  0], free: [0.4,  0.58,  0.18], elbow: [-0.45, -0.3, 0.45] },
-  mute:    { knee: 1.3, hand: 'front', pt: [0.1,  1,  0.03], hip: [-0.03,  0.58,  -0.06], bend: 0.55, side: 0.08, twist: -0.76, arch: 0, bpos: [0.01,  0.2,  0.15], brot: [0.16,  0.29,  0.38], free: [-0.48,  0.38,  -0.05], elbow: [0.45, -0.3, 0.45] },
-  stale:  { knee: 0.5, hand: 'rear', pt: [-0.2,  -1,  0.03], hip: [-0.01,  0.45,  0.02], bend: 0.42, side: 0.23, twist: -0.15, arch: 0, bpos: [-0.06,  0.33,  -0.01], brot: [-0.15,  0.2,  0.3], free: [0.42,  0.5,  0.25], elbow: [-0.5, 0.05, -0.5] },
-  melon:  { knee: 0.5, hand: 'front', pt: [0.18,  -1,  0.03], hip: [0,  0.5,  0.1], bend: 0.45, side: -0.2, twist: 0.12, arch: 0, bpos: [0,  0.37,  -0.03], brot: [-0.19,  -0.15,  -0.35], free: [-0.4,  0.55,  0], elbow: [0.5, 0.05, -0.5] },
-  method: { hand: 'front', pt: [0.12,  -1,  0.03], hip: [-0.01,  0.63,  0.06], bend: 0.12, side: 0.1, twist: 0.31, arch: 0.42, bpos: [0,  0.42,  -0.32], brot: [-1.1,  0.15,  -0.25], free: [-0.3,  0.78,  0.05], elbow: [0.4, 0.2, -0.6] },
-  japan:  { knee: 1.0, hand: 'front', pt: [0.12,  1,  0.03], hip: [-0.04,  0.6,  0.07], bend: 0.45, side: -0.16, twist: 0.11, arch: 0.22, bpos: [0.04,  0.37,  -0.24], brot: [0.9,  -0.35,  0.2], free: [-0.2,  0.82,  0], elbow: [0.5, 0.2, 0.2] }
+  nose:    { hand: 'front', pt: [0.66,  0,  0.02], hip: [0.07,  0.67,  -0.04], bend: 0.52, side: 0.13, twist: -0.13, arch: 0, bpos: [-0.07,  0.28,  0.15], brot: [0,  0.61,  0], free: [-0.55,  0.42,  -0.05], elbow: [0.25,  0.5,  0.35] },
+  tail:    { hand: 'rear', pt: [-0.66,  0,  0.02], hip: [-0.06,  0.7,  -0.02], bend: 0.45, side: -0.03, twist: -0.05, arch: 0, bpos: [0.06,  0.22,  0.06], brot: [0,  -0.7,  0.2], free: [0.55,  0.42,  0], elbow: [-0.25,  0.5,  0.35] },
+  indy:    { hand: 'rear', knee: 1.22, pt: [-0.05,  1,  0], hip: [0,  0.68,  -0.04], bend: 0.75, side: 0.2, twist: 0.3, arch: 0, bpos: [-0.06,  0.3,  0.1], brot: [0.35,  -0.1,  -0.01], free: [0.42,  0.62,  0.12], elbow: [-0.38,  -0.18,  0.47] },
+  mute:    { hand: 'front', knee: 1.24, pt: [0.04,  1,  0], hip: [-0.08,  0.68,  -0.04], bend: 0.54, side: -0.84, twist: -0.93, arch: 0, bpos: [0.01,  0.25,  0.06], brot: [0.63,  0.14,  0.52], free: [-0.47,  0.53,  -0.05], elbow: [0.45,  -0.25,  0.45] },
+  stale:   { hand: 'rear', knee: 0.4, pt: [-0.12,  -1,  0], hip: [0.01,  0.67,  0.02], bend: 0.03, side: 0.86, twist: 0.09, arch: 0, bpos: [-0.09,  0.31,  -0.01], brot: [-0.27,  -0.33,  0.3], free: [0.44,  0.61,  0.18], elbow: [-0.53,  0.03,  -0.69] },
+  melon:   { hand: 'front', knee: 0.36, pt: [0.1,  -1,  0], hip: [-0.06,  0.68,  0.04], bend: 0.19, side: -0.82, twist: 0.2, arch: 0, bpos: [0,  0.33,  -0.18], brot: [-0.73,  -0.02,  -0.35], free: [-0.42,  0.58,  0], elbow: [0.5,  -0.02,  -0.5] },
+  method:  { hand: 'front', pt: [0.06,  -1,  0], hip: [0,  0.74,  0.12], bend: 0.05, side: 0.1, twist: 0.29, arch: 0.4, bpos: [0,  0.42,  -0.34], brot: [-1,  0.15,  -0.3], free: [-0.3,  0.8,  0.05], elbow: [0.4,  0.2,  -0.6] },
+  japan:   { hand: 'front', knee: 0.8, pt: [0.1,  1,  0], hip: [0,  0.7,  0.07], bend: 0.4, side: -0.32, twist: 0.15, arch: 0.2, bpos: [0.02,  0.49,  -0.27], brot: [0.84,  -0.28,  0.2], free: [-0.2,  0.84,  0], elbow: [0.5,  0.2,  0.2] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali della tavola) dove va la mano
@@ -459,6 +475,8 @@ function poseRider(dt, mode) {
   if (ground) _tg.applyAxisAngle(AY, -PS.steerS * 0.4);
   PS.look.lerp(_tg, first ? 1 : damp(7, dt)).normalize();
   poseHead();
+  bodyCapsules();
+  separateBoard();
   // ---- gambe, poi braccia; se la mano non arriva alla tavola si accorcia la distanza (nel sistema del corpo)
   var front = ss > 0 ? 'Left' : 'Right', back = ss > 0 ? 'Right' : 'Left';
   poseLegs(front, back, ss, air);
@@ -473,6 +491,7 @@ function poseRider(dt, mode) {
       if (PS.reach.length() > 0.45) PS.reach.setLength(0.45);
       L2W(PS.bpos.x + PS.reach.x, PS.bpos.y + PS.reach.y, PS.bpos.z + PS.reach.z, _bpos);
       rig.board.position.copy(_bpos); rig.board.updateMatrixWorld(true);
+      separateBoard();
       poseLegs(front, back, ss, air);
     }
   }
@@ -481,7 +500,21 @@ function poseRider(dt, mode) {
   poseArm(back, false, G0, GP, PS.hR, ss);
   curlFingers(0.35);
   if (G0 && PS.grab > 0.2) curlFingers(1.25 * PS.grab, gh === 'Left' ? 'L' : 'R');
+  boardFlex(dt, ground);
   PS.init = true;
+}
+// flessione della tavola con una molla: si carica e scatta
+PS.fb = 0; PS.fbV = 0; PS.ft = 0; PS.ftV = 0; PS.fApplied = [9, 9];
+function boardFlex(dt, ground) {
+  var ss = stanceSign();
+  // bersagli: carica dell'ollie sul tail, press, compressione all'atterraggio, curva sullo spigolo
+  var bowT = clamp(-PS.comp * 2.2, 0, 0.9) + Math.abs(PS.press) * 0.5 + (ground ? Math.abs(PS.lean) * 0.25 : 0) + (P.mode === 'rail' ? 0.25 : 0);
+  var tipT = -P.charge * 0.8 + PS.press * 0.6;
+  var h = Math.min(dt, 0.033);
+  PS.fbV += ((bowT - PS.fb) * 260 - PS.fbV * 14) * h; PS.fb += PS.fbV * h;
+  PS.ftV += ((tipT - PS.ft) * 220 - PS.ftV * 12) * h; PS.ft += PS.ftV * h;
+  var b = clamp(PS.fb, -0.4, 1.2), t = clamp(PS.ft, -1, 1);
+  if (Math.abs(b - PS.fApplied[0]) > 0.01 || Math.abs(t - PS.fApplied[1]) > 0.01) { rig.board.userData.flex(b, t); PS.fApplied = [b, t]; }
 }
 function poseSpine(ss) {
   var B = rig.B, bend = PS.bend;
@@ -535,6 +568,11 @@ function bodyCapsules() {
     _cs.push([p, q, r]);
   }
   cap('Hips', 'Spine2', 0.17, 0.0);       // pancia e fianchi
+  // sedere: dal bacino un po' in basso e indietro
+  var hp = new THREE.Vector3(), sp2 = new THREE.Vector3(), hq = new THREE.Quaternion();
+  B.Hips.getWorldPosition(hp); B.Spine2.getWorldPosition(sp2); B.Hips.getWorldQuaternion(hq);
+  var upv = sp2.clone().sub(hp).normalize(), fw = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.bind.Hips.q.clone().invert()).applyQuaternion(hq).normalize();
+  _cs.push([hp.clone(), hp.clone().addScaledVector(upv, -0.1).addScaledVector(fw, -0.07), 0.15]);
   cap('Spine1', 'Neck', 0.16, 0.0);       // petto
   cap('Neck', 'Head', 0.13, 0.9);         // testa
   cap('LeftUpLeg', 'LeftLeg', 0.11, 0); cap('RightUpLeg', 'RightLeg', 0.11, 0);   // cosce
@@ -569,11 +607,42 @@ function armPenetration(a, b, skipFrom) {
   }
   return pen;
 }
-var CAP_NAMES = ['pancia', 'petto', 'testa', 'coscia S', 'coscia D', 'stinco S', 'stinco D'];
+var CAP_NAMES = ['pancia', 'sedere', 'petto', 'testa', 'coscia S', 'coscia D', 'stinco S', 'stinco D'];
 function penBreakdown(a, b, skipFrom) {
   _ca.copy(a).lerp(b, skipFrom || 0); var r = [];
   for (var i = 0; i < _cs.length; i++) { var c = _cs[i], d = segDist(_ca, b, c[0], c[1]), need = c[2] + 0.055; if (d < need) r.push(CAP_NAMES[i] + ' ' + Math.round((need - d) * 100)); }
   return r.join(', ');
+}
+// la tavola non entra mai in bacino, sedere, petto e testa: se ci finisce dentro viene spostata fuori
+var _bA = new THREE.Vector3(), _bB = new THREE.Vector3(), _sepD = new THREE.Vector3();
+function boardPen() {
+  _bA.set(0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos); _bB.set(-0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos);
+  var pen = 0;
+  for (var i = 0; i < 4; i++) { var c = _cs[i], d = segDist(_bA, _bB, c[0], c[1]), need = c[2] + 0.13; if (d < need) pen += need - d; }
+  return pen;
+}
+function separateBoard() {
+  // 1) la tavola sta sotto il bacino (salvo i grab con la tavola dietro la schiena): mai il sedere attraverso la tavola
+  var G0 = PS.gi >= 0 ? GRABS[PS.gi] : null, behind = G0 && (G0.id === 'method' || G0.id === 'japan');
+  var minClear = behind ? 0.05 : 0.34;
+  _t1.subVectors(_hipP, _bpos); var clr = _t1.dot(_rY);
+  if (clr < minClear) _bpos.addScaledVector(_rY, clr - minClear);
+  // 2) nessun pezzo della tavola dentro bacino, sedere, petto, testa: bacino e sedere spingono in basso
+  for (var it = 0; it < 4; it++) {
+    _bA.set(0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos); _bB.set(-0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos);
+    var moved = false;
+    for (var i = 0; i < 4; i++) {
+      var c = _cs[i], d = segDist(_bA, _bB, c[0], c[1]), need = c[2] + 0.13;
+      if (d < need) {
+        if (i < 2 && !behind) _sepD.copy(_rY).negate();
+        else { _sepD.subVectors(_cp1, _cp2); if (_sepD.lengthSq() < 1e-8) _sepD.copy(_rY).negate(); _sepD.normalize(); }
+        _bpos.addScaledVector(_sepD, need - d + 0.005); moved = true;
+        _bA.set(0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos); _bB.set(-0.7, 0.02, 0).applyQuaternion(_bq).add(_bpos);
+      }
+    }
+    if (!moved) break;
+  }
+  rig.board.position.copy(_bpos); rig.board.updateMatrixWorld(true);
 }
 // spinge fuori dal corpo un punto (es. la mano)
 function pushOut(p) {

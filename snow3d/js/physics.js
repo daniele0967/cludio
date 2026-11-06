@@ -103,7 +103,12 @@ function stepGround(dt, released) {
     var B = P.butter; B.t += dt; if (IN.press) B.press = IN.press;
     var w = -sx * 6.2;
     B.spin += w * dt; P.yawOff += w * dt;
-    if (!IN.press) endButter();
+    if (!IN.press) {
+      // lasciando il press dopo averlo tenuto, la tavola flessa scatta: ollie (dal tail) o nollie (dal nose)
+      var loaded = B.t > 0.22, fromNose = B.press > 0;
+      endButter();
+      if (loaded && !released) { P.charge = clamp(B.t / 0.5, 0.4, 1); doPop(n, false); EV.push({ t: 'flexpop', nose: fromNose }); return; }
+    }
   }
   P.brake = !P.butter && sy < -0.35 ? clamp((-sy - 0.35) / 0.5, 0, 1) : 0;
   P.tuck = !P.butter && sy > 0.35 ? clamp((sy - 0.35) / 0.5, 0, 1) : 0;
@@ -213,6 +218,7 @@ function endButter() {
 // ollie: spinta lungo la normale; sul lip del kicker c'e' una spinta in piu'
 function doPop(n, fromAir) {
   var c = P.charge, pop = POP_MIN + (POP_MAX - POP_MIN) * c, perfect = false;
+  if (P.flexPop) { pop += 0.35; P.flexPop = false; }
   if (P.lipD !== null && P.lipD < 1.4 && P.lipD > -0.5) { pop += POP_LIP; perfect = P.lipD < 0.8; }
   if (fromAir) { pop *= 0.8; }
   P.vx += n.x * pop; P.vy += n.y * pop; P.vz += n.z * pop;

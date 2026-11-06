@@ -144,6 +144,7 @@ function handleEvents() {
     switch (e.t) {
       case 'pop': sfx('pop'); burst(P.x, P.y, P.z, 10, 1.4, 1.2, 0.18); if (e.perfect) popup('Pop!', '', '', 'small'); break;
       case 'grab': sfx('grab'); break;
+      case 'flexpop': popup(e.nose ? 'Nollie' : 'Ollie', 'dal press', '', 'small'); break;
       case 'land': {
         var imp = clamp(e.impact / 9, 0.2, 1);
         PS.compV -= 0.7 + imp * 1.6;
@@ -579,7 +580,7 @@ window.__pr = {
   get P() { return P; }, replay: startReplay, endReplay: endReplay, get W() { return W; }, get GAME() { return GAME; }, get state() { return state; }, IN: IN, save: save,
   start: function (m) { startRun(m || 'free'); }, menu: toMenu, CB: function () { return CB; }, camera: camera, renderer: renderer, quality: quality,
   setQuality: setQuality, applyLight: applyLight, rig: function () { return rig; }, step: stepPlayer, events: function () { return EV; },
-  GPOSE: GPOSE, BASE: BASE, grabPoint: grabPoint, bodyCapsules: bodyCapsules, armPenetration: armPenetration, penBreakdown: penBreakdown, GRABS: GRABS, PS: PS, poseRider: poseRider, groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
+  GPOSE: GPOSE, BASE: BASE, grabPoint: grabPoint, bodyCapsules: bodyCapsules, armPenetration: armPenetration, penBreakdown: penBreakdown, boardPen: boardPen, GRABS: GRABS, PS: PS, poseRider: poseRider, groundSelfTest: groundSelfTest, useEmergencySnow: useEmergencySnow, DIAG: DIAG, snowMat: function () { return snowMat; },
   scene: scene, bgScene: bgScene, bgCam: bgCam, POST: POST, renderFrame: renderFrame, prof: PROF,
   place: function (d, u, sp) { newPlayer(d, u || 0, sp || 0); P.safeT = 0; camInit = false; PS.init = false; if (rig) rig.rag = null; trailReset(); },
   cx: cx, profY: profY, railCapture: railCapture, gen: genUntil, parkObjs: function () { return parkObjs; }, snowUniforms: snowUniforms, chunks: function () { return chunks; }, sfx: sfx, AU: function () { return AU; }, crash: function (w) { crash(w || 'tilt'); }, THREE: THREE, groundH: groundH, poseRider: poseRider, updAids: updAids, syncChunks: syncChunks, syncPark: syncPark, updEffects: updEffects, updHud: updHud, updParticles: updParticles, updLift: updLift, updFlakes: updFlakes
