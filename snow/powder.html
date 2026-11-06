@@ -2922,7 +2922,7 @@ function curlFingers(amount, side) {
 var GPOSE = {
   nose:    { hand: 'front', pt: [0.66,  0,  0.02], hip: [0.07,  0.67,  -0.04], bend: 0.52, side: 0.13, twist: -0.13, arch: 0, bpos: [-0.07,  0.28,  0.15], brot: [0,  0.61,  0], free: [-0.55,  0.42,  -0.05], elbow: [0.25,  0.5,  0.35] },
   tail:    { hand: 'rear', pt: [-0.66,  0,  0.02], hip: [-0.06,  0.7,  -0.02], bend: 0.45, side: -0.03, twist: -0.05, arch: 0, bpos: [0.06,  0.22,  0.06], brot: [0,  -0.7,  0.2], free: [0.55,  0.42,  0], elbow: [-0.25,  0.5,  0.35] },
-  indy:    { hand: 'rear', knee: 1.22, pt: [-0.05,  1,  0], hip: [0,  0.68,  -0.04], bend: 0.75, side: 0.2, twist: 0.3, arch: 0, bpos: [-0.06,  0.3,  0.1], brot: [0.35,  -0.1,  -0.01], free: [0.42,  0.62,  0.12], elbow: [-0.38,  -0.18,  0.47] },
+  indy:    { hand: 'rear', knee: 1.22, pt: [-0.05, 1, 0], hip: [0, 0.68, -0.04], bend: 0.68, side: 0.61, twist: 0.73, arch: 0, bpos: [-0.1, 0.34, 0.1], brot: [0.75, -0.3, -0.01], free: [0.42, 0.62, 0.12], elbow: [-0.38, -0.18, 0.47] },
   mute:    { hand: 'front', knee: 1.24, pt: [0.04,  1,  0], hip: [-0.08,  0.68,  -0.04], bend: 0.54, side: -0.84, twist: -0.93, arch: 0, bpos: [0.01,  0.25,  0.06], brot: [0.63,  0.14,  0.52], free: [-0.47,  0.53,  -0.05], elbow: [0.45,  -0.25,  0.45] },
   stale:   { hand: 'rear', knee: 0.4, pt: [-0.12,  -1,  0], hip: [0.01,  0.67,  0.02], bend: 0.03, side: 0.86, twist: 0.09, arch: 0, bpos: [-0.09,  0.31,  -0.01], brot: [-0.27,  -0.33,  0.3], free: [0.44,  0.61,  0.18], elbow: [-0.53,  0.03,  -0.69] },
   melon:   { hand: 'front', knee: 0.36, pt: [0.1,  -1,  0], hip: [-0.06,  0.68,  0.04], bend: 0.19, side: -0.82, twist: 0.2, arch: 0, bpos: [0,  0.33,  -0.18], brot: [-0.73,  -0.02,  -0.35], free: [-0.42,  0.58,  0], elbow: [0.5,  -0.02,  -0.5] },
@@ -2972,6 +2972,7 @@ function poseRider(dt, mode) {
   // ---- stato
   var gi = air && A && A.grab >= 0 ? A.grab : -1;
   PS.grab = lerp(PS.grab, gi >= 0 ? 1 : 0, first ? 1 : damp(gi >= 0 ? 11 : 9, dt));
+  if (gi >= 0 && gi !== PS.gi) PS.reach.set(0, 0, 0); // cambio di grab: la correzione del grab precedente non vale piu'
   if (gi >= 0) PS.gi = gi;
   if (PS.grab < 0.01) PS.gi = -1;
   var G0 = PS.gi >= 0 ? GRABS[PS.gi] : null, GP = G0 ? gpose(G0) : null;
