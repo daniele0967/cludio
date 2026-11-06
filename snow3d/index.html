@@ -153,7 +153,13 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .sw { pointer-events: auto; width: 54px; height: 54px; border-radius: 16px; border: 2px solid transparent; cursor: pointer; padding: 0; display: grid; place-items: center; font: 800 10px var(--round); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .sw.on { border-color: var(--ice); box-shadow: 0 0 0 3px rgba(242,247,255,.25); }
 #riderPanel { place-items: center start; }
-#riderPanel .card { width: min(100%, 360px); }
+#riderPanel .card { width: min(100%, 380px); max-height: 100%; overflow-y: auto; touch-action: pan-y; }
+.parts { display: grid; gap: 8px; }
+.part { display: grid; gap: 5px; }
+.part > span { font: 800 10.5px var(--round); letter-spacing: .12em; text-transform: uppercase; color: var(--frost); }
+.pal { display: flex; gap: 5px; overflow-x: auto; padding: 2px 2px 4px; touch-action: pan-x; }
+.pal button { pointer-events: auto; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; border: 2px solid rgba(242,247,255,.18); padding: 0; cursor: pointer; }
+.pal button.on { border-color: var(--ice); box-shadow: 0 0 0 2px rgba(242,247,255,.35); }
 @media (orientation: portrait) { #riderPanel { place-items: end stretch; } #riderPanel .card { width: 100%; } }
 @media (orientation: landscape) { #over .stats { grid-template-columns: repeat(4, 1fr); } #over .stat.big { grid-column: 1 / -1; } #over .card { width: min(100%, 620px); } }
 @media (max-height: 430px) { .stat.big b { font-size: 34px; } .stat b { font-size: 21px; } .stat { padding: 8px 10px; } h2 { font-size: 26px; } }
@@ -275,8 +281,9 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 <div id="riderPanel" class="overlay hidden">
   <div class="card">
     <h2>Rider</h2>
-    <div class="opt"><span>Completo</span><div class="swatches" id="outfits"></div></div>
-    <div class="opt"><span>Tavola</span><div class="swatches" id="boards"></div></div>
+    <div class="opt"><span>Parti da un completo</span><div class="swatches" id="outfits"></div></div>
+    <div class="opt"><span>Parti da una tavola</span><div class="swatches" id="boards"></div></div>
+    <div class="parts" id="parts"></div>
     <button class="btn pri" id="btnRiderClose">Fatto</button>
   </div>
 </div>

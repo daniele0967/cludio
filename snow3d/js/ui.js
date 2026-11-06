@@ -242,16 +242,39 @@ $('sens').addEventListener('input', function () { save.set.sens = +this.value; $
 $('btnRider').addEventListener('click', function () { sfx('click'); show('menu', false); show('riderPanel', true); buildSwatches(); MENU_CAM.close = 1; });
 $('btnRiderClose').addEventListener('click', function () { show('riderPanel', false); show('menu', true); persist(); MENU_CAM.close = 0; });
 function buildSwatches() {
+  var L = getLook();
   $('outfits').innerHTML = OUTFITS.map(function (o, i) {
     var a = '#' + new THREE.Color(o.jacket).getHexString(), b = '#' + new THREE.Color(o.accent).getHexString();
-    return '<button class="sw' + (i === save.set.outfit ? ' on' : '') + '" data-i="' + i + '" style="background:linear-gradient(135deg,' + a + ' 55%,' + b + ' 56%)">' + o.name + '</button>';
+    return '<button class="sw" data-i="' + i + '" style="background:linear-gradient(135deg,' + a + ' 55%,' + b + ' 56%)">' + o.name + '</button>';
   }).join('');
   $('boards').innerHTML = BOARDS.map(function (o, i) {
-    return '<button class="sw' + (i === save.set.board ? ' on' : '') + '" data-i="' + i + '" style="background:linear-gradient(135deg,' + o.top[0] + ' 40%,' + o.top[1] + ' 41%,' + o.top[1] + ' 70%,' + o.base + ' 71%)">' + o.name + '</button>';
+    return '<button class="sw" data-i="' + i + '" style="background:linear-gradient(135deg,' + o.top[0] + ' 40%,' + o.top[1] + ' 41%,' + o.top[1] + ' 70%,' + o.base + ' 71%)">' + o.name + '</button>';
+  }).join('');
+  // ogni parte: una riga di colori
+  $('parts').innerHTML = LOOK_PARTS.map(function (p) {
+    return '<div class="part"><span>' + p[1] + '</span><div class="pal" data-k="' + p[0] + '">' + LOOK_PALETTE.map(function (c) {
+      return '<button aria-label="' + p[1] + ' ' + hexStr(c) + '" data-c="' + c + '" class="' + (L[p[0]] === c ? 'on' : '') + '" style="background:' + hexStr(c) + '"></button>';
+    }).join('') + '</div></div>';
   }).join('');
 }
-$('outfits').addEventListener('click', function (e) { var b = e.target.closest('.sw'); if (!b) return; save.set.outfit = +b.dataset.i; rebuildRider(); buildSwatches(); sfx('click'); });
-$('boards').addEventListener('click', function (e) { var b = e.target.closest('.sw'); if (!b) return; save.set.board = +b.dataset.i; rebuildRider(); buildSwatches(); sfx('click'); });
+var rebuildT = null;
+function rebuildSoon() { clearTimeout(rebuildT); rebuildT = setTimeout(rebuildRider, 60); }
+$('outfits').addEventListener('click', function (e) {
+  var b = e.target.closest('.sw'); if (!b) return; var L = getLook(), o = lookFromPreset(+b.dataset.i, 0);
+  ['jacket', 'accent', 'pants', 'glove', 'boot', 'helmet', 'lens', 'buff'].forEach(function (k) { L[k] = o[k]; });
+  save.set.outfit = +b.dataset.i; rebuildSoon(); buildSwatches(); sfx('click');
+});
+$('boards').addEventListener('click', function (e) {
+  var b = e.target.closest('.sw'); if (!b) return; var L = getLook(), o = lookFromPreset(0, +b.dataset.i);
+  ['bTop1', 'bTop2', 'bTop3', 'bBase'].forEach(function (k) { L[k] = o[k]; });
+  save.set.board = +b.dataset.i; rebuildSoon(); buildSwatches(); sfx('click');
+});
+$('parts').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return; var pal = b.parentNode, k = pal.dataset.k;
+  getLook()[k] = +b.dataset.c;
+  pal.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+  rebuildSoon(); sfx('click');
+});
 function rebuildRider() { var buf = rig.buf; disposeRig(); makeRig(buf).buf = buf; PS.init = false; }
 
 var GUIDE = [

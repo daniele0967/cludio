@@ -153,7 +153,13 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 .sw { pointer-events: auto; width: 54px; height: 54px; border-radius: 16px; border: 2px solid transparent; cursor: pointer; padding: 0; display: grid; place-items: center; font: 800 10px var(--round); color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.5); }
 .sw.on { border-color: var(--ice); box-shadow: 0 0 0 3px rgba(242,247,255,.25); }
 #riderPanel { place-items: center start; }
-#riderPanel .card { width: min(100%, 360px); }
+#riderPanel .card { width: min(100%, 380px); max-height: 100%; overflow-y: auto; touch-action: pan-y; }
+.parts { display: grid; gap: 8px; }
+.part { display: grid; gap: 5px; }
+.part > span { font: 800 10.5px var(--round); letter-spacing: .12em; text-transform: uppercase; color: var(--frost); }
+.pal { display: flex; gap: 5px; overflow-x: auto; padding: 2px 2px 4px; touch-action: pan-x; }
+.pal button { pointer-events: auto; flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; border: 2px solid rgba(242,247,255,.18); padding: 0; cursor: pointer; }
+.pal button.on { border-color: var(--ice); box-shadow: 0 0 0 2px rgba(242,247,255,.35); }
 @media (orientation: portrait) { #riderPanel { place-items: end stretch; } #riderPanel .card { width: 100%; } }
 @media (orientation: landscape) { #over .stats { grid-template-columns: repeat(4, 1fr); } #over .stat.big { grid-column: 1 / -1; } #over .card { width: min(100%, 620px); } }
 @media (max-height: 430px) { .stat.big b { font-size: 34px; } .stat b { font-size: 21px; } .stat { padding: 8px 10px; } h2 { font-size: 26px; } }
@@ -275,8 +281,9 @@ input[type=range] { width: 100%; accent-color: var(--gold); }
 <div id="riderPanel" class="overlay hidden">
   <div class="card">
     <h2>Rider</h2>
-    <div class="opt"><span>Completo</span><div class="swatches" id="outfits"></div></div>
-    <div class="opt"><span>Tavola</span><div class="swatches" id="boards"></div></div>
+    <div class="opt"><span>Parti da un completo</span><div class="swatches" id="outfits"></div></div>
+    <div class="opt"><span>Parti da una tavola</span><div class="swatches" id="boards"></div></div>
+    <div class="parts" id="parts"></div>
     <button class="btn pri" id="btnRiderClose">Fatto</button>
   </div>
 </div>
@@ -2683,6 +2690,26 @@ var BOARDS = [
   { name: 'Viola', base: '#6c5ce7', top: ['#f2f4f6', '#6c5ce7', '#ff4f8b'] }
 ];
 
+// aspetto completo del rider e della tavola: ogni parte ha il suo colore (si parte da un completo pronto)
+var LOOK_PARTS = [
+  ['jacket', 'Giacca'], ['accent', 'Dettagli giacca'], ['pants', 'Pantaloni'], ['glove', 'Guanti'], ['boot', 'Scarponi'],
+  ['helmet', 'Casco'], ['lens', 'Lente maschera'], ['buff', 'Scaldacollo'], ['cam', 'Action cam'],
+  ['bTop1', 'Tavola: fondo'], ['bTop2', 'Tavola: centro'], ['bTop3', 'Tavola: righe'], ['bBase', 'Tavola: soletta']
+];
+var LOOK_PALETTE = [0xf2f4f6, 0xb9c2cc, 0x5b6470, 0x22283a, 0x0f1115, 0xc7323b, 0xff5a36, 0xff8a1e, 0xf4c01e, 0xe0a526, 0x9bd13b, 0x1a9b58, 0x3c4a35, 0x1d8f8c, 0x21b8ff, 0x2b6de0, 0x1c2333, 0x6c5ce7, 0xc76bff, 0xff4f8b, 0x8a5a3c, 0xd9c7a6];
+function hexStr(c) { return '#' + ('000000' + (c >>> 0).toString(16)).slice(-6); }
+function lookFromPreset(oi, bi) {
+  var o = OUTFITS[oi % OUTFITS.length], b = BOARDS[bi % BOARDS.length];
+  return { jacket: o.jacket, accent: o.accent, pants: o.pants, glove: o.glove, boot: o.boot, helmet: o.helmet, lens: o.lens, buff: o.buff, cam: 0x1b1d22,
+    bTop1: parseInt(b.top[0].slice(1), 16), bTop2: parseInt(b.top[1].slice(1), 16), bTop3: parseInt(b.top[2].slice(1), 16), bBase: parseInt(b.base.slice(1), 16) };
+}
+function getLook() {
+  if (!save.set.look) save.set.look = lookFromPreset(save.set.outfit || 0, save.set.board || 0);
+  var L = save.set.look, d = lookFromPreset(0, 0);
+  for (var k in d) if (L[k] === undefined) L[k] = d[k];
+  return L;
+}
+
 function b64ToBuf(b64) { var bin = atob(b64), n = bin.length, u8 = new Uint8Array(n); for (var i = 0; i < n; i++) u8[i] = bin.charCodeAt(i); return u8.buffer; }
 
 function buildRider(buf) {
@@ -2720,12 +2747,30 @@ function regionOf(name, y, x) {
   if (/Leg/.test(name) && !/UpLeg/.test(name)) return y < 0.2 ? REG.BOOT : REG.PANTS;
   if (/ForeArm/.test(name)) return Math.abs(x) > 0.66 ? REG.ACCENT : REG.JACKET;
   if (/Arm|Shoulder/.test(name)) return REG.JACKET;
-  if (y > 0.9) return y > 1.36 && /Spine2|Shoulder/.test(name) ? REG.ACCENT : REG.JACKET;
+  if (y > 0.78) return y > 1.36 && /Spine2|Shoulder/.test(name) ? REG.ACCENT : REG.JACKET; // giacca lunga fino a meta' coscia
   return REG.PANTS;
+}
+// Stoffa che si muove: il vertex shader sposta i punti "liberi" (orli, maniche) con l'aria che arriva contro
+// (direzione opposta alla velocita'), un'ondulazione che cresce con la velocita' e di piu' in volo.
+var CLOTH = { uTime: { value: 0 }, uFlap: { value: 0 }, uWind: { value: new THREE.Vector3() } };
+function clothMaterial() {
+  var m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.82, metalness: 0, envMapIntensity: 0.6 });
+  m.onBeforeCompile = function (sh) {
+    sh.uniforms.uTime = CLOTH.uTime; sh.uniforms.uFlap = CLOTH.uFlap; sh.uniforms.uWind = CLOTH.uWind;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute float aLoose;\nuniform float uTime, uFlap;\nuniform vec3 uWind;')
+      .replace('#include <skinning_vertex>', [
+        '#include <skinning_vertex>',
+        'float ph = position.x * 13.0 + position.y * 17.0 + position.z * 11.0;',
+        'float wv = sin(uTime * 15.0 + ph) * 0.6 + sin(uTime * 26.0 + ph * 1.7) * 0.4;',
+        'transformed += objectNormal * aLoose * uFlap * wv * 0.018;',
+        'transformed += uWind * aLoose * (0.75 + 0.25 * wv);'].join('\n'));
+  };
+  m.customProgramCacheKey = function () { return 'cloth-v1'; };
+  return m;
 }
 function riderMaterials(of) {
   return {
-    cloth: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0, envMapIntensity: 0.6 }),
+    cloth: clothMaterial(),
     helmet: new THREE.MeshStandardMaterial({ color: of.helmet, roughness: 0.32, metalness: 0.05, envMapIntensity: 1 }),
     lens: new THREE.MeshStandardMaterial({ color: of.lens, roughness: 0.08, metalness: 1, envMapIntensity: 1.6, emissive: new THREE.Color(of.lens).multiplyScalar(0.18) }),
     frame: new THREE.MeshStandardMaterial({ color: 0x15171b, roughness: 0.5 }),
@@ -2739,7 +2784,7 @@ var _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector
 var _q1 = new THREE.Quaternion(), _q3 = new THREE.Quaternion(), _q4 = new THREE.Quaternion(), _m1 = new THREE.Matrix4(), _m2 = new THREE.Matrix4();
 
 function makeRig(buf) {
-  var R = buildRider(buf), of = OUTFITS[save.set.outfit % OUTFITS.length], mats = riderMaterials(of);
+  var R = buildRider(buf), of = getLook(), mats = riderMaterials(of);
   var group = R.group, B = R.B;
   // posa di riposo: orientamenti e posizioni nel mondo
   var bind = {};
@@ -2750,7 +2795,7 @@ function makeRig(buf) {
   var geos = R.meshes.map(function (m) {
     var cols = new Float32Array(m.count * 3), pos = m.pos, c = new THREE.Color();
     var pal = [of.helmet, of.buff, of.jacket, of.accent, of.glove, of.pants, of.boot];
-    var infl = [0.004, 0.012, 0.024, 0.024, 0.01, 0.03, 0.02];
+    var infl = [0.004, 0.016, 0.034, 0.032, 0.012, 0.046, 0.024], loose = new Float32Array(m.count);
     for (var i = 0; i < m.count; i++) {
       var best = 0, bi = 0;
       for (var k = 0; k < 4; k++) if (m.we[i * 4 + k] > best) { best = m.we[i * 4 + k]; bi = m.jo[i * 4 + k]; }
@@ -2761,13 +2806,19 @@ function makeRig(buf) {
       var nz = 0.94 + 0.06 * vnoise2(pos[i * 3] * 40, pos[i * 3 + 1] * 40, 3);
       cols[i * 3] = c.r * nz; cols[i * 3 + 1] = c.g * nz; cols[i * 3 + 2] = c.b * nz;
       var f = infl[reg] * (m.name === 'joints' ? 1.1 : 1);
-      if (reg === REG.PANTS) f += 0.012 * sm01((0.62 - Math.abs(pos[i * 3 + 1] - 0.55)) / 0.4);
+      var yy = pos[i * 3 + 1];
+      // pantaloni larghi che si allargano in fondo, giacca piu' ampia sui fianchi e alle maniche
+      if (reg === REG.PANTS) f += 0.03 * sm01((0.55 - yy) / 0.4) + 0.012;
+      if (reg === REG.JACKET || reg === REG.ACCENT) f += 0.02 * sm01((1.05 - yy) / 0.25) + (Math.abs(pos[i * 3]) > 0.4 ? 0.012 : 0);
+      // quanto si muove il tessuto: orli dei pantaloni, fondo della giacca, maniche
+      loose[i] = reg === REG.PANTS ? 0.45 + 0.55 * sm01((0.6 - yy) / 0.45) : (reg === REG.JACKET || reg === REG.ACCENT) ? 0.25 + 0.75 * Math.max(sm01((1.0 - yy) / 0.22), sm01((Math.abs(pos[i * 3]) - 0.35) / 0.3)) : reg === REG.NECK ? 0.15 : 0;
       pos[i * 3] += m.nor[i * 3] * f; pos[i * 3 + 1] += m.nor[i * 3 + 1] * f; pos[i * 3 + 2] += m.nor[i * 3 + 2] * f;
     }
     var g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     g.setAttribute('normal', new THREE.BufferAttribute(m.nor, 3));
     g.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+    g.setAttribute('aLoose', new THREE.BufferAttribute(loose, 1));
     g.setAttribute('skinIndex', new THREE.BufferAttribute(m.jo, 4));
     g.setAttribute('skinWeight', new THREE.BufferAttribute(m.we, 4, true));
     g.setIndex(new THREE.BufferAttribute(m.idx, 1));
@@ -2807,8 +2858,17 @@ function makeRig(buf) {
   var strap = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.035, 28, 1, true, 1.05, TAU - 2.1), mats.strap); goggle.add(strap);
   goggle.scale.set(1, 1, 1.12);
   attach('Head', goggle, hc.clone().add(new THREE.Vector3(0, -0.012, 0.006)));
+  // action cam sul casco (davanti, in alto) con supporto
+  var camM = new THREE.MeshStandardMaterial({ color: of.cam, roughness: 0.4, metalness: 0.2 });
+  var acam = new THREE.Group();
+  var body = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.04, 0.032), camM); acam.add(body);
+  var lensR = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.012, 0.012, 14).rotateX(PI / 2), mats.frame); lensR.position.set(0.012, 0, 0.021); acam.add(lensR);
+  var glass = new THREE.Mesh(new THREE.CircleGeometry(0.008, 14), new THREE.MeshStandardMaterial({ color: 0x0a1a2a, roughness: 0.05, metalness: 1, envMapIntensity: 2 })); glass.position.set(0.012, 0, 0.0275); acam.add(glass);
+  var mount = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.022, 0.02), mats.frame); mount.position.set(0, -0.028, -0.004); acam.add(mount);
+  var rec = new THREE.Mesh(new THREE.SphereGeometry(0.003, 6, 4), new THREE.MeshBasicMaterial({ color: 0xff2030 })); rec.position.set(-0.016, 0.012, 0.0165); acam.add(rec);
+  attach('Head', acam, hc.clone().add(new THREE.Vector3(0, 0.168, 0.07)), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.25));
   // tavola e attacchi
-  var board = makeBoard(BOARDS[save.set.board % BOARDS.length], mats);
+  var board = makeBoard({ base: hexStr(of.bBase), top: [hexStr(of.bTop1), hexStr(of.bTop2), hexStr(of.bTop3)] }, mats);
   scene.add(board);
   scene.add(group);
   // misure dello scheletro
@@ -3170,6 +3230,11 @@ function poseRider(dt, mode) {
   curlFingers(0.35);
   if (G0 && PS.grab > 0.2) curlFingers(1.25 * PS.grab, gh === 'Left' ? 'L' : 'R');
   boardFlex(dt, ground);
+  // stoffa: aria contro (opposta alla velocita') e sventolio
+  var spd = speedOf();
+  CLOTH.uTime.value += dt;
+  CLOTH.uFlap.value = lerp(CLOTH.uFlap.value, clamp(spd / 18, 0, 1.4) * (air ? 1.6 : 1) + (air && A ? Math.min(1, (Math.abs(A.ws) + Math.abs(A.wf)) / 8) : 0), damp(4, dt));
+  if (spd > 0.5) CLOTH.uWind.value.set(-P.vx, -P.vy, -P.vz).multiplyScalar(Math.min(spd, 22) / spd * 0.0016); else CLOTH.uWind.value.set(0, 0, 0);
   PS.init = true;
 }
 // flessione della tavola con una molla: si carica e scatta
@@ -3788,16 +3853,39 @@ $('sens').addEventListener('input', function () { save.set.sens = +this.value; $
 $('btnRider').addEventListener('click', function () { sfx('click'); show('menu', false); show('riderPanel', true); buildSwatches(); MENU_CAM.close = 1; });
 $('btnRiderClose').addEventListener('click', function () { show('riderPanel', false); show('menu', true); persist(); MENU_CAM.close = 0; });
 function buildSwatches() {
+  var L = getLook();
   $('outfits').innerHTML = OUTFITS.map(function (o, i) {
     var a = '#' + new THREE.Color(o.jacket).getHexString(), b = '#' + new THREE.Color(o.accent).getHexString();
-    return '<button class="sw' + (i === save.set.outfit ? ' on' : '') + '" data-i="' + i + '" style="background:linear-gradient(135deg,' + a + ' 55%,' + b + ' 56%)">' + o.name + '</button>';
+    return '<button class="sw" data-i="' + i + '" style="background:linear-gradient(135deg,' + a + ' 55%,' + b + ' 56%)">' + o.name + '</button>';
   }).join('');
   $('boards').innerHTML = BOARDS.map(function (o, i) {
-    return '<button class="sw' + (i === save.set.board ? ' on' : '') + '" data-i="' + i + '" style="background:linear-gradient(135deg,' + o.top[0] + ' 40%,' + o.top[1] + ' 41%,' + o.top[1] + ' 70%,' + o.base + ' 71%)">' + o.name + '</button>';
+    return '<button class="sw" data-i="' + i + '" style="background:linear-gradient(135deg,' + o.top[0] + ' 40%,' + o.top[1] + ' 41%,' + o.top[1] + ' 70%,' + o.base + ' 71%)">' + o.name + '</button>';
+  }).join('');
+  // ogni parte: una riga di colori
+  $('parts').innerHTML = LOOK_PARTS.map(function (p) {
+    return '<div class="part"><span>' + p[1] + '</span><div class="pal" data-k="' + p[0] + '">' + LOOK_PALETTE.map(function (c) {
+      return '<button aria-label="' + p[1] + ' ' + hexStr(c) + '" data-c="' + c + '" class="' + (L[p[0]] === c ? 'on' : '') + '" style="background:' + hexStr(c) + '"></button>';
+    }).join('') + '</div></div>';
   }).join('');
 }
-$('outfits').addEventListener('click', function (e) { var b = e.target.closest('.sw'); if (!b) return; save.set.outfit = +b.dataset.i; rebuildRider(); buildSwatches(); sfx('click'); });
-$('boards').addEventListener('click', function (e) { var b = e.target.closest('.sw'); if (!b) return; save.set.board = +b.dataset.i; rebuildRider(); buildSwatches(); sfx('click'); });
+var rebuildT = null;
+function rebuildSoon() { clearTimeout(rebuildT); rebuildT = setTimeout(rebuildRider, 60); }
+$('outfits').addEventListener('click', function (e) {
+  var b = e.target.closest('.sw'); if (!b) return; var L = getLook(), o = lookFromPreset(+b.dataset.i, 0);
+  ['jacket', 'accent', 'pants', 'glove', 'boot', 'helmet', 'lens', 'buff'].forEach(function (k) { L[k] = o[k]; });
+  save.set.outfit = +b.dataset.i; rebuildSoon(); buildSwatches(); sfx('click');
+});
+$('boards').addEventListener('click', function (e) {
+  var b = e.target.closest('.sw'); if (!b) return; var L = getLook(), o = lookFromPreset(0, +b.dataset.i);
+  ['bTop1', 'bTop2', 'bTop3', 'bBase'].forEach(function (k) { L[k] = o[k]; });
+  save.set.board = +b.dataset.i; rebuildSoon(); buildSwatches(); sfx('click');
+});
+$('parts').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return; var pal = b.parentNode, k = pal.dataset.k;
+  getLook()[k] = +b.dataset.c;
+  pal.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); });
+  rebuildSoon(); sfx('click');
+});
 function rebuildRider() { var buf = rig.buf; disposeRig(); makeRig(buf).buf = buf; PS.init = false; }
 
 var GUIDE = [

@@ -34,6 +34,11 @@ python3 build.py
 Gioco di snowboard originale in **3D** (Three.js) per **Scriptable** e browser, rifatto da zero: valle alpina con montagne lontane, foschia, sole basso e ombre, neve battuta con le righe del gatto e i brillantini, boschi innevati, seggiovia che gira, park con kicker, rail e box generati all'infinito. Il rider ha uno scheletro vero (modello Xbot degli esempi di Three.js, di origine Mixamo) vestito con giacca, pantaloni larghi, casco e maschera; le pose sono calcolate in tempo reale (IK di gambe e braccia, grab con la mano sulla tavola, caduta con ragdoll).
 
 ## Novità
+- **Paesaggio con parallasse**: catene montuose vere ai lati della valle (boschi, roccia, neve) che si spostano mentre scendi, fondovalle fino all'orizzonte, vette lontane sullo sfondo.
+- **Super Big Air** ogni 1,1–1,6 km: kicker gigante con tribune e pubblico, fino a 4 secondi in aria (1440 e double cork atterrabili).
+- **Rider personalizzabile** (menu Rider): colore di giacca, dettagli, pantaloni, guanti, scarponi, casco, lente, scaldacollo, action cam e quattro colori della tavola; si può partire da un completo o una tavola pronti.
+- **Vestiti larghi** che si muovono con l'aria e la velocità (orli dei pantaloni, fondo della giacca, maniche), **action cam** sul casco.
+- **Tavola flessibile**: si carica sul tail per l'ollie, si piega nei press e negli atterraggi; tenendo un press e lasciando si salta (ollie / nollie).
 - **Neve fresca ovunque**: superficie polverosa con dune e cumuli, solchi profondi della tavola, nuvole di polvere in curva e negli atterraggi, abeti carichi di neve.
 - **Effetti di camera** (sui telefoni che li reggono): bagliore della neve al sole, sfocatura ai bordi in velocità, vignetta, antialiasing. Si spengono da soli se il telefono fatica.
 - **Tre camere** (tasto in alto a destra): Classica, Video (bassa e di lato), Lontana. **Replay al rallentatore** dopo un bel trick, e in pausa "Rivedi l'ultimo trick".
