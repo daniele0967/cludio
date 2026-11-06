@@ -71,7 +71,7 @@ const want = process.argv.slice(2);
     await page.evaluate(() => { clearInterval(window.__ap); window.__camFn = null; });
   }
   if (want.includes('grabs')) {
-    for (const gi of [0, 1, 2, 3, 4, 5, 6, 7]) {
+    for (const gi of (process.env.GI ? process.env.GI.split(',').map(Number) : [0, 1, 2, 3, 4, 5, 6, 7])) {
       await page.evaluate((gi) => {
         const pr = __pr, f = pr.W.feats.find(g => g.t === 'kick' && (g.size === 'L' || g.size === 'XL')) || pr.W.feats.find(g => g.t === 'kick' && g.size === 'M' && g.d0 > 20);
         pr.place(f.d0 - 14, f.u, f.K.vd); window.__gi = gi;
