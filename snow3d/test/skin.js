@@ -22,9 +22,9 @@ const OUT = '/tmp/claude-0/-workspace-cludio/a159db5d-364f-5530-b3e8-33bda5b2af0
     window.__camFn = (cam, P) => { cam.position.set(P.x + 2.6, P.y + 1.1, P.z + 1.0); cam.lookAt(P.x, P.y + 0.9, P.z); cam.fov = 40; }; });
   await page.waitForTimeout(2500);
   await page.screenshot({ path: OUT + '/k_ride.png', timeout: 120000 });
-  await page.evaluate(() => { window.__camFn = (cam, P) => { cam.position.set(P.x - 0.6, P.y + 1.9, P.z + 1.3); cam.lookAt(P.x, P.y + 1.5, P.z); cam.fov = 38; }; });
+  await page.evaluate(() => { window.__camFn = (cam, P) => { cam.position.set(P.x - 2.4, P.y + 1.2, P.z - 0.4); cam.lookAt(P.x, P.y + 0.8, P.z); cam.fov = 38; }; });
   await page.waitForTimeout(800);
-  await page.screenshot({ path: OUT + '/k_cam.png', timeout: 120000 });
+  await page.screenshot({ path: OUT + '/k_back.png', timeout: 120000 });
   console.log(errs.join('\n') || 'nessun errore');
   await browser.close();
 })();

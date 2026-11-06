@@ -17,7 +17,7 @@ var BOARDS = [
 
 // aspetto completo del rider e della tavola: ogni parte ha il suo colore (si parte da un completo pronto)
 var LOOK_PARTS = [
-  ['jacket', 'Giacca'], ['accent', 'Dettagli giacca'], ['pants', 'Pantaloni'], ['glove', 'Guanti'], ['boot', 'Scarponi'],
+  ['jacket', 'Hoodie'], ['accent', 'Cordini'], ['pants', 'Pantaloni'], ['glove', 'Guanti'], ['boot', 'Scarponi'],
   ['helmet', 'Casco'], ['lens', 'Lente maschera'], ['buff', 'Scaldacollo'], ['cam', 'Action cam'],
   ['bTop1', 'Tavola: fondo'], ['bTop2', 'Tavola: centro'], ['bTop3', 'Tavola: righe'], ['bBase', 'Tavola: soletta']
 ];
@@ -70,9 +70,9 @@ function regionOf(name, y, x) {
   if (name === 'Neck') return REG.NECK;
   if (/Foot|Toe/.test(name)) return REG.BOOT;
   if (/Leg/.test(name) && !/UpLeg/.test(name)) return y < 0.2 ? REG.BOOT : REG.PANTS;
-  if (/ForeArm/.test(name)) return Math.abs(x) > 0.66 ? REG.ACCENT : REG.JACKET;
+  if (/ForeArm/.test(name)) return Math.abs(x) > 0.7 ? REG.ACCENT : REG.JACKET;
   if (/Arm|Shoulder/.test(name)) return REG.JACKET;
-  if (y > 0.78) return y > 1.36 && /Spine2|Shoulder/.test(name) ? REG.ACCENT : REG.JACKET; // giacca lunga fino a meta' coscia
+  if (y > 0.74) return REG.JACKET; // hoodie lunga fino a meta' coscia
   return REG.PANTS;
 }
 // Stoffa che si muove: il vertex shader sposta i punti "liberi" (orli, maniche) con l'aria che arriva contro
@@ -120,24 +120,63 @@ function makeRig(buf) {
   var geos = R.meshes.map(function (m) {
     var cols = new Float32Array(m.count * 3), pos = m.pos, c = new THREE.Color();
     var pal = [of.helmet, of.buff, of.jacket, of.accent, of.glove, of.pants, of.boot];
-    var infl = [0.004, 0.016, 0.034, 0.032, 0.012, 0.046, 0.024], loose = new Float32Array(m.count);
+    var infl = [0.004, 0.02, 0.05, 0.05, 0.012, 0.075, 0.024], loose = new Float32Array(m.count), jc = new THREE.Color(of.jacket);
+    // Stoffa larga: ogni vertice dei vestiti viene portato su un "tubo" morbido attorno all'osso
+    // (busto = un solo tubo dal bacino al collo, braccia e gambe il loro osso). Il raggio e' la media del
+    // pezzo, cosi' spariscono i muscoli del modello e resta la forma di un tessuto che cade largo.
+    var segOf = function (name) {
+      if (/Spine|Hips|Shoulder/.test(name)) return ['Hips', 'Neck', 1.0];
+      if (/ForeArm/.test(name)) return [name, name.replace('ForeArm', 'Hand'), 1];
+      if (/Arm/.test(name)) return [name, name.replace('Arm', 'ForeArm'), 1];
+      if (/UpLeg/.test(name)) return [name, name.replace('UpLeg', 'Leg'), 1];
+      if (/Leg/.test(name)) return [name, name.replace('Leg', 'Foot'), 1];
+      return null;
+    };
+    var info = new Array(m.count), sums = {}, cnts = {}, tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpP = new THREE.Vector3();
     for (var i = 0; i < m.count; i++) {
       var best = 0, bi = 0;
       for (var k = 0; k < 4; k++) if (m.we[i * 4 + k] > best) { best = m.we[i * 4 + k]; bi = m.jo[i * 4 + k]; }
-      var reg = regionOf(R.names[bi], pos[i * 3 + 1], pos[i * 3]);
+      var nm = R.names[bi], reg = regionOf(nm, pos[i * 3 + 1], pos[i * 3]), sg = (reg === REG.JACKET || reg === REG.ACCENT || reg === REG.PANTS) ? segOf(nm) : null;
+      var it = { reg: reg, sg: sg };
+      if (sg && bind[sg[0]] && bind[sg[1]]) {
+        tmpA.copy(bind[sg[0]].p); tmpB.copy(bind[sg[1]].p); tmpP.set(pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2]);
+        if (sg[0] === 'Hips') tmpA.y -= 0.4; // il busto della hoodie scende fino a meta' coscia: niente rigonfiamento sui fianchi
+        var ab = tmpB.clone().sub(tmpA), t = clamp(tmpP.clone().sub(tmpA).dot(ab) / ab.lengthSq(), 0, 1), cp = tmpA.clone().addScaledVector(ab, t), rv = tmpP.clone().sub(cp);
+        // il busto e' ovale: si misura il raggio con la larghezza schiacciata
+        var key = sg[0] + '>' + sg[1] + ':' + reg + ':' + Math.floor(t * 4), rr = sg[0] === 'Hips' ? Math.hypot(rv.x / 1.45, rv.y, rv.z) : rv.length();
+        it.cp = cp; it.rv = rv; it.rr = rr; it.key = key;
+        sums[key] = (sums[key] || 0) + rr; cnts[key] = (cnts[key] || 0) + 1;
+      }
+      info[i] = it;
+    }
+    for (i = 0; i < m.count; i++) {
+      var I = info[i], reg = I.reg, px = pos[i * 3], yy = pos[i * 3 + 1], pz = pos[i * 3 + 2];
       c.set(pal[reg]);
       if (reg === REG.HEAD) c.set(0xd9a383);
-      // pieghe del tessuto: un filo di variazione di colore
-      var nz = 0.94 + 0.06 * vnoise2(pos[i * 3] * 40, pos[i * 3 + 1] * 40, 3);
+      if (reg === REG.JACKET) {
+        var pocket = pz > 0.06 && Math.abs(px) < 0.15 && yy > 0.88 && yy < 1.08, hem = yy < 0.8;
+        if (pocket || hem) c.copy(jc).multiplyScalar(pocket ? 0.8 : 0.86);
+      }
+      if (reg === REG.ACCENT) c.copy(jc).multiplyScalar(0.84);
+      var nz = 0.95 + 0.05 * vnoise2(px * 30, yy * 30, 3);
+      if (reg === REG.PANTS) nz *= 0.9 + 0.1 * Math.cos(yy * 30 + vnoise2(px * 8, yy * 8, 5) * 2.5);
+      if ((reg === REG.JACKET || reg === REG.ACCENT) && Math.abs(px) > 0.3) nz *= 0.93 + 0.07 * Math.cos(Math.abs(px) * 26 + vnoise2(px * 6, yy * 6, 9) * 2);
       cols[i * 3] = c.r * nz; cols[i * 3 + 1] = c.g * nz; cols[i * 3 + 2] = c.b * nz;
-      var f = infl[reg] * (m.name === 'joints' ? 1.1 : 1);
-      var yy = pos[i * 3 + 1];
-      // pantaloni larghi che si allargano in fondo, giacca piu' ampia sui fianchi e alle maniche
-      if (reg === REG.PANTS) f += 0.03 * sm01((0.55 - yy) / 0.4) + 0.012;
-      if (reg === REG.JACKET || reg === REG.ACCENT) f += 0.02 * sm01((1.05 - yy) / 0.25) + (Math.abs(pos[i * 3]) > 0.4 ? 0.012 : 0);
-      // quanto si muove il tessuto: orli dei pantaloni, fondo della giacca, maniche
-      loose[i] = reg === REG.PANTS ? 0.45 + 0.55 * sm01((0.6 - yy) / 0.45) : (reg === REG.JACKET || reg === REG.ACCENT) ? 0.25 + 0.75 * Math.max(sm01((1.0 - yy) / 0.22), sm01((Math.abs(pos[i * 3]) - 0.35) / 0.3)) : reg === REG.NECK ? 0.15 : 0;
-      pos[i * 3] += m.nor[i * 3] * f; pos[i * 3 + 1] += m.nor[i * 3 + 1] * f; pos[i * 3 + 2] += m.nor[i * 3 + 2] * f;
+      if (I.cp) {
+        var avg = sums[I.key] / cnts[I.key], extra;
+        if (reg === REG.PANTS) extra = 0.05 + 0.04 * sm01((0.55 - yy) / 0.35) + 0.015 * sm01((0.85 - yy) / 0.25);
+        else extra = (I.sg[0] === 'Hips' ? 0.055 : 0.04) + 0.025 * sm01((0.98 - yy) / 0.22) + (reg === REG.ACCENT ? 0.012 : 0);
+        var target = avg * 0.85 + I.rr * 0.15 + extra, scale = target / Math.max(I.rr, 1e-4);
+        pos[i * 3] = I.cp.x + I.rv.x * scale; pos[i * 3 + 1] = I.cp.y + I.rv.y * scale; pos[i * 3 + 2] = I.cp.z + I.rv.z * scale;
+        // normale: verso fuori dal tubo (stoffa liscia)
+        var nl = Math.hypot(I.rv.x, I.rv.y, I.rv.z) || 1, mn = m.nor;
+        mn[i * 3] = mn[i * 3] * 0.3 + I.rv.x / nl * 0.7; mn[i * 3 + 1] = mn[i * 3 + 1] * 0.3 + I.rv.y / nl * 0.7; mn[i * 3 + 2] = mn[i * 3 + 2] * 0.3 + I.rv.z / nl * 0.7;
+        var ml = Math.hypot(mn[i * 3], mn[i * 3 + 1], mn[i * 3 + 2]) || 1; mn[i * 3] /= ml; mn[i * 3 + 1] /= ml; mn[i * 3 + 2] /= ml;
+      } else {
+        var f = infl[reg] * (m.name === 'joints' ? 1.1 : 1) + (reg === REG.BOOT && yy > 0.1 ? 0.03 : 0);
+        pos[i * 3] += m.nor[i * 3] * f; pos[i * 3 + 1] += m.nor[i * 3 + 1] * f; pos[i * 3 + 2] += m.nor[i * 3 + 2] * f;
+      }
+      loose[i] = reg === REG.PANTS ? 0.55 + 0.6 * sm01((0.6 - yy) / 0.45) : (reg === REG.JACKET || reg === REG.ACCENT) ? 0.3 + 0.8 * Math.max(sm01((0.95 - yy) / 0.2), sm01((Math.abs(px) - 0.35) / 0.3)) : reg === REG.NECK ? 0.15 : 0;
     }
     var g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
@@ -183,6 +222,20 @@ function makeRig(buf) {
   var strap = new THREE.Mesh(new THREE.CylinderGeometry(0.128, 0.128, 0.035, 28, 1, true, 1.05, TAU - 2.1), mats.strap); goggle.add(strap);
   goggle.scale.set(1, 1, 1.12);
   attach('Head', goggle, hc.clone().add(new THREE.Vector3(0, -0.012, 0.006)));
+  // hoodie: cappuccio appoggiato dietro il collo e due cordini davanti
+  var hoodM = new THREE.MeshStandardMaterial({ color: of.jacket, roughness: 0.9 }), cordM = new THREE.MeshStandardMaterial({ color: of.accent, roughness: 0.6 });
+  var hood = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12, 0, TAU, 0, PI * 0.62), hoodM);
+  hood.scale.set(0.16, 0.11, 0.13);
+  var hoodQ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -2.0);
+  attach('Spine2', hood, hp.clone().add(new THREE.Vector3(0, -0.06, -0.13)), hoodQ);
+  var rim = new THREE.Mesh(new THREE.TorusGeometry(1, 0.12, 6, 20), hoodM); rim.scale.set(0.15, 0.1, 0.12);
+  attach('Spine2', rim, hp.clone().add(new THREE.Vector3(0, -0.02, -0.08)), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.4));
+  [-1, 1].forEach(function (sd) {
+    var cord = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.16, 5), cordM);
+    attach('Spine2', cord, hp.clone().add(new THREE.Vector3(sd * 0.045, -0.2, 0.135)));
+    var tip = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.02, 6), cordM);
+    attach('Spine2', tip, hp.clone().add(new THREE.Vector3(sd * 0.045, -0.29, 0.137)));
+  });
   // action cam sul casco (davanti, in alto) con supporto
   var camM = new THREE.MeshStandardMaterial({ color: of.cam, roughness: 0.4, metalness: 0.2 });
   var acam = new THREE.Group();
@@ -461,6 +514,9 @@ function poseRider(dt, mode) {
   _qB.copy(P.q);
   _qb.setFromAxisAngle(AX, -PS.lean * 0.75 * (P.sw ? -1 : 1)); _qB.multiply(_qb);
   _org.set(P.x, P.y, P.z);
+  var sinkT = ground ? clamp(0.03 - Math.min(speedOf(), 22) * 0.001 + P.brake * 0.015 + (P.butter ? 0.008 : 0), 0.008, 0.045) : 0;
+  PS.sink = lerp(PS.sink || 0, sinkT, damp(ground ? 10 : 20, dt));
+  _org.y -= PS.sink;
   _rX.set(1, 0, 0).applyQuaternion(_qB); _rY.set(0, 1, 0).applyQuaternion(_qB); _rZ.set(0, 0, ss).applyQuaternion(_qB);
   // ---- posa bersaglio (numeri nel sistema del corpo)
   var crouchT = P.crouch;

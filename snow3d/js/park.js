@@ -388,24 +388,35 @@ function updParticles(dt) {
   pGeo.attributes.position.needsUpdate = true; pGeo.attributes.aSize.needsUpdate = true; pGeo.attributes.aAlpha.needsUpdate = true;
 }
 
-// ------------------------------------------------------------ fiocchi e cristalli nell'aria
-var FN = 900, fPos = new Float32Array(FN * 3), fGeo = new THREE.BufferGeometry();
-for (var fi = 0; fi < FN; fi++) { fPos[fi * 3] = (Math.random() - 0.5) * 60; fPos[fi * 3 + 1] = Math.random() * 30; fPos[fi * 3 + 2] = (Math.random() - 0.5) * 60; }
+// ------------------------------------------------------------ neve che cade
+// Fiocchi morbidi in un cubo di 70 m attorno alla camera: cadono ondeggiando, spinti un po' dal vento,
+// piu' grandi vicino alla camera. Nevica sempre; con la luce "Neve" nevica forte.
+var FN = 2600, fPos = new Float32Array(FN * 3), fSeed = new Float32Array(FN), fGeo = new THREE.BufferGeometry();
+for (var fi = 0; fi < FN; fi++) { fPos[fi * 3] = (Math.random() - 0.5) * 70; fPos[fi * 3 + 1] = (Math.random() - 0.5) * 40; fPos[fi * 3 + 2] = (Math.random() - 0.5) * 70; fSeed[fi] = Math.random(); }
 fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3));
-var fMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.07, transparent: true, opacity: 0.8, depthWrite: false });
-var flakes = new THREE.Points(fGeo, fMat); flakes.frustumCulled = false; scene.add(flakes);
-var flakeOrigin = new THREE.Vector3();
+fGeo.setAttribute('aSeed', new THREE.BufferAttribute(fSeed, 1));
+var fMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, fog: false,
+  uniforms: { uScale: { value: 300 }, uSize: { value: 0.07 }, uAlpha: { value: 0.9 } },
+  vertexShader: 'attribute float aSeed; uniform float uScale, uSize; varying float vA; void main(){ vec4 mv = modelViewMatrix * vec4(position, 1.0); float d = -mv.z; gl_PointSize = clamp(uSize * (0.6 + aSeed) * uScale / max(0.3, d), 1.0, 26.0); vA = smoothstep(0.3, 1.5, d) * (1.0 - smoothstep(22.0, 34.0, d)); gl_Position = projectionMatrix * mv; }',
+  fragmentShader: 'uniform float uAlpha; varying float vA; void main(){ vec2 c = gl_PointCoord - 0.5; float r = dot(c, c) * 4.0; if (r > 1.0) discard; gl_FragColor = vec4(1.0, 1.0, 1.0, (1.0 - r) * (1.0 - r) * vA * uAlpha);\n #include <tonemapping_fragment>\n #include <colorspace_fragment>\n}'
+});
+var flakes = new THREE.Points(fGeo, fMat); flakes.frustumCulled = false; flakes.renderOrder = 5; scene.add(flakes);
 function updFlakes(dt, cam, amount, time) {
-  var n = Math.floor(FN * clamp(amount, 0.05, 1));
+  var heavy = amount > 0.5, n = heavy ? FN : Math.floor(FN * 0.55);
   fGeo.setDrawRange(0, n);
-  fMat.size = amount > 0.5 ? 0.09 : 0.05;
+  fMat.uniforms.uSize.value = heavy ? 0.085 : 0.065;
+  fMat.uniforms.uScale.value = VH * 0.5 / Math.tan(camera.fov * DEG / 2);
+  var fall = heavy ? 1.6 : 1.0, wx = Math.sin(time * 0.13) * 0.8 + 0.6, wz = 0.35;
   for (var i = 0; i < n; i++) {
-    var k = i * 3;
-    fPos[k] += (Math.sin(time * 0.7 + i) * 0.4) * dt; fPos[k + 1] -= (amount > 0.5 ? 1.3 : 0.25) * dt; fPos[k + 2] += 0.2 * dt;
+    var k = i * 3, s = fSeed[i];
+    fPos[k] += (wx + Math.sin(time * (0.8 + s) + i) * 0.5) * dt;
+    fPos[k + 1] -= fall * (0.7 + s * 0.6) * dt;
+    fPos[k + 2] += (wz + Math.cos(time * (0.7 + s) + i * 1.3) * 0.4) * dt;
     var rx = fPos[k] - cam.x, ry = fPos[k + 1] - cam.y, rz = fPos[k + 2] - cam.z;
-    if (rx > 30) fPos[k] -= 60; else if (rx < -30) fPos[k] += 60;
-    if (rz > 30) fPos[k + 2] -= 60; else if (rz < -30) fPos[k + 2] += 60;
-    if (ry < -12) fPos[k + 1] += 26; else if (ry > 14) fPos[k + 1] -= 26;
+    if (rx > 35) fPos[k] -= 70; else if (rx < -35) fPos[k] += 70;
+    if (rz > 35) fPos[k + 2] -= 70; else if (rz < -35) fPos[k + 2] += 70;
+    if (ry < -20) fPos[k + 1] += 40; else if (ry > 20) fPos[k + 1] -= 40;
   }
   fGeo.attributes.position.needsUpdate = true;
 }

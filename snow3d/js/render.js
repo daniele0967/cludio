@@ -31,9 +31,9 @@ var VW = 1, VH = 1;
 
 // ------------------------------------------------------------ luce: tre momenti della giornata
 var LIGHTS = {
-  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.7, top: 0x1a58bd, hor: 0xa9c7e6, haze: 0xbfd4ea, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.32, exp: 0.8, env: 0.42, snowfall: 0.15, cloud: 0.55 },
-  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.6, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe0d9d0, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.3, exp: 0.82, env: 0.42, snowfall: 0.1, cloud: 0.45 },
-  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 3.0, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.35, exp: 0.95, env: 0.45, snowfall: 0.08, cloud: 0.6 },
+  mattina: { az: 64, el: 47, sun: 0xfff2df, sunI: 3.7, top: 0x1a58bd, hor: 0xa9c7e6, haze: 0xbfd4ea, hemiS: 0xc4dbf7, hemiG: 0xf2f5fa, hemiI: 0.32, exp: 0.8, env: 0.42, snowfall: 0.3, cloud: 0.55 },
+  pomeriggio: { az: 102, el: 31, sun: 0xffe2b8, sunI: 3.6, top: 0x2a5eb8, hor: 0xe6dccf, haze: 0xe0d9d0, hemiS: 0xbcd0f0, hemiG: 0xf4ede4, hemiI: 0.3, exp: 0.82, env: 0.42, snowfall: 0.3, cloud: 0.45 },
+  tramonto: { az: 118, el: 11, sun: 0xffb27a, sunI: 3.0, top: 0x34509a, hor: 0xf3b59a, haze: 0xd9b7ae, hemiS: 0x9fb0dc, hemiG: 0xf0d7c8, hemiI: 0.35, exp: 0.95, env: 0.45, snowfall: 0.3, cloud: 0.6 },
   nuvoloso: { az: 30, el: 40, sun: 0xeef2f8, sunI: 1.3, top: 0x8ea3bb, hor: 0xd3dbe4, haze: 0xcdd6e1, hemiS: 0xd8e2ee, hemiG: 0xe6eaf0, hemiI: 1.05, exp: 0.92, env: 0.6, snowfall: 1, cloud: 0.95 }
 };
 var LT = null;
