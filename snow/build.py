@@ -4,14 +4,19 @@
 - PowderRun.js         script corto: scarica il gioco da GitHub e lo tiene in cache
 - PowderRunCompleto.js versione completa con il gioco dentro (funziona offline)
 """
-import json, pathlib
+import base64, json, pathlib, re
 here = pathlib.Path(__file__).parent
 src3d = here.parent / 'snow3d'
+ORDER = ['core.js', 'world.js', 'tricks.js', 'physics.js', 'render.js', 'park.js', 'rider.js', 'audio.js', 'ui.js', 'main.js']
 html = (src3d / 'index.html').read_text()
-for tag, f in [('THREE', 'vendor/three.min.js'), ('GAME', 'game.js')]:
-    code = (src3d / f).read_text()
-    assert '</script' not in code.lower(), f
-    html = html.replace('/*__%s__*/' % tag, code, 1)
+three = (src3d / 'vendor' / 'three.min.js').read_text()
+# il file r160 apre con un avviso in console sul formato "build/three.min.js": non serve
+three = re.sub(r'^console\.warn\([^;]*?\)(?=,)', 'void 0', three, count=1)
+game = '(function () {\n' + '\n'.join((src3d / 'js' / f).read_text() for f in ORDER) + '\n})();\n'
+for name, code in [('three', three), ('game', game)]:
+    assert '</script' not in code.lower(), name
+rider = base64.b64encode((src3d / 'assets' / 'rider.bin').read_bytes()).decode()
+html = html.replace('/*__THREE__*/', three, 1).replace('/*__GAME__*/', game, 1).replace('/*__RIDER__*/', rider, 1)
 assert '/*__SAVE__*/null' in html
 (here / 'powder.html').write_text(html)
 

@@ -29,33 +29,34 @@ python3 build.py
 
 ---
 
-# POWDER RUN 3D — snowboard infinito
+# POWDER RUN — snowpark infinito (Free Ride)
 
-Gioco di snowboard originale in **3D** (Three.js) per **Scriptable**: camera alle spalle del rider, pista infinita generata al volo con kicker e linee di salti, salti nel vuoto, rail e box, dossi, sassi e alberi, seggiovia e baite, caduta con ragdoll e una valanga che ti insegue.
+Gioco di snowboard originale in **3D** (Three.js) per **Scriptable** e browser, rifatto da zero: valle alpina con montagne lontane, foschia, sole basso e ombre, neve battuta con le righe del gatto e i brillantini, boschi innevati, seggiovia che gira, park con kicker, rail e box generati all'infinito. Il rider ha uno scheletro vero (modello Xbot degli esempi di Three.js, di origine Mixamo) vestito con giacca, pantaloni larghi, casco e maschera; le pose sono calcolate in tempo reale (IK di gambe e braccia, grab con la mano sulla tavola, caduta con ragdoll).
+
+## Modalità
+- **Free Run**: salti e rail all'infinito, si fanno trick e combo; 3 cadute e la corsa finisce. Sempre una **sfida** attiva (es. "Atterra un 540", "Grinda 14 m"): completarla dà punti e una vita.
+- **Zen**: stessa montagna, senza limite di cadute.
+- **Tutorial**: 11 passi guidati, da sterzare fino alle combo.
+
+## Comandi (telefono, in orizzontale)
+- **Pollice sinistro** in qualsiasi punto della metà sinistra: lo stick appare sotto il dito. ← → curvi, ↑ posizione raccolta (più veloce), ↓ freni di traverso.
+- **Pollice destro**: tieni premuto per caricare, lascia per saltare. Sui kicker lascia sul bordo (lip) per il "Pop!". Se tieni premuto oltre il lip, salta da solo.
+- **Spin**: in aria stick ← →. **Pre-carica**: tieni lo stick di lato mentre carichi il salto. **Flip**: stick ↑ (frontflip) / ↓ (backflip). In diagonale: Cork, Rodeo, Misty, anche doppi.
+- **Grab**: in aria tocca a destra e **trascina**: ↑ Nose, ↗ Mute, → Indy, ↘ Japan, ↓ Tail, ↙ Stalefish, ← Melon, ↖ Method. Tenuto a lungo diventa "Tweaked". Si può cambiare grab trascinando altrove. Trucco: tieni il salto oltre il lip e trascina subito, è un solo gesto.
+- **Rail e box**: nessuna calamita. Ci si aggancia solo se la tavola ci finisce davvero sopra (aiuto di 6 cm); un puntino verde sul rail dice che la traiettoria è giusta. Sul rail: stick ← → gira la tavola (50-50, Boardslide, Lipslide), trascina a destra ↑ ↓ per Nose/Tail Press, tocca per saltare via (180 Out, 360 Out…).
+- **Press e butter**: a terra trascina a destra ↑ o ↓ e tieni; con lo stick fai girare la tavola sulla neve (Nose Butter 180, 360…).
+- **Atterraggio**: Perfetto (×1,25), Pulito, Sporco (punti a metà). Troppo storto, sulla testa, di traverso o col grab in mano dopo un salto grosso: caduta. Il cerchio a terra dice dove atterri (verde ok, giallo al limite, rosso cadi).
+- Impostazioni: Regular/Goofy, aiuto all'atterraggio (Pro, Normale, Facile), sensibilità, flip invertiti, luce (mattina, pomeriggio, tramonto, neve), qualità grafica (automatica), audio e musica. Nel menu **Rider** si scelgono completo e tavola.
+- Sul computer: frecce/WASD = stick, Spazio = salto, 1–8 = grab (E = Indy, Q = Melon), R/F = press, P = pausa.
 
 ## Come giocare su iPhone
-1. In Scriptable tocca **+**, incolla il contenuto di [`snow/PowderRun.js`](snow/PowderRun.js) (circa 70 righe) e avvia.
-   Alla prima apertura scarica il gioco da GitHub (serve internet), poi funziona anche offline. Lo script scarica sempre l'ultima versione.
-2. Alternativa senza internet: incolla [`snow/PowderRunCompleto.js`](snow/PowderRunCompleto.js), la versione completa (circa 800 KB, contiene anche il motore 3D).
-3. Record e impostazioni finiscono in `Scriptable/PowderRun/record.json`.
-
-## Comandi
-- **Joystick a sinistra**: curvi. Spingi in avanti per andare più veloce, indietro per frenare.
-- **Tasto a destra**: tocca per saltare, tieni premuto per caricare un salto più alto. Saltare sul bordo di un kicker dà una spinta in più.
-- **In aria, trascina il dito a destra**: il rider ruota come muovi il dito (orizzontale = spin, verticale = flip). Se lasci il dito con uno scatto, continua a girare per inerzia.
-- **In aria, joystick**: anche lui fa ruotare il rider (sinistra/destra = spin, su/giù = flip).
-- **In aria, tieni fermo il dito a destra**: grab (in alto Method, in basso Indy).
-- Il cerchio a terra mostra dove atterri: verde se l'atterraggio va bene, rosso se cadi.
-- Ogni 450 m si sale di livello e si va più veloci (anche la valanga).
-- Sul computer: frecce = joystick, Spazio = salto, A / D = grab, P = pausa.
+1. In Scriptable incolla [`snow/PowderRun.js`](snow/PowderRun.js) (circa 70 righe) e avvia: scarica sempre l'ultima versione da GitHub (circa 2 MB), poi funziona anche offline. Chi aveva già lo script lo ritrova aggiornato da solo.
+2. Alternativa senza internet: [`snow/PowderRunCompleto.js`](snow/PowderRunCompleto.js).
+3. Record e impostazioni: `Scriptable/PowderRun/record.json`.
 
 ## Sviluppo
-Sorgenti in `snow3d/` (`index.html` interfaccia, `game.js` gioco, `vendor/three.min.js` motore 3D, licenza MIT).
-Dopo ogni modifica:
-```
-python3 snow/build.py
-```
-che crea `snow/powder.html` (si apre anche nel browser) e i due script Scriptable.
+Sorgenti in `snow3d/`: `js/core.js` (servizi, salvataggio), `js/world.js` (pista, kicker progettati sulle traiettorie, rail, alberi), `js/tricks.js` (nomi e punti), `js/physics.js` (fisica a 120 Hz, salti, rotazioni, rail, butter, cadute), `js/render.js` e `js/park.js` (grafica), `js/rider.js` (modello, vestiti, pose, ragdoll), `js/audio.js` (suoni e musica sintetizzati), `js/ui.js` e `js/main.js` (comandi, HUD, menu, camera), `index.html`. `assets/rider.bin` si rigenera con `python3 snow3d/tools/extract_rider.py`.
+Dopo ogni modifica: `python3 snow/build.py`. Test senza grafica: `node snow3d/test/ride.js`, `tricks.js`, `rails.js`, `butter.js`; nel browser: `snow3d/test/scenes.js`, `touch.js`, `tut.js`.
 La prima versione 2D è ancora in `snow/powder2d.html`.
 
 ---
