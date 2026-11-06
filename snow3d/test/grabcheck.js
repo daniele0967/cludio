@@ -33,6 +33,21 @@ const path = require('path');
         }
       }
     }
+    // andatura a terra: le mani non devono incrociarsi (quella davanti resta verso la punta)
+    for (const st of stances) {
+      pr.save.set.stance = st;
+      for (const steer of [-1, 0, 1]) {
+        const P = pr.P; P.mode = 'ground'; P.air = null; P.sw = false; P.steer = steer; P.lean = -steer * 0.6; P.crouch = 0.3; P.vx = 0; P.vz = -12;
+        const nose = new T.Vector3(0, 0, -1), up = new T.Vector3(0, 1, 0), z = new T.Vector3().crossVectors(nose, up);
+        P.q.setFromRotationMatrix(new T.Matrix4().makeBasis(nose, up, z));
+        pr.PS.init = false; pr.PS.gi = -1; pr.PS.grab = 0;
+        for (let k = 0; k < 90; k++) pr.poseRider(1 / 60, 'ground');
+        const rig = pr.rig(), ss = st === 'goofy' ? -1 : 1, front = ss > 0 ? 'Left' : 'Right', back = ss > 0 ? 'Right' : 'Left';
+        const fh = new T.Vector3(), bh = new T.Vector3(); rig.B[front + 'Hand'].getWorldPosition(fh); rig.B[back + 'Hand'].getWorldPosition(bh);
+        const along = fh.clone().sub(bh).dot(nose);
+        out.push(`andatura ${st.padEnd(7)} sterzo ${steer}: mano davanti ${(along * 100).toFixed(0)} cm piu' verso la punta ${along > 0.3 ? 'OK' : 'INCROCIATE'}`);
+      }
+    }
     return out.join('\n');
   });
   console.log(res);

@@ -2900,14 +2900,14 @@ var BOARD_T = 0.013;
 //  free:  dove va la mano libera rispetto alla spalla [avanti(petto), verso la punta, su]
 //  elbow: verso dove punta il gomito della mano che afferra [avanti, punta, su]
 var GPOSE = {
-  nose:    { pt: [0.7, 0, 0.02], board: { toeUp: 0, noseUp: 0.6, yaw: 0, up: 0.2, back: 0, along: -0.2 }, body: { hip: 0.52, bend: 0.8, side: 0.6, twist: 0.25, arch: 0 }, free: [-0.05, -0.6, 0.1], elbow: [0.3, 0.4, 0.6] },
-  mute:    { pt: [0.06, 1, 0.0], board: { toeUp: 0.22, noseUp: -0.1, yaw: -0.22, up: 0.24, back: -0.08, along: 0.04 }, body: { hip: 0.46, bend: 0.75, side: 0.25, twist: 0.05, arch: 0 }, free: [-0.3, -0.45, 0.35], elbow: [0.6, 0.2, 0.4] },
-  indy:    { pt: [-0.05, 1, 0.0], board: { toeUp: 0.5, noseUp: 0.2, yaw: 0.15, up: 0.16, back: -0.05, along: 0 }, body: { hip: 0.43, bend: 0.8, side: -0.1, twist: -0.15, arch: 0 }, free: [0.3, 0.35, 0.5], elbow: [0.6, -0.2, 0.4] },
-  japan:   { pt: [0.18, 1, -0.01], board: { toeUp: 1.05, noseUp: -0.35, yaw: 0.1, up: 0.3, back: 0.28, along: -0.05 }, body: { hip: 0.5, bend: 0.55, side: 0.2, twist: 0.25, arch: 0.25 }, free: [0, 0, 0.72], elbow: [0.5, 0.5, 0.3] },
-  tail:    { pt: [-0.7, 0, 0.02], board: { toeUp: 0, noseUp: -0.55, yaw: 0, up: 0.18, back: 0, along: 0.2 }, body: { hip: 0.52, bend: 0.7, side: -0.6, twist: -0.3, arch: 0 }, free: [0.1, 0.6, 0.12], elbow: [0.2, -0.4, 0.6] },
-  stale:   { pt: [-0.14, -1, -0.01], board: { toeUp: -0.55, noseUp: 0.35, yaw: 0.25, up: 0.22, back: 0.2, along: 0.05 }, body: { hip: 0.52, bend: 0.3, side: -0.35, twist: -0.45, arch: 0.15 }, free: [0.5, 0.3, 0.05], elbow: [-0.6, -0.4, 0.2] },
-  melon:   { pt: [0.08, -1, -0.01], board: { toeUp: -0.45, noseUp: -0.15, yaw: -0.25, up: 0.22, back: 0.12, along: 0 }, body: { hip: 0.47, bend: 0.45, side: 0.35, twist: 0.35, arch: 0 }, free: [-0.2, -0.3, 0.6], elbow: [-0.6, 0.3, 0.2] },
-  method:  { pt: [0.02, -1, -0.03], board: { toeUp: -1.35, noseUp: 0.2, yaw: -0.15, up: 0.42, back: 0.4, along: -0.02 }, body: { hip: 0.56, bend: 0.25, side: 0.15, twist: 0.45, arch: 0.45 }, free: [-0.15, -0.45, 0.65], elbow: [-0.5, 0.2, 0.5] }
+  nose:    { pt: [0.7, 0, 0.02], board: { toeUp: 0, noseUp: 0.45, yaw: 0, up: 0.22, back: 0, along: -0.12 }, body: { hip: 0.5, bend: 0.75, side: 0.5, twist: 0.1, arch: 0 }, free: [-0.05, -0.55, 0.15], elbow: [0.2, 0.5, 0.5] },
+  mute:    { pt: [0.04, 1, 0.0], board: { toeUp: 0.15, noseUp: 0.25, yaw: 0.4, up: 0.2, back: 0, along: 0 }, body: { hip: 0.46, bend: 0.85, side: 0.1, twist: 0.1, arch: 0 }, free: [-0.1, -0.5, 0.3], elbow: [0.6, 0.35, 0.2] },
+  indy:    { pt: [-0.04, 1, 0.0], board: { toeUp: 0.15, noseUp: 0, yaw: 0, up: 0.2, back: 0, along: 0 }, body: { hip: 0.44, bend: 0.85, side: -0.05, twist: 0, arch: 0 }, free: [0.15, 0.4, 0.45], elbow: [0.6, 0.35, 0.2] },
+  japan:   { pt: [0.12, 1, -0.01], board: { toeUp: 1.0, noseUp: -0.3, yaw: 0.2, up: 0.3, back: 0.28, along: -0.03 }, body: { hip: 0.5, bend: 0.55, side: 0.15, twist: 0.1, arch: 0.25 }, free: [0, -0.2, 0.72], elbow: [0.5, 0.35, 0.3] },
+  tail:    { pt: [-0.7, 0, 0.02], board: { toeUp: 0, noseUp: -0.45, yaw: 0, up: 0.22, back: 0, along: 0.12 }, body: { hip: 0.5, bend: 0.6, side: -0.5, twist: -0.1, arch: 0 }, free: [0.05, 0.55, 0.15], elbow: [0.2, 0.5, 0.5] },
+  stale:   { pt: [-0.12, -1, -0.01], board: { toeUp: -0.25, noseUp: 0.25, yaw: 0.35, up: 0.22, back: 0.06, along: 0 }, body: { hip: 0.5, bend: 0.35, side: -0.15, twist: -0.1, arch: 0.05 }, free: [0.2, 0.5, 0.35], elbow: [-0.6, 0.35, 0.2] },
+  melon:   { pt: [0.1, -1, -0.01], board: { toeUp: -0.25, noseUp: -0.25, yaw: -0.35, up: 0.22, back: 0.06, along: 0 }, body: { hip: 0.48, bend: 0.45, side: 0.15, twist: 0.1, arch: 0 }, free: [-0.15, -0.45, 0.45], elbow: [-0.6, 0.35, 0.2] },
+  method:  { pt: [0.04, -1, -0.03], board: { toeUp: -1.2, noseUp: 0.15, yaw: -0.3, up: 0.42, back: 0.38, along: -0.02 }, body: { hip: 0.56, bend: 0.25, side: 0.1, twist: 0.2, arch: 0.45 }, free: [-0.1, -0.35, 0.7], elbow: [-0.5, 0.3, 0.5] }
 };
 function gpose(g) { return GPOSE[g.id] || GPOSE.indy; }
 // punto della tavola (coordinate locali) dove va la mano
@@ -2977,7 +2977,7 @@ function poseRider(dt, mode) {
   PS.open = lerp(PS.open || 0, openT, damp(10, dt));
   if (air) crouch = Math.max(crouch, PS.tuck * 0.9);
   if (air && PS.open > 0.05 && PS.grab < 0.1) crouch = lerp(crouch, 0.15, PS.open * 0.7);
-  var twist = 0.38 - (P.charge > 0 ? P.prewind * 0.9 * P.charge : 0) + clamp(-spinW * 0.09, -0.75, 0.75) * (ss);
+  var twist = 0.12 - (P.charge > 0 ? P.prewind * 0.9 * P.charge : 0) + clamp(-spinW * 0.09, -0.75, 0.75) * (ss);
   if (P.mode === 'ground' && P.brake) twist += 0.3;
   if (P.mode === 'ground') twist += -PS.steerS * 0.3 * ss * (P.sw ? -1 : 1);
   PS.twist = lerp(PS.twist, twist, damp(8, dt));
@@ -2997,7 +2997,7 @@ function poseRider(dt, mode) {
   if (P.wobble > 0) { P.wobble = Math.max(0, P.wobble - dt * 1.6); _U.applyAxisAngle(_v1, Math.sin(rig.t * 22) * 0.12 * P.wobble); }
   _hipP.set(P.x, P.y, P.z).addScaledVector(_by, BOARD_T).addScaledVector(_U, hipH).addScaledVector(_v1, PS.xOff).addScaledVector(_c, -0.04 - PS.crouch * 0.06);
   // in aria con grab il bacino si avvicina alla tavola: le ginocchia salgono
-  _F.copy(_c).applyAxisAngle(_U, 0.3 * ss);
+  _F.copy(_c).applyAxisAngle(_U, 0.12 * ss);
   bodyQ(_F, _U, _qc); _qc.multiply(rig.bind.Hips.q);
   B.Hips.position.copy(_hipP);
   B.Hips.quaternion.copy(_qc);
@@ -3011,7 +3011,7 @@ function poseRider(dt, mode) {
   ['Spine', 'Spine1', 'Spine2'].forEach(function (n, i) {
     var f = (i + 1) / 3;
     if (arch && i === 2) bend -= arch * 0.6;
-    _F.copy(_c).applyAxisAngle(_U, (0.3 + (PS.twist + gtw) * f) * ss);
+    _F.copy(_c).applyAxisAngle(_U, (0.12 + (PS.twist + gtw) * f) * ss);
     _v3.crossVectors(_U, _F).normalize(); // sinistra del busto
     _v4.copy(_U).applyAxisAngle(_v3, bend * f * 0.9).applyAxisAngle(_F, side * f * ss);
     _v5.copy(_F).applyAxisAngle(_v3, bend * f * 0.9);
@@ -3079,9 +3079,9 @@ function armPose(side, isFront, G0, gi, air, rail, t, dt, exact) {
   var sw = air && P.air ? P.air.ws : 0;
   // braccia in equilibrio: avanti verso la punta e dietro verso la coda
   var lift = air ? 0.15 : rail ? 0.25 : 0.02 + Math.abs(PS.lean) * 0.25;
-  tgt.copy(_sh).addScaledVector(_bx, dirX * (isFront ? 0.42 : 0.3)).addScaledVector(_c, isFront ? 0.22 : 0.12).addScaledVector(_U, -0.42 + lift);
+  tgt.copy(_sh).addScaledVector(_bx, dirX * (isFront ? 0.34 : 0.3)).addScaledVector(_c, isFront ? 0.14 : 0.06).addScaledVector(_U, -0.46 + lift);
   // spin veloce: braccia chiuse sul petto (si gira piu' veloci); flip: abbracciano le ginocchia
-  if (air && Math.abs(sw) > 3) tgt.lerp(_v4.copy(_sh).addScaledVector(_c, 0.3).addScaledVector(_U, -0.28).addScaledVector(_bx, -dirX * 0.05), clamp((Math.abs(sw) - 3) / 4, 0, 1));
+  if (air && Math.abs(sw) > 3) tgt.lerp(_v4.copy(_sh).addScaledVector(_c, 0.3).addScaledVector(_U, -0.28).addScaledVector(_bx, dirX * 0.1), clamp((Math.abs(sw) - 3) / 4, 0, 1));
   if (air && PS.tuck > 0.1) tgt.lerp(_v4.copy(_sh).addScaledVector(_c, 0.42).addScaledVector(_U, -0.5).addScaledVector(_bx, dirX * 0.05), PS.tuck * 0.8);
   // prima di atterrare: braccia larghe per l'equilibrio
   if (air && PS.open > 0.05) tgt.lerp(_v4.copy(_sh).addScaledVector(_bx, dirX * 0.55).addScaledVector(_c, 0.15).addScaledVector(_U, -0.1), PS.open);
@@ -3106,7 +3106,7 @@ function armPose(side, isFront, G0, gi, air, rail, t, dt, exact) {
     if (h.distanceTo(tgt) > 0.6) h.lerp(tgt, 0.5);
   }
   if (grabbing && GP) _pl.copy(_c).multiplyScalar(GP.elbow[0]).addScaledVector(_bx, GP.elbow[1] * dirX).addScaledVector(_U, GP.elbow[2]);
-  else _pl.copy(_U).multiplyScalar(-0.6).addScaledVector(_c, -0.6).addScaledVector(_bx, -dirX * 0.2);
+  else _pl.copy(_U).multiplyScalar(-0.5).addScaledVector(_c, -0.2).addScaledVector(_bx, dirX * 0.55);
   solveLimb(side + 'Arm', side + 'ForeArm', side + 'Hand', h, L.upper, L.fore, _pl, ZB);
   if (S === 'R') _handInit = true;
 }
